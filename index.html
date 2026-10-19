@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>方包包 V14-成員版 等候+位置</title>
+<style>
+body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+.ver{position:fixed;top:8px;right:8px;background:#00FF88;color:#000;padding:4px 10px;border-radius:99px;font-weight:900;font-size:11px}
+.card{width:92%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:16px;margin-top:14px}
+.input{width:100%;padding:12px;border-radius:10px;border:2px solid #444;background:#000;color:#fff;font-size:15px;box-sizing:border-box}
+.btn{width:100%;padding:14px;border-radius:99px;border:0;font-weight:900;font-size:15px;margin-top:10px}
+.btnY{background:#FFEB00;color:#000}.btnG{background:#2a2a2a;color:#ccc;border:1px solid #333}
+.code{font-size:32px;font-weight:900;letter-spacing:6px;color:#00FF88;text-align:center;margin:10px 0}
+.row{display:flex;justify-content:space-between;background:#222;padding:10px 12px;border-radius:10px;margin-top:8px;border:1px solid #222}
+.pos{width:42px;height:24px;background:#00FF88;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
+.item{display:flex;gap:8px;padding:8px 10px;background:#151515;border:1px solid #222;border-radius:8px;margin-top:6px;font-size:13px;align-items:center}
+.log{font-size:12px;color:#00FF88;background:#222;border:1px solid #333;border-radius:8px;padding:10px;margin-top:10px;white-space:pre-line;text-align:center}
+</style>
+</head><body>
+<div class="ver">成員版 V14 等候+位置顯示</div>
+<h1 style="color:#00FF88;margin:40px 0 5px">方包包 - 成員版</h1>
+<div style="color:#888;font-size:11px">保留：登入房間 / 上傳字庫 / 等候區 / 位置顯示 - 已移除遊戲</div>
+
+<div class="card">
+<div style="font-weight:900">1. 登入房間 (成員)</div>
+<input id="nameInput" class="input" value="Fai" style="margin-top:10px">
+<div style="display:flex;gap:8px;margin-top:10px"><input id="codeInput" class="input" placeholder="輸入4位房號" style="flex:1"><button class="btn btnY" style="flex:1" onclick="joinRoom()">加入房間</button></div>
+<div id="roomInfo" style="display:none"><div class="code" id="roomCode">----</div></div>
+<div id="logRoom" class="log">未入房 - 輸入房號一撳即入</div>
+</div>
+
+<div class="card">
+<div style="font-weight:900">2. 上傳字庫 (成員都可上傳)</div>
+<textarea id="wordBox" class="input" style="height:110px;margin-top:10px" placeholder="一行一詞，成員上傳後房主會見到位置"></textarea>
+<button class="btn btnY" onclick="saveWords()">💾 上傳確認</button>
+<div id="logWords" class="log" style="display:none"></div>
+</div>
+
+<div class="card">
+<div style="font-weight:900">3. 等候區域</div>
+<div id="playerList"></div>
+<div id="logWait" class="log">等候區：等緊房主</div>
+<div style="font-weight:900;margin-top:16px">4. 📍 位置顯示 - 上傳字庫</div>
+<div id="posList"><div style="color:#555;text-align:center;padding:20px;font-size:12px">未有字庫，請先上傳</div></div>
+</div>
+
+<script>
+let myName='Fai', roomCode='', players=['Louis','Fai'], wordBank=[];
+function joinRoom(){
+ try{
+  myName=document.getElementById('nameInput').value||'Fai';
+  roomCode=(document.getElementById('codeInput').value||'TEST').toUpperCase();
+  document.getElementById('roomCode').textContent=roomCode;
+  document.getElementById('roomInfo').style.display='block';
+  document.getElementById('logRoom').textContent='✅ 已加入房間：'+roomCode+'\n你：'+myName;
+  if(players.indexOf(myName)===-1) players.push(myName);
+  updateWait();
+  alert('收到加入！房號：'+roomCode);
+ }catch(e){ alert('錯誤：'+e.message); }
+}
+function saveWords(){
+ let txt=document.getElementById('wordBox').value.trim(); if(!txt){ alert('字庫空嘅'); return; }
+ wordBank=txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s);
+ document.getElementById('logWords').style.display='block';
+ document.getElementById('logWords').textContent='✅ 成員 '+myName+' 已上傳 '+wordBank.length+' 詞';
+ renderPos();
+}
+function renderPos(){
+ if(!wordBank.length){ document.getElementById('posList').innerHTML='<div style="color:#555;text-align:center;padding:20px">未有字庫</div>'; return; }
+ let h=''; for(let i=0;i<wordBank.length;i++){ let p=players[i%players.length]||'未指派'; h+=`<div class="item"><div class="pos">${i+1}號位</div><div style="flex:1">${wordBank[i]}</div><div style="font-size:11px;color:#00FF88;border:1px solid #333;padding:2px 8px;border-radius:99px">${p} 上傳</div></div>`; }
+ document.getElementById('posList').innerHTML=h;
+}
+function updateWait(){
+ let h=''; for(let i=0;i<players.length;i++){ let isMe=players[i]==myName; h+=`<div class="row" style="${isMe?'border-color:#00FF88;background:#0a2a1a':''}"><span>${i+1}. ${players[i]} ${isMe?'(你)':''}</span><span style="font-size:11px;color:#888">${i+1}號位</span></div>`; }
+ document.getElementById('playerList').innerHTML=h;
+ document.getElementById('logWait').textContent=`等候區：共 ${players.length} 人 - ${players.join(', ')}`;
+ if(wordBank.length) renderPos();
+}
+// 自動讀Link房號
+(function(){ let p=new URLSearchParams(location.search); let r=p.get('room'); if(r) document.getElementById('codeInput').value=r.toUpperCase(); })();
+</script>
+</body></html>
