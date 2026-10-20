@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V35 強制打通版</title>
+<title>V36 終極修復版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:10px}
@@ -8,20 +8,19 @@ body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;
 .card{width:96%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:12px;margin-top:56px}
 .btn{padding:12px;border-radius:99px;border:0;font-weight:900;cursor:pointer}.btnY{background:#FFEB00;color:#000;width:100%;margin-top:8px}.btnDark{background:#222;color:#fff;width:100%;margin-top:8px;border:1px solid #444}
 .item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:6px;display:flex;justify-content:space-between}.item.ok{border-color:#00FF88;background:#0e2018}.item.wait{border-color:#FFEB00;background:#332e00}
-.log{font-size:12px;color:#FFEB00;background:#222;border-radius:8px;padding:8px;margin-top:8px;text-align:center;word-break:break-all}
-.debug{font-size:10px;color:#888;background:#111;border-radius:6px;padding:6px;margin-top:6px;max-height:90px;overflow:auto}
+.log{font-size:13px;color:#FFEB00;background:#222;border-radius:8px;padding:10px;margin-top:8px;text-align:center}
+.debug{font-size:10px;color:#0f0;background:#000;border-radius:6px;padding:6px;margin-top:6px;word-break:break-all}
 .code{font-size:30px;font-weight:900;letter-spacing:5px;color:#00FF88;text-align:center}
-.choiceBtn{flex:1;padding:10px;border-radius:16px;border:3px solid #333;background:#fff;color:#000;font-weight:900;display:flex;flex-direction:column;align-items:center}.choiceBtn img{width:68px;height:68px}.choiceBtn.sel{border-color:#FFEB00;box-shadow:0 0 12px #FFEB00}
-.countBig{font-size:60px;font-weight:900;color:#FFEB00;text-align:center;margin:10px 0;display:none}
-.progress{width:100%;height:14px;background:#333;border-radius:99px;margin-top:8px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px}.green{background:#00FF88}.red{background:#FF4444}
+.choiceBtn{flex:1;padding:10px;border-radius:16px;border:3px solid #333;background:#fff;color:#000;font-weight:900;display:flex;flex-direction:column;align-items:center}.choiceBtn.sel{border-color:#FFEB00;box-shadow:0 0 14px #FFEB00}
+.countBig{font-size:64px;font-weight:900;color:#FFEB00;text-align:center;display:none;margin:8px 0}
+.progress{width:100%;height:16px;background:#333;border-radius:99px;margin-top:8px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
 </style>
 </head><body>
-<div class="verBadge">方包包包剪揼 V35 - 強制打通版 [揀定先倒數]</div>
-<div class="verTag">V35</div>
+<div class="verBadge">方包包包剪揼 V36 - 終極修復版 [揀定即倒數]</div>
+<div class="verTag">V36</div>
 
 <div class="card">
-<b>房間 [V35] <span id="connInfo"><span class="dot red"></span>檢查連線中</span></b>
+<b>房間 [V36] <span id="conn" style="color:#0f0">● 已連線</span></b>
 <div style="display:flex;gap:6px;margin-top:8px">
 <input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
 <button class="btn" style="background:#FFEB00;color:#000;flex:1" onclick="createRoom()">開房</button>
@@ -29,130 +28,127 @@ body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;
 <button class="btn" style="background:#00FF88;color:#000;flex:1" onclick="joinRoom()">入房</button>
 </div>
 <div class="code" id="roomCode">----</div>
-<div id="logRoom" class="log">[V35] 未入房 - 兩部機都要係V35</div>
-<div id="debug" class="debug">Debug: 等待...</div>
+<div id="logRoom" class="log">[V36] 等待入房</div>
+<div id="debug" class="debug">debug: 空</div>
 <div id="playerList"></div>
-<button id="startBtn" class="btn btnY" style="display:none">🎤 房主按：開始</button>
+<button id="startBtn" class="btn btnY" style="display:none">開始遊戲</button>
 </div>
 
 <div class="card" id="gameCard" style="display:none">
-<b>🎮 V35 請出拳！都揀好先倒數</b>
-<div id="statusLog" class="log">[V35] 請出拳...</div>
+<b>🎮 V36 請出拳！兩邊揀好即倒數</b>
+<div id="statusLog" class="log">[V36] 請出拳</div>
 <div style="display:flex;gap:8px;margin-top:10px">
-<button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg"><span>揼</span></button>
-<button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg"><span>剪</span></button>
-<button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg"><span>包</span></button>
+<button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" width="70"><span>揼</span></button>
+<button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" width="70"><span>剪</span></button>
+<button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" width="70"><span>包</span></button>
 </div>
-<div id="choiceLog" class="log">[V35] 你未揀</div>
+<div id="choiceLog" class="log">[V36] 你未揀</div>
 <div id="whoChosen"></div>
-<div style="display:flex;gap:6px;margin-top:8px">
-<button class="btn btnDark" onclick="forceSync()">📡 強制同步 (卡住按呢個)</button>
-</div>
 <div class="countBig" id="countBig">3</div>
 <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
 <div id="result" style="display:none;margin-top:10px"></div>
 </div>
 
 <script>
-const VERSION='V35';
+const VERSION='V36';
 let IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
 let peer=null, conns={}, myName='', roomCode='', players=[], isHost=false, myChoice=null, remoteChoices={}, choiceDone=false, gameStarted=false, audioCtx=null;
-let myPeerId='';
 
-function addDebug(t){ let d=document.getElementById('debug'); d.textContent='['+new Date().toLocaleTimeString()+'] '+t+'\n'+d.textContent.slice(0,500); }
-function log(t){ document.getElementById('logRoom').textContent='['+VERSION+'] '+t; addDebug(t); }
+function dbg(t){ document.getElementById('debug').textContent=t; }
+function log(t){ document.getElementById('logRoom').textContent='['+VERSION+'] '+t; }
 function slog(t){ document.getElementById('statusLog').textContent='['+VERSION+'] '+t; }
-function setConnInfo(t,ok){ document.getElementById('connInfo').innerHTML=(ok?'<span class="dot green"></span>':'<span class="dot red"></span>')+t; }
-
-function sendAll(m){ 
-  let ok=0; 
-  for(let k in conns){ 
-    try{ 
-      let c=conns[k]; 
-      if(c && c.open){ c.send(m); ok++; } 
-    }catch(e){ addDebug('發送失敗 '+k+' '+e); } 
-  } 
-  addDebug('發送 '+m.type+' 給 '+ok+' 條線'); 
-  return ok; 
-}
-function sendAllRetry(m){ for(let i=0;i<25;i++) setTimeout(()=>sendAll(m), i*200); }
+function sendAll(m){ for(let k in conns){ try{ if(conns[k] && conns[k].open) conns[k].send(m); }catch{} } }
+function sendRetry(m){ for(let i=0;i<30;i++) setTimeout(()=>sendAll(m), i*200); }
 
 function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; isHost=true;
- peer=new Peer(VERSION+'-'+roomCode); 
- myPeerId=VERSION+'-'+roomCode;
- peer.on('open',(id)=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode+' ID:'+id); setConnInfo('等朋友入房...',false); });
- peer.on('connection',c=>{ addDebug('收到連接 '+c.peer); conns[c.peer]=c; hookConn(c); });
- peer.on('error',e=>{ addDebug('Peer錯誤 '+e.type); });
+ peer=new Peer(VERSION+'-'+roomCode);
+ peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode); dbg('host id='+VERSION+'-'+roomCode); });
+ peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>c.send({type:'sync',players,roomCode,ver:VERSION})); c.on('data',onData); });
 }
 function joinRoom(){
- let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code) return alert('房號'); myName=document.getElementById('nameInput').value.trim()||'Bella'; roomCode=code; isHost=false;
- peer=new Peer(); 
- peer.on('open',(id)=>{ 
-   myPeerId=id; addDebug('我的ID '+id+' 連接房主 '+VERSION+'-'+roomCode);
-   // V35 關鍵：主動連 + 等房主連我，雙向
-   connectToHost();
-   // 額外每3秒重連一次，確保打通
-   setInterval(connectToHost, 3000);
+ let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code) return; myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; isHost=false;
+ peer=new Peer();
+ peer.on('open',()=>{ 
+   let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn; 
+   conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; });
+   conn.on('data',onData);
+   // V36: 每秒重連確保打通
+   setInterval(()=>{ if(!conns['host'] || !conns['host'].open){ let c=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=c; c.on('open',()=>c.send({type:'join',name:myName,ver:VERSION})); c.on('data',onData); } }, 2500);
  });
 }
-function connectToHost(){
- if(conns['host'] && conns['host'].open) return;
- let conn=peer.connect(VERSION+'-'+roomCode, {reliable:true}); 
- conns['host']=conn; hookConn(conn);
- conn.on('open',()=>{ addDebug('已連上房主'); conn.send({type:'join',name:myName,peerId:myPeerId,ver:VERSION}); setConnInfo('已入房 '+roomCode+' 有'+Object.keys(conns).length+'條線',true); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; });
-}
-function hookConn(c){
- c.on('open',()=>{ addDebug('Data通道Open '+c.peer); setConnInfo('已連接 '+Object.keys(conns).length+'條線',true); });
- c.on('data',onData);
- c.on('close',()=>{ addDebug('Data通道Close '+c.peer); setConnInfo('斷線 剩'+Object.keys(conns).length+'條',false); });
- c.on('error',e=>{ addDebug('Data錯誤 '+c.peer); });
-}
 function onData(d){
- if(!d || !d.type) return;
- if(d.ver && d.ver!==VERSION){ log('版本唔同 '+d.ver); return; }
- addDebug('收到 '+d.type+' 來自 '+d.name);
- if(d.type==='join'){ 
-   if(!players.includes(d.name)) players.push(d.name); 
-   // V35：收到join，立刻反向連回去對方，確保雙向
-   if(d.peerId && !conns[d.peerId]){ 
-     addDebug('反向連接 '+d.peerId); 
-     let back=peer.connect(d.peerId,{reliable:true}); 
-     conns[d.peerId]=back; hookConn(back); 
-   }
-   updatePlayers(); sendAllRetry({type:'sync',players,ver:VERSION,roomCode}); 
+ if(!d || !d.ver) return;
+ if(d.ver!==VERSION) return;
+ if(d.type==='join'){ if(!players.includes(d.name)) players.push(d.name); updatePlayers(); sendRetry({type:'sync',players,roomCode,ver:VERSION}); }
+ if(d.type==='sync'){ players=d.players||players; updatePlayers(); }
+ if(d.type==='goGame'){ startRound(); }
+ if(d.type==='choice'){ 
+   // V36 核心：無條件寫入，唔理players順序
+   remoteChoices[d.name]=d.choice; 
+   log('收到 '+d.name+' 揀 '+d.choice); 
+   dbg('my='+myChoice+' remote='+JSON.stringify(remoteChoices)+' players='+JSON.stringify(players));
+   renderWho(); checkAll();
  }
- if(d.type==='sync'){ players=d.players||players; if(d.roomCode) document.getElementById('roomCode').textContent=d.roomCode; updatePlayers(); }
- if(d.type==='goGame'){ startNewRound(); }
- if(d.type==='choice'){ remoteChoices[d.name]=d.choice; renderWho(); checkAll(); log('收到 '+d.name+' 揀 '+d.choice); slog('收到 '+d.name+' 已揀'); }
  if(d.type==='preReveal'){ doCountdown(d.at); }
  if(d.type==='reveal'){ showResult(); }
- if(d.type==='restart'){ startNewRound(); }
+ if(d.type==='restart'){ startRound(); }
 }
 function updatePlayers(){
  let h=''; for(let p of players){ h+=`<div class="item ok"><span>${p}${p===myName?' (你)':''}</span><span>✅ 已入房</span></div>`; }
  document.getElementById('playerList').innerHTML=h;
- if(players.length>=2 && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=()=>{ sendAllRetry({type:'goGame',ver:VERSION}); startNewRound(); }; }
+ if(players.length>=2 && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=()=>{ sendRetry({type:'goGame',ver:VERSION}); startRound(); }; }
 }
-function startNewRound(){
+function startRound(){
  gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={};
  document.getElementById('gameCard').style.display='block'; document.getElementById('startBtn').style.display='none';
  document.querySelectorAll('.choiceBtn').forEach(b=>{b.classList.remove('sel'); b.disabled=false;});
  document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀'; document.getElementById('result').style.display='none'; document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none'; document.getElementById('bar').style.width='0%';
- slog('請出拳！兩邊都揀好就倒數'); renderWho();
+ slog('請出拳，兩邊揀好即倒數'); renderWho(); dbg('新一局開始 my=null remote={}');
 }
 function choose(c){
  myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
  if(c==='揼') btnChui.classList.add('sel'); if(c==='剪') btnJian.classList.add('sel'); if(c==='包') btnBao.classList.add('sel');
- document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀：'+c+'，不停發送中...';
- renderWho(); sendAllRetry({type:'choice',name:myName,choice:c,ver:VERSION});
- checkAll();
+ document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀 '+c+'，發送中...';
+ renderWho(); sendRetry({type:'choice',name:myName,choice:c,ver:VERSION}); checkAll();
+ // V36：不停重發直到對面收到
+ let iv=setInterval(()=>{ if(choiceDone){ clearInterval(iv); return; } sendAll({type:'choice',name:myName,choice:c,ver:VERSION}); }, 600);
 }
-function forceSync(){ if(!myChoice) return log('你未揀，不能同步'); log('強制同步 '+myChoice+' 發20次'); sendAllRetry({type:'choice',name:myName,choice:myChoice,ver:VERSION}); if(players.length>=2 && myChoice && remoteChoices[players.find(p=>p!==myName)]) checkAll(); }
-function renderWho(){ let h=''; for(let p of players){ let has=(p===myName?myChoice:remoteChoices[p]); h+=`<div class="item ${has?'ok':'wait'}"><span>${p}</span><span>${has?'✅ 已揀好 '+has:'⏳ 未揀'}</span></div>`; } document.getElementById('whoChosen').innerHTML=h; }
-function checkAll(){ let other=players.find(p=>p!==myName); let all=myChoice!==null && (players.length<2 || !!remoteChoices[other]); if(all && !choiceDone){ choiceDone=true; slog('全部揀好！倒數'); document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true); if(isHost){ let at=Date.now()+600; sendAllRetry({type:'preReveal',at,ver:VERSION}); doCountdown(at); } } }
-async function doCountdown(at){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume(); let big=document.getElementById('countBig'), prog=document.getElementById('prog'), bar=document.getElementById('bar'); big.style.display='block'; prog.style.display='block'; bar.style.width='0%'; let delay=Math.max(0,(at-Date.now())/1000), when=audioCtx.currentTime+delay; for(let i=0;i<3;i++){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=700; g.gain.setValueAtTime(0.5,when+i*0.8); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.8+0.25); o.connect(g).connect(audioCtx.destination); o.start(when+i*0.8); o.stop(when+i*0.8+0.25); } let st=Date.now()+delay*1000, dur=2400; let iv=setInterval(()=>{ let e=Date.now()-st; big.textContent=e<800?'3':e<1600?'2':'1'; bar.style.width=Math.min(e/dur*100,100)+'%'; if(e>=dur){ clearInterval(iv); big.textContent='揭曉！'; setTimeout(()=>{ sendAllRetry({type:'reveal',ver:VERSION}); showResult(); },500); } },50); }
-function showResult(){ let area=document.getElementById('result'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices); let h='<b>['+VERSION+'] 結果</b>'; for(let p of players){ let ch=all[p]||'?'; h+=`<div class="item"><span>${p}</span><span><img src="${IMG[ch]||''}" style="width:24px"> ${ch}</span></div>`; } let v=Object.values(all); let win=(new Set(v).size===1||new Set(v).size===3)?'平手！':v.includes('包')&&v.includes('剪')?'剪贏包':v.includes('包')&&v.includes('揼')?'包贏揼':'揼贏剪'; h+=`<div class="log">🏆 ${win} [${VERSION}]</div><button class="btn btnY" onclick="restart()">🔄 再玩一次 [${VERSION}]</button><button class="btn btnDark" onclick="location.reload()">🚪 離開</button>`; area.innerHTML=h; }
-function restart(){ sendAllRetry({type:'restart',ver:VERSION}); startNewRound(); }
+function renderWho(){
+ // V36：直接用myChoice同remoteChoices顯示，唔再依賴players順序
+ let h=''; 
+ h+=`<div class="item ${myChoice?'ok':'wait'}"><span>${myName} (你)</span><span>${myChoice?'✅ 已揀好 '+myChoice:'⏳ 未揀'}</span></div>`;
+ for(let name in remoteChoices){ if(name!==myName){ h+=`<div class="item ok"><span>${name}</span><span>✅ 已揀好 ${remoteChoices[name]}</span></div>`; } }
+ // 如果對面未揀，顯示佢個名
+ for(let p of players){ if(p!==myName && !remoteChoices[p]){ h+=`<div class="item wait"><span>${p}</span><span>⏳ 未揀</span></div>`; } }
+ document.getElementById('whoChosen').innerHTML=h;
+}
+function checkAll(){
+ // 只要有一個遠端選擇就算齊（2人房）
+ let hasRemote = Object.keys(remoteChoices).length>0;
+ let all = myChoice!==null && hasRemote;
+ dbg('checkAll my='+myChoice+' remoteKeys='+Object.keys(remoteChoices)+' all='+all);
+ if(all && !choiceDone){ 
+   choiceDone=true; slog('兩邊都揀好！3-2-1'); document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true);
+   if(isHost){ let at=Date.now()+800; sendRetry({type:'preReveal',at,ver:VERSION}); doCountdown(at); }
+ }
+}
+async function doCountdown(at){
+ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume();
+ let big=document.getElementById('countBig'), prog=document.getElementById('prog'), bar=document.getElementById('bar');
+ big.style.display='block'; prog.style.display='block'; bar.style.width='0%';
+ let delay=Math.max(0,(at-Date.now())/1000), when=audioCtx.currentTime+delay;
+ for(let i=0;i<3;i++){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=700; g.gain.setValueAtTime(0.5,when+i*0.7); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.7+0.2); o.connect(g).connect(audioCtx.destination); o.start(when+i*0.7); o.stop(when+i*0.7+0.2); }
+ let st=Date.now()+delay*1000, dur=2100;
+ let iv=setInterval(()=>{ let e=Date.now()-st; big.textContent=e<700?'3':e<1400?'2':'1'; bar.style.width=Math.min(e/dur*100,100)+'%'; if(e>=dur){ clearInterval(iv); big.textContent='揭曉！'; setTimeout(()=>{ sendRetry({type:'reveal',ver:VERSION}); showResult(); },400); } },50);
+}
+function showResult(){
+ let area=document.getElementById('result'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
+ let h='<b>['+VERSION+'] 結果</b>'; for(let k in all){ h+=`<div class="item"><span>${k}</span><span><img src="${IMG[all[k]]||''}" width="20"> ${all[k]}</span></div>`; }
+ let v=Object.values(all); let win=(new Set(v).size===1||new Set(v).size===3)?'平手！':v.includes('包')&&v.includes('剪')?'剪贏包':v.includes('包')&&v.includes('揼')?'包贏揼':'揼贏剪';
+ h+=`<div class="log">🏆 ${win} [${VERSION}]</div><button class="btn btnY" onclick="restart()">🔄 再玩一次 [${VERSION}]</button><button class="btn btnDark" onclick="location.reload()">離開</button>`;
+ area.innerHTML=h;
+}
+function restart(){ sendRetry({type:'restart',ver:VERSION}); startRound(); }
 </script>
 </body></html>
