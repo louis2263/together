@@ -1,60 +1,74 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包 V22 一鍵合唱</title>
+<title>方包包 V23 包剪揼聲音</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px;min-height:100vh}
+body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:18px;min-height:100vh}
 .ver{position:fixed;top:8px;right:8px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;padding:5px 12px;border-radius:99px;font-weight:900;font-size:11px}
-.card{width:92%;max-width:480px;background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:16px;margin-top:14px}
-.btn{padding:14px;border-radius:99px;border:0;font-weight:900;font-size:14px;cursor:pointer}
-.btnBig{width:100%;padding:20px;font-size:18px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;border-radius:18px;margin-top:10px}
-.btnB{background:#2a5bd7;color:#fff;flex:1}.btnR{background:#333;color:#fff;flex:1}
-.item{padding:12px;background:#151515;border:2px solid #222;border-radius:14px;margin-top:10px;display:flex;align-items:center;gap:10px}
+.card{width:94%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:14px;margin-top:14px}
+.btn{padding:12px;border-radius:99px;border:0;font-weight:900;font-size:14px;cursor:pointer}
+.btnY{background:#FFEB00;color:#000;flex:1}.btnG{background:#00FF88;color:#000;flex:1}.btnB{background:#2a5bd7;color:#fff;flex:1}.btnR{background:#333;color:#fff;flex:1}
+.btnBig{width:100%;padding:18px;font-size:18px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;border-radius:16px;margin-top:10px}
+.item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:8px;display:flex;gap:8px;align-items:center}
 .item.ok{border-color:#00FF88;background:#0e2018}
-.pos{width:56px;height:28px;background:#222;color:#888;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px}
-.pos.ok{background:#00FF88;color:#000}
-.log{font-size:13px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:10px;padding:10px;margin-top:10px;text-align:center}
-.code{font-size:34px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center}
-.playing{box-shadow:0 0 15px #00FF88aa; border-color:#00FF88!important}
+.choiceBtn{flex:1;padding:18px 8px;border-radius:14px;border:3px solid #333;background:#222;color:#fff;font-weight:900;font-size:18px;cursor:pointer;transition:.2s}
+.choiceBtn.sel{border-color:#FFEB00;background:#3a3200;transform:scale(1.05)}
+.choiceBtn.lock{opacity:.4;pointer-events:none}
+.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:8px;margin-top:8px;text-align:center;white-space:pre-line}
+.code{font-size:32px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center}
+.progress{width:100%;height:10px;background:#333;border-radius:99px;margin-top:10px;overflow:hidden;display:none}
+.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88);transition:width .1s linear}
 </style>
 </head><body>
-<div class="ver">V22 一鍵合唱</div>
-<h1 style="color:#FFEB00;margin:36px 0 4px">方包包 V22</h1>
-<div style="color:#888;font-size:12px">兩個人上傳完 → 撳一個掣 → 合唱</div>
+<div class="ver">V23 包剪揼聲音版</div>
+<h1 style="color:#FFEB00;margin:30px 0 4px">包剪揼．聲音版</h1>
+<div style="color:#888;font-size:11px">錄聲音 → 準備 → 放聲音嗰陣揀拳</div>
 
-<div class="card">
-<div style="display:flex;justify-content:space-between;align-items:center">
-<div style="font-weight:900">房間</div><div class="code" id="roomCode">----</div>
-</div>
-<div style="display:flex;gap:8px;margin-top:10px">
-<input id="nameInput" class="input" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
-<button class="btn" style="background:#FFEB00;color:#000" onclick="createRoom()">開房</button>
+<div class="card" id="step1">
+<div style="font-weight:900">1. 輸入名字登入房間</div>
+<div style="display:flex;gap:6px;margin-top:10px">
+<input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
+<button class="btn btnY" onclick="createRoom()">開房</button>
 <input id="codeInput" placeholder="房號" style="width:70px;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
-<button class="btn" style="background:#00FF88;color:#000" onclick="joinRoom()">入房</button>
+<button class="btn btnG" onclick="joinRoom()">入房</button>
 </div>
-<div id="logRoom" class="log">開房後將Link俾朋友入</div>
+<div class="code" id="roomCode" style="margin-top:8px">----</div>
+<div id="logRoom" class="log">未入房</div>
+<div id="playerList" style="margin-top:8px"></div>
 </div>
 
-<div class="card">
-<div style="font-weight:900">1. 上傳聲音</div>
-<input type="file" id="fileIn" accept="audio/*" style="margin-top:10px;width:100%;color:#888">
-<div style="display:flex;gap:8px;margin-top:8px">
-<button class="btn btnB" onclick="uploadFile()">🔊 上傳檔案</button>
-<button class="btn btnR" id="recBtn" onclick="record()">● 錄音</button>
+<div class="card" id="step2" style="display:none">
+<div style="font-weight:900">2. 錄製包剪揼聲音</div>
+<div style="font-size:11px;color:#888;margin-top:4px">錄一句「包剪揼」叫聲，之後合唱播出就係揀拳時間</div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<button class="btn btnB" onclick="uploadFile()" style="flex:1">🔊 上傳</button>
+<button class="btn btnR" id="recBtn" onclick="record()" style="flex:1">● 錄音</button>
 </div>
+<input type="file" id="fileIn" accept="audio/*" style="display:none">
 <div id="logAudio" class="log" style="display:none"></div>
+<div id="audioList" style="margin-top:8px"></div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<button class="btn btnY" style="flex:1" onclick="setReady()">✅ 我準備好</button>
+<button class="btn btnG" id="startBtn" style="flex:1;display:none" onclick="hostStart()">🎤 全部Ready → 開始放聲</button>
+</div>
 </div>
 
-<div class="card">
-<div style="display:flex;justify-content:space-between"><div style="font-weight:900">2. 已上傳</div><div style="color:#888;font-size:12px"><span id="count">0</span>/20</div></div>
-<div id="list"></div>
-<button class="btn btnBig" onclick="choir()">🎤 ▶️ 撳一下 - 一齊合唱</button>
-<button class="btn" style="width:100%;background:#222;color:#888;margin-top:8px" onclick="stop()">⏸ 停止</button>
-<div style="font-size:11px;color:#666;text-align:center;margin-top:8px">Louis上傳1段，Fai上傳1段，呢度會見到2個「以上傳」，撳上面個大掣就兩把聲一齊出</div>
+<div class="card" id="step3" style="display:none">
+<div style="font-weight:900;text-align:center">🎤 放聲音中... 快啲揀拳！</div>
+<div style="font-size:11px;color:#888;text-align:center">我放聲音嘅時間就係你選擇嘅時間</div>
+<div class="progress" id="prog"><div class="bar" id="bar"></div></div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="choiceBtn" id="btnBao" onclick="choose('包')">✋<br>包</button>
+<button class="choiceBtn" id="btnJian" onclick="choose('剪')">✌️<br>剪</button>
+<button class="choiceBtn" id="btnChui" onclick="choose('揼')">👊<br>揼</button>
+</div>
+<div id="logChoice" class="log">已預設揀咗「包」，放聲時可以轉</div>
+<div id="resultArea" style="margin-top:12px;display:none"></div>
 </div>
 
 <script>
-let peer=null, conns={}, myName='Louis', roomCode='', audioBank=[], incoming={}, mediaRecorder=null, chunks=[], sources=[], audioCtx=null;
+let peer=null, conns={}, myName='Louis', roomCode='', players=[], readyMap={}, audioBank=[], incoming={}, mediaRecorder=null, chunks=[], audioCtx=null, sources=[], myChoice='包', gameStarted=false;
 const CHUNK=12*1024;
+
 function logRoom(t){ document.getElementById('logRoom').textContent=t; }
 function logAudio(t){ let e=document.getElementById('logAudio'); e.style.display='block'; e.textContent=t; }
 function base64ToBlob(b64){ let p=b64.split(','), mime=p[0].match(/:(.*?);/)[1], bin=atob(p[1]), a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:mime}); }
@@ -63,72 +77,96 @@ function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis';
  roomCode=Math.random().toString(36).substring(2,6).toUpperCase();
  document.getElementById('codeInput').value=roomCode;
- peer=new Peer('v22-'+roomCode);
- peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; logRoom('✅ 已開房 '+roomCode+'，複製條Link俾Fai'); });
- peer.on('connection',c=>{ conns[c.peer]=c; c.on('data',onData); c.on('open',()=>c.send({type:'sync', count:audioBank.length})); });
+ peer=new Peer('rps-v23-'+roomCode);
+ peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; readyMap[myName]=false; updatePlayers(); logRoom('✅ 已開房 '+roomCode); document.getElementById('step2').style.display='block'; });
+ peer.on('connection',c=>{ conns[c.peer]=c; c.on('data',onData); c.on('open',()=>c.send({type:'sync', players, readyMap, count:audioBank.length, roomCode})); });
 }
 function joinRoom(){
- let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('入房號'); return; }
+ let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('房號'); return; }
  myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code;
- peer=new Peer(); peer.on('open',()=>{ let conn=peer.connect('v22-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join', name:myName})); conn.on('data',onData); });
- document.getElementById('roomCode').textContent=roomCode; logRoom('✅ 已入房 '+roomCode);
+ peer=new Peer(); peer.on('open',()=>{ let conn=peer.connect('rps-v23-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join', name:myName})); conn.on('data',onData); });
+ document.getElementById('roomCode').textContent=roomCode; logRoom('✅ 已入房 '+roomCode); document.getElementById('step2').style.display='block';
 }
 function onData(d){
+ if(d.type==='join'){ if(players.indexOf(d.name)===-1){ players.push(d.name); readyMap[d.name]=false; } updatePlayers(); broadcast({type:'sync', players, readyMap, roomCode}); }
+ if(d.type==='sync'){ players=d.players||players; readyMap=d.readyMap||readyMap; roomCode=d.roomCode||roomCode; document.getElementById('roomCode').textContent=roomCode; updatePlayers(); if(d.count) document.getElementById('step2').style.display='block'; }
  if(d.type==='audioStart'){ incoming[d.id]={name:d.name, from:d.from, total:d.total, chunks:[], got:0}; }
- if(d.type==='audioChunk'){ let inc=incoming[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; if(inc.got===inc.total){ let full=inc.chunks.join(''); let blob=base64ToBlob(full); let url=URL.createObjectURL(blob); audioBank.push({id:d.id, name:inc.name, from:inc.from, data:full, url}); render(); delete incoming[d.id]; logAudio('✅ 收到 '+inc.name+' - 以上傳'); } }
- if(d.type==='choir'){ choir(false); } if(d.type==='stop'){ stop(false); }
+ if(d.type==='audioChunk'){ let inc=incoming[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; if(inc.got===inc.total){ let full=inc.chunks.join(''); let blob=base64ToBlob(full); let url=URL.createObjectURL(blob); audioBank.push({id:d.id, name:inc.name, from:inc.from, data:full, url}); renderAudio(); delete incoming[d.id]; } }
+ if(d.type==='ready'){ readyMap[d.name]=true; updatePlayers(); }
+ if(d.type==='startGame'){ startGamePhase(false); }
+ if(d.type==='choice'){ window.remoteChoices=window.remoteChoices||{}; window.remoteChoices[d.name]=d.choice; }
+ if(d.type==='endGame'){ showResult(false); }
 }
 function broadcast(m){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send(m); }catch{} }); }
-
-function uploadFile(){
- let f=document.getElementById('fileIn').files[0]; if(!f){ alert('揀檔'); return; }
- let r=new FileReader(); r.onload=e=>{ let blob=base64ToBlob(e.target.result); let url=URL.createObjectURL(blob); let item={id:Date.now(), name:f.name+' - '+myName, from:myName, data:e.target.result, url}; audioBank.push(item); render(); send(item); logAudio('✅ 以上傳 '+f.name); }; r.readAsDataURL(f);
+function updatePlayers(){
+ let h=''; let readyCount=0; for(let p of players){ let r=readyMap[p]; if(r) readyCount++; h+=`<div class="item ${r?'ok':''}" style="justify-content:space-between"><span>${p} ${p===myName?'(你)':''}</span><span style="font-size:11px">${r?'✅ 已準備':'⏳ 未準備'}</span></div>`; }
+ document.getElementById('playerList').innerHTML=h;
+ if(players.length>=2 && readyCount===players.length && myName===players[0]){ document.getElementById('startBtn').style.display='block'; logRoom('全部準備好，可以開始'); } else if(readyCount===players.length && players.length>=2){ logRoom('全部準備好，等房主開始'); }
 }
+function renderAudio(){
+ let h=''; for(let a of audioBank){ h+=`<div class="item ok"><div style="flex:1;font-size:12px">以上傳 - ${a.name}</div><audio controls src="${a.url}" style="width:120px"></audio></div>`; }
+ document.getElementById('audioList').innerHTML=h||'<div style="color:#555;text-align:center;padding:8px;font-size:12px">未上傳聲音</div>';
+}
+function uploadFile(){ document.getElementById('fileIn').click(); }
+document.getElementById('fileIn').addEventListener('change',()=>{
+ let f=document.getElementById('fileIn').files[0]; if(!f) return; let r=new FileReader(); r.onload=e=>{ let blob=base64ToBlob(e.target.result); let url=URL.createObjectURL(blob); let item={id:Date.now(), name:f.name+' - '+myName, from:myName, data:e.target.result, url}; audioBank.push(item); renderAudio(); sendAudio(item); }; r.readAsDataURL(f);
+});
 function record(){
  if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); document.getElementById('recBtn').textContent='● 錄音'; return; }
  navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{
-  mediaRecorder=new MediaRecorder(s,{mimeType:'audio/webm;codecs=opus', bitsPerSecond:32000}); chunks=[];
-  mediaRecorder.ondataavailable=e=>chunks.push(e.data);
-  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader(); rd.onload=ev=>{ let url=URL.createObjectURL(blob); let item={id:Date.now(), name:'錄音'+(audioBank.length+1)+' - '+myName, from:myName, data:ev.target.result, url}; audioBank.push(item); render(); send(item); logAudio('✅ 以上傳 錄音'); }; rd.readAsDataURL(blob); };
-  mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 停止'; setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); },15000);
+  mediaRecorder=new MediaRecorder(s,{mimeType:'audio/webm;codecs=opus', bitsPerSecond:32000}); chunks=[]; mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader(); rd.onload=ev=>{ let url=URL.createObjectURL(blob); let item={id:Date.now(), name:'包剪揼 - '+myName, from:myName, data:ev.target.result, url}; audioBank.push(item); renderAudio(); sendAudio(item); logAudio('✅ 以上傳 包剪揼聲音'); }; rd.readAsDataURL(blob); };
+  mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 停止'; setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); },4000);
  }).catch(()=>alert('要麥克風'));
 }
-function send(item){
+function sendAudio(item){
  let data=item.data, total=Math.ceil(data.length/CHUNK); broadcast({type:'audioStart', id:item.id, name:item.name, from:item.from, total});
- let i=0; function next(){ if(i>=total) return; broadcast({type:'audioChunk', id:item.id, index:i, chunk:data.substr(i*CHUNK, CHUNK)}); i++; setTimeout(next,80); } next();
+ let i=0; function next(){ if(i>=total) return; broadcast({type:'audioChunk', id:item.id, index:i, chunk:data.substr(i*CHUNK, CHUNK)}); i++; setTimeout(next,60); } next();
 }
-function render(){
- let h=''; for(let i=0;i<audioBank.length;i++){ let a=audioBank[i]; h+=`<div class="item ok" id="item-${a.id}"><div class="pos ok">🔊 ${i+1}</div><div style="flex:1"><div style="font-weight:900">以上傳</div><div style="font-size:12px;color:#888">${a.name}</div><audio controls src="${a.url}" style="width:140px;height:28px"></audio></div></div>`; }
- if(!audioBank.length) h='<div style="color:#555;text-align:center;padding:16px;font-size:13px">未有人上傳</div>';
- document.getElementById('list').innerHTML=h; document.getElementById('count').textContent=audioBank.length;
-}
-
-// 核心：一鍵合唱
-async function choir(shouldBroadcast=true){
- if(audioBank.length===0){ alert('未有人上傳'); return; }
- stop(false);
- if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
- await audioCtx.resume();
- let buffers=[];
- for(let a of audioBank){
-   try{ let blob=base64ToBlob(a.data); let ab=await blob.arrayBuffer(); let b=await audioCtx.decodeAudioData(ab); buffers.push(b); }catch{}
+function setReady(){ readyMap[myName]=true; updatePlayers(); broadcast({type:'ready', name:myName}); logAudio('✅ 已準備好'); }
+function hostStart(){ broadcast({type:'startGame'}); startGamePhase(true); }
+async function startGamePhase(isHost){
+ document.getElementById('step3').style.display='block'; document.getElementById('step1').style.display='none'; document.getElementById('step2').style.display='none';
+ gameStarted=true; myChoice='包'; window.remoteChoices={}; // 預設已選包
+ document.querySelectorAll('.choiceBtn').forEach(b=>{ b.classList.remove('sel','lock'); }); document.getElementById('btnBao').classList.add('sel');
+ document.getElementById('logChoice').textContent='已預設選擇「包」，放聲時間內可改';
+ // 合唱播放
+ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume();
+ let buffers=[]; for(let a of audioBank){ try{ let blob=base64ToBlob(a.data); let ab=await blob.arrayBuffer(); let b=await audioCtx.decodeAudioData(ab); buffers.push(b);}catch{} }
+ if(buffers.length===0){ // 如果冇聲，用空3秒
+   buffers=[audioCtx.createBuffer(1, audioCtx.sampleRate*3, audioCtx.sampleRate)];
  }
- let when=audioCtx.currentTime+0.3;
- sources=[];
- buffers.forEach((buf,idx)=>{
-   let src=audioCtx.createBufferSource(); src.buffer=buf;
-   src.connect(audioCtx.destination); src.start(when); sources.push(src);
-   let el=document.getElementById('item-'+audioBank[idx].id); if(el) el.classList.add('playing');
- });
- logAudio('🎶 合唱中！'+audioBank.length+'把聲一齊播');
- if(shouldBroadcast) broadcast({type:'choir'});
+ let maxDur=Math.max(...buffers.map(b=>b.duration),3);
+ let when=audioCtx.currentTime+0.3; sources=[];
+ buffers.forEach(buf=>{ let src=audioCtx.createBufferSource(); src.buffer=buf; src.connect(audioCtx.destination); src.start(when); sources.push(src); });
+ // 進度條 = 揀拳時間
+ let prog=document.getElementById('prog'); let bar=document.getElementById('bar'); prog.style.display='block'; bar.style.width='0%';
+ let start=Date.now(); let timer=setInterval(()=>{
+   let elapsed=(Date.now()-start)/1000; let pct=Math.min(elapsed/maxDur*100,100); bar.style.width=pct+'%';
+   if(elapsed>=maxDur){ clearInterval(timer); prog.style.display='none'; lockChoices(); }
+ },50);
 }
-function stop(shouldBroadcast=true){
- sources.forEach(s=>{ try{s.stop();}catch{} }); sources=[];
- document.querySelectorAll('.item').forEach(it=>it.classList.remove('playing'));
- if(shouldBroadcast) broadcast({type:'stop'});
- logAudio('⏸ 已停止');
+function choose(c){
+ if(!gameStarted) return;
+ myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel')); if(c==='包') document.getElementById('btnBao').classList.add('sel'); if(c==='剪') document.getElementById('btnJian').classList.add('sel'); if(c==='揼') document.getElementById('btnChui').classList.add('sel');
+ document.getElementById('logChoice').textContent='你已揀：'+c+'（可繼續改，直到聲音完）';
+ broadcast({type:'choice', name:myName, choice:c});
 }
-(function(){ let p=new URLSearchParams(location.search); let r=p.get('room'); if(r) document.getElementById('codeInput').value=r.toUpperCase(); })();
+function lockChoices(){
+ document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.add('lock'));
+ document.getElementById('logChoice').textContent='⏰ 時間到！鎖定：'+myChoice;
+ broadcast({type:'endGame'}); showResult(true);
+}
+function showResult(isHost){
+ let resultArea=document.getElementById('resultArea'); resultArea.style.display='block';
+ let all={}; all[myName]=myChoice; Object.assign(all, window.remoteChoices||{});
+ let h='<div style="font-weight:900;margin-bottom:6px">結果</div>';
+ for(let p of players){ let ch=all[p]||'包 (預設)'; h+=`<div class="item"><span>${p}</span><span style="font-weight:900;color:#FFEB00">${ch}</span></div>`; }
+ // 簡單判定
+ let vals=Object.values(all); let hasBao=vals.includes('包'), hasJian=vals.includes('剪'), hasChui=vals.includes('揼');
+ let winText=''; if(hasBao&&hasJian&&hasChui || (!hasBao&&!hasJian) || (!hasBao&&!hasChui) || (!hasJian&&!hasChui)) winText='平手！'; else if(hasBao&&hasJian) winText='剪贏包'; else if(hasBao&&hasChui) winText='包贏揼'; else if(hasJian&&hasChui) winText='揼贏剪';
+ h+=`<div class="log" style="margin-top:10px">🏆 ${winText}</div><button class="btn btnY" style="width:100%;margin-top:10px" onclick="location.reload()">再玩一次</button>`;
+ resultArea.innerHTML=h;
+}
 </script>
 </body></html>
