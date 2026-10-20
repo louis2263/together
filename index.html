@@ -1,145 +1,156 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包 V16 真連線 等候+位置</title>
+<title>方包包 V17 聲音版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px;min-height:100vh}
 .ver{position:fixed;top:8px;right:8px;background:#FFEB00;color:#000;padding:4px 10px;border-radius:99px;font-weight:900;font-size:11px;z-index:99}
 .card{width:92%;max-width:520px;background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:16px;margin-top:14px}
 .input{width:100%;padding:12px;border-radius:10px;border:2px solid #444;background:#000;color:#fff;font-size:15px;box-sizing:border-box}
-.btn{padding:14px;border-radius:99px;border:0;font-weight:900;font-size:15px;margin-top:10px;cursor:pointer}
-.btnY{background:#FFEB00;color:#000;flex:1}.btnG2{background:#00FF88;color:#000;flex:1}.btnG{background:#2a2a2a;color:#ccc;border:1px solid #333;width:100%}
+.btn{padding:14px;border-radius:99px;border:0;font-weight:900;font-size:14px;margin-top:8px;cursor:pointer}
+.btnY{background:#FFEB00;color:#000;flex:1}.btnG2{background:#00FF88;color:#000;flex:1}.btnB{background:#2a5bd7;color:#fff;flex:1}
+.item{display:flex;gap:8px;padding:10px;background:#151515;border:1px solid #222;border-radius:10px;margin-top:6px;font-size:13px;align-items:center}
+.pos{width:50px;height:26px;background:#FFEB00;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0}
+.posA{background:#00FF88}
+.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:10px;margin-top:10px;white-space:pre-line;text-align:center}
 .code{font-size:36px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center;margin:10px 0}
 .row{display:flex;justify-content:space-between;background:#222;padding:10px 12px;border-radius:10px;margin-top:8px;border:1px solid #222}
-.pos{width:48px;height:24px;background:#FFEB00;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
-.item{display:flex;gap:8px;padding:8px 10px;background:#151515;border:1px solid #222;border-radius:8px;margin-top:6px;font-size:13px;align-items:center}
-.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:10px;margin-top:10px;white-space:pre-line;text-align:center}
+audio{width:160px;height:32px}
 </style>
 </head><body>
-<div class="ver">V16 真連線版</div>
-<h1 style="color:#FFEB00;margin:36px 0 5px">方包包 - V16 真連線</h1>
-<div style="color:#888;font-size:11px">保留：登入/上傳/等候/位置顯示 - 已刪遊戲 - 真人同步</div>
+<div class="ver">V17 聲音+位置版</div>
+<h1 style="color:#FFEB00;margin:36px 0 5px">方包包 V17</h1>
+<div style="color:#888;font-size:11px">文字 + 聲音 都會按位置顯示並同步</div>
 
 <div class="card">
 <div style="font-weight:900">1. 登入房間</div>
 <input id="nameInput" class="input" value="Louis" style="margin-top:10px">
-<div style="display:flex;gap:8px;margin-top:10px">
-<button class="btn btnY" onclick="createRoom()">開新房間</button>
-<button class="btn btnG2" onclick="joinRoom()">加入房間</button>
-</div>
-<input id="codeInput" class="input" placeholder="加入時輸入4位房號" style="margin-top:10px">
-<div id="roomInfo" style="display:none"><div class="code" id="roomCode">----</div><div id="roomLink" style="font-size:11px;color:#00FF88;word-break:break-all;text-align:center"></div><button class="btn btnG" onclick="copyLink()">📋 複製Link俾朋友</button></div>
+<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btnY" onclick="createRoom()">開新房間</button><button class="btn btnG2" onclick="joinRoom()">加入房間</button></div>
+<input id="codeInput" class="input" placeholder="加入輸入房號" style="margin-top:10px">
+<div id="roomInfo" style="display:none"><div class="code" id="roomCode">----</div><div id="roomLink" style="font-size:11px;color:#00FF88;word-break:break-all;text-align:center"></div></div>
 <div id="logRoom" class="log">未入房</div>
 </div>
 
 <div class="card">
 <div style="font-weight:900">2. 上傳字庫</div>
-<textarea id="wordBox" class="input" style="height:110px;margin-top:10px" placeholder="一行一詞"></textarea>
-<div style="display:flex;gap:8px;margin-top:8px"><input type="file" id="fileIn" accept=".txt,.json" onchange="loadFile(event)" style="color:#888"><button class="btn btnY" onclick="saveWords()">💾 上傳確認</button></div>
+<textarea id="wordBox" class="input" style="height:80px;margin-top:8px" placeholder="一行一詞"></textarea>
+<button class="btn btnY" style="width:100%" onclick="saveWords()">💾 上傳文字</button>
+
+<div style="font-weight:900;margin-top:16px">2.1 上傳聲音 (新增)</div>
+<div style="font-size:11px;color:#888;margin-top:4px">支援 mp3 m4a wav，最長60秒，錄完即同步</div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<input type="file" id="audioFile" accept="audio/*" style="color:#888;flex:1">
+<button class="btn btnB" onclick="uploadAudio()">🔊 上傳聲音</button>
+</div>
+<button class="btn" style="width:100%;background:#333;color:#fff" onclick="startRecord()" id="recBtn">● 按住錄音 / 撳一下開始錄</button>
+<div id="logAudio" class="log" style="display:none"></div>
 <div id="logWords" class="log" style="display:none"></div>
 </div>
 
 <div class="card">
-<div style="font-weight:900">3. 等候區域</div>
+<div style="font-weight:900">3. 等候區</div>
 <div id="playerList"></div>
 <div id="logWait" class="log">等候區：未入房</div>
-<div style="font-weight:900;margin-top:16px">4. 📍 位置顯示 - 上傳字庫</div>
-<div id="posList"><div style="color:#555;text-align:center;padding:20px;font-size:12px">未有字庫</div></div>
+
+<div style="font-weight:900;margin-top:16px">4. 📍 位置顯示 - 文字 + 聲音</div>
+<div id="posList"></div>
+<div id="audioPosList" style="margin-top:10px"></div>
 </div>
 
 <script>
-let peer=null, conns={}, myName='Louis', roomCode='', isHost=false, players=[], wordBank=[], myPeerId=null;
+let peer=null, conns={}, myName='Louis', roomCode='', isHost=false, players=[], wordBank=[], audioBank=[], mediaRecorder=null, chunks=[], myPeerId=null;
 
 function logRoom(t){ document.getElementById('logRoom').textContent=t; }
 function logWords(t){ let e=document.getElementById('logWords'); e.style.display='block'; e.textContent=t; }
+function logAudio(t){ let e=document.getElementById('logAudio'); e.style.display='block'; e.textContent=t; }
 
 function createRoom(){
   myName=document.getElementById('nameInput').value.trim()||'Louis';
   roomCode=Math.random().toString(36).substring(2,6).toUpperCase();
   document.getElementById('codeInput').value=roomCode;
-  // 重要：用自訂ID開房，成個問題「沒有開啟房間」就係因為以前冇指定ID
-  peer = new Peer('nosay-'+roomCode);
+  peer=new Peer('nosay-'+roomCode);
   peer.on('open', id=>{
-    myPeerId=id; isHost=true;
-    document.getElementById('roomCode').textContent=roomCode;
+    isHost=true; document.getElementById('roomCode').textContent=roomCode;
     document.getElementById('roomInfo').style.display='block';
     document.getElementById('roomLink').textContent=location.origin+location.pathname+'?room='+roomCode;
-    players=[myName]; updateWait(); broadcast();
-    logRoom('✅ 已開啟房間：'+roomCode+'\n房主：'+myName+'\nPeerID: '+id+'\n等朋友加入...');
+    players=[myName]; updateWait(); logRoom('✅ 已開啟房間：'+roomCode+'\n房主：'+myName);
   });
-  peer.on('connection', conn=>{
-    conns[conn.peer]=conn;
-    conn.on('data', onData);
-    conn.on('open', ()=>{ conn.send({type:'sync', players, wordBank, roomCode}); });
-  });
-  peer.on('error', err=>{ logRoom('❌ 開房失敗：'+err.type+'\n試下換個網絡或轉個房號'); console.error(err); });
+  peer.on('connection', conn=>{ conns[conn.peer]=conn; conn.on('data', onData); conn.on('open', ()=>conn.send({type:'sync', players, wordBank, audioBank, roomCode})); });
 }
-
 function joinRoom(){
-  let code=document.getElementById('codeInput').value.trim().toUpperCase();
-  if(!code){ alert('請輸入房號'); return; }
-  myName=document.getElementById('nameInput').value.trim()||'Fai';
-  roomCode=code; isHost=false;
-  peer = new Peer();
+  let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('請輸入房號'); return; }
+  myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; isHost=false;
+  peer=new Peer();
   peer.on('open', id=>{
-    myPeerId=id;
     let conn=peer.connect('nosay-'+roomCode);
     conns['host']=conn;
     conn.on('open', ()=>{ conn.send({type:'join', name:myName}); logRoom('⏳ 正在加入 '+roomCode+'...'); });
     conn.on('data', onData);
-    conn.on('error', ()=>logRoom('❌ 加入失敗，房主可能離線'));
   });
-  peer.on('error', err=>logRoom('❌ 加入失敗：'+err.type));
-  document.getElementById('roomCode').textContent=roomCode;
-  document.getElementById('roomInfo').style.display='block';
+  document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block';
 }
 
 function onData(data){
-  if(data.type==='join'){
-    if(players.indexOf(data.name)===-1) players.push(data.name);
-    updateWait(); broadcast();
-  }
-  if(data.type==='sync'){
-    players=data.players; wordBank=data.wordBank; roomCode=data.roomCode||roomCode;
-    document.getElementById('roomCode').textContent=roomCode;
-    document.getElementById('roomInfo').style.display='block';
-    logRoom('✅ 已加入房間：'+roomCode+'\n你：'+myName+'\n已同步 '+wordBank.length+' 詞');
-    updateWait(); renderPos();
-  }
-  if(data.type==='wordUpdate'){
-    wordBank=data.wordBank; renderPos();
-    logWords('📩 收到新字庫：'+wordBank.length+' 詞，來自 '+data.from);
-  }
-  if(data.type==='players'){ players=data.players; updateWait(); }
+  if(data.type==='join'){ if(players.indexOf(data.name)===-1) players.push(data.name); updateWait(); broadcast(); }
+  if(data.type==='sync'){ players=data.players; wordBank=data.wordBank||[]; audioBank=data.audioBank||[]; roomCode=data.roomCode||roomCode; document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; logRoom('✅ 已加入：'+roomCode+'\n文字'+wordBank.length+'個 聲音'+audioBank.length+'段'); updateWait(); renderAll(); }
+  if(data.type==='wordUpdate'){ wordBank=data.wordBank; audioBank=data.audioBank||audioBank; renderAll(); logWords('📩 同步文字：'+wordBank.length); }
+  if(data.type==='audioUpdate'){ audioBank=data.audioBank; renderAll(); logAudio('📩 收到新聲音：'+data.audioBank.length+'段 來自'+data.from); }
 }
 
-function broadcast(){
-  let msg={type:'sync', players, wordBank, roomCode};
-  Object.values(conns).forEach(c=>{ if(c.open) c.send(msg); });
-}
-function broadcastWords(){
-  Object.values(conns).forEach(c=>{ if(c.open) c.send({type:'wordUpdate', wordBank, from:myName}); });
-}
+function broadcast(){ Object.values(conns).forEach(c=>{ if(c.open) c.send({type:'sync', players, wordBank, audioBank, roomCode}); }); }
+function broadcastWords(){ Object.values(conns).forEach(c=>{ if(c.open) c.send({type:'wordUpdate', wordBank, audioBank, from:myName}); }); }
+function broadcastAudio(){ Object.values(conns).forEach(c=>{ if(c.open) c.send({type:'audioUpdate', audioBank, from:myName}); }); }
 
 function saveWords(){
- let txt=document.getElementById('wordBox').value.trim(); if(!txt){ alert('字庫空'); return; }
+ let txt=document.getElementById('wordBox').value.trim(); if(!txt){ alert('文字空'); return; }
  try{ if(txt.startsWith('[')) wordBank=JSON.parse(txt); else wordBank=txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s); }catch{ wordBank=txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s); }
- logWords('✅ 你已上傳 '+wordBank.length+' 詞，已同步給全房');
- renderPos(); broadcast(); broadcastWords();
+ logWords('✅ 上傳 '+wordBank.length+' 詞'); renderAll(); broadcast(); broadcastWords();
 }
 
+function uploadAudio(){
+ let file=document.getElementById('audioFile').files[0]; if(!file){ alert('請揀聲音檔'); return; }
+ let reader=new FileReader();
+ reader.onload=e=>{
+   let item={id:Date.now(), name:file.name, from:myName, pos:audioBank.length+1, data:e.target.result};
+   audioBank.push(item); renderAll(); logAudio('✅ 已上傳聲音：'+file.name+' 已同步'); broadcast(); broadcastAudio();
+ };
+ reader.readAsDataURL(file);
+}
+
+function startRecord(){
+ if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); document.getElementById('recBtn').textContent='● 按住錄音 / 撳一下開始錄'; return; }
+ navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+   mediaRecorder=new MediaRecorder(stream); chunks=[];
+   mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+   mediaRecorder.onstop=e=>{
+     let blob=new Blob(chunks, {type:'audio/webm'});
+     let reader=new FileReader();
+     reader.onload=ev=>{
+       let item={id:Date.now(), name:'錄音'+(audioBank.length+1), from:myName, pos:audioBank.length+1, data:ev.target.result};
+       audioBank.push(item); renderAll(); logAudio('✅ 錄音完成已同步'); broadcast(); broadcastAudio();
+     };
+     reader.readAsDataURL(blob);
+   };
+   mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 撳一下停止錄音';
+   setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); }, 60000);
+ }).catch(()=>alert('冇麥克風權限'));
+}
+
+function renderAll(){ renderPos(); renderAudioPos(); }
 function renderPos(){
- if(!wordBank.length){ document.getElementById('posList').innerHTML='<div style="color:#555;text-align:center;padding:20px">未有字庫</div>'; return; }
- let h=''; for(let i=0;i<wordBank.length;i++){ let p=players[i%players.length]||'未指派'; h+=`<div class="item"><div class="pos">${i+1}號位</div><div style="flex:1">${wordBank[i]}</div><div style="font-size:11px;color:#FFEB00;border:1px solid #333;padding:2px 8px;border-radius:99px">${p}</div></div>`; }
+ if(!wordBank.length){ document.getElementById('posList').innerHTML='<div style="color:#555;text-align:center;padding:8px;font-size:12px">未有文字</div>'; return; }
+ let h=''; for(let i=0;i<wordBank.length;i++){ let p=players[i%players.length]||'未指派'; h+=`<div class="item"><div class="pos">${i+1}號位</div><div style="flex:1">${wordBank[i]}</div><div style="font-size:11px;color:#FFEB00;border:1px solid #333;padding:2px 6px;border-radius:99px">${p}</div></div>`; }
  document.getElementById('posList').innerHTML=h;
+}
+function renderAudioPos(){
+ if(!audioBank.length){ document.getElementById('audioPosList').innerHTML='<div style="color:#555;text-align:center;padding:8px;font-size:12px">未有聲音</div>'; return; }
+ let h=''; for(let i=0;i<audioBank.length;i++){ let a=audioBank[i]; let p=players[i%players.length]||a.from; h+=`<div class="item"><div class="pos posA">🔊 ${i+1}號位</div><div style="flex:1"><div style="font-size:12px">${a.name} - ${a.from}</div><audio controls src="${a.data}"></audio></div><div style="font-size:11px;color:#00FF88">${p}</div></div>`; }
+ document.getElementById('audioPosList').innerHTML=h;
 }
 function updateWait(){
  let h=''; for(let i=0;i<players.length;i++){ let isMe=players[i]==myName; h+=`<div class="row" style="${isMe?'border-color:#FFEB00;background:#2a2a00':''}"><span>${i+1}. ${players[i]} ${isMe?'(你)':''}</span><span style="font-size:11px;color:#888">${i+1}號位</span></div>`; }
  document.getElementById('playerList').innerHTML=h;
- document.getElementById('logWait').textContent=`等候區：共 ${players.length} 人 - ${players.join(', ')}`;
- if(wordBank.length) renderPos();
+ document.getElementById('logWait').textContent=`等候區：共 ${players.length} 人 - ${players.join(', ')}`; if(wordBank.length||audioBank.length) renderAll();
 }
-function copyLink(){ navigator.clipboard.writeText(document.getElementById('roomLink').textContent).then(()=>alert('已複製')); }
-function loadFile(e){ let f=e.target.files[0]; if(!f) return; let r=new FileReader(); r.onload=ev=>{ document.getElementById('wordBox').value=ev.target.result; saveWords(); }; r.readAsText(f); }
 (function(){ let p=new URLSearchParams(location.search); let r=p.get('room'); if(r) document.getElementById('codeInput').value=r.toUpperCase(); })();
 </script>
 </body></html>
