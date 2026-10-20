@@ -1,31 +1,25 @@
-<!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>V24 三圖包剪揼</title>
+<!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>方包包 V25 三圖最終版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:18px;min-height:100vh}
+body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:18px}
 .ver{position:fixed;top:8px;right:8px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;padding:5px 12px;border-radius:99px;font-weight:900;font-size:11px}
 .card{width:94%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:14px;margin-top:14px}
-.btn{padding:12px;border-radius:99px;border:0;font-weight:900;font-size:14px;cursor:pointer}
-.btnY{background:#FFEB00;color:#000;flex:1}.btnG{background:#00FF88;color:#000;flex:1}.btnB{background:#2a5bd7;color:#fff;flex:1}
-.btnBig{width:100%;padding:18px;font-size:18px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;border-radius:16px;margin-top:10px}
-.item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:8px;display:flex;gap:8px;align-items:center}
+.btn{padding:12px;border-radius:99px;border:0;font-weight:900;cursor:pointer}.btnY{background:#FFEB00;color:#000;flex:1}.btnG{background:#00FF88;color:#000;flex:1}
+.choiceBtn{flex:1;padding:10px;border-radius:18px;border:3px solid #333;background:#fff;color:#000;font-weight:900;cursor:pointer;display:flex;flex-direction:column;align-items:center}
+.choiceBtn img{width:80px;height:80px;object-fit:contain}.choiceBtn.sel{border-color:#FFEB00;transform:scale(1.08);box-shadow:0 0 15px #FFEB00aa}
+.item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:8px;display:flex;justify-content:space-between}
 .item.ok{border-color:#00FF88;background:#0e2018}
-.choiceBtn{flex:1;padding:8px;border-radius:18px;border:3px solid #333;background:#222;color:#fff;font-weight:900;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;gap:4px}
-.choiceBtn img{width:70px;height:70px;object-fit:contain;background:#fff;border-radius:12px}
-.choiceBtn.sel{border-color:#FFEB00;background:#3a3200;transform:scale(1.08)}
-.choiceBtn.lock{opacity:.4;pointer-events:none}
-.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:8px;margin-top:8px;text-align:center;white-space:pre-line}
+.log{font-size:12px;color:#FFEB00;background:#222;border-radius:8px;padding:8px;margin-top:8px;text-align:center}
 .code{font-size:32px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center}
-.progress{width:100%;height:10px;background:#333;border-radius:99px;margin-top:10px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
-.imgUpload{display:flex;gap:8px;margin-top:8px}.imgUpload div{flex:1;text-align:center;background:#222;border:1px dashed #444;border-radius:12px;padding:6px}
-.imgUpload img{width:100%;height:60px;object-fit:contain;background:#fff;border-radius:8px}
+.progress{width:100%;height:12px;background:#333;border-radius:99px;margin-top:10px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
 </style>
 </head><body>
-<div class="ver">V24 三圖版</div>
-<h1 style="color:#FFEB00;margin:30px 0 4px">包剪揼．三圖版</h1>
+<div class="ver">V25 GitHub三圖版</div>
+<h1 style="color:#FFEB00;margin:30px 0 4px">包剪揼．聲音合唱</h1>
 
 <div class="card">
-<div style="font-weight:900">1. 登入房間</div>
+<div style="font-weight:900">1. 輸入名字登入房間</div>
 <div style="display:flex;gap:6px;margin-top:10px">
 <input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
 <button class="btn btnY" onclick="createRoom()">開房</button>
@@ -35,78 +29,49 @@ body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;
 <div class="code" id="roomCode">----</div><div id="logRoom" class="log">未入房</div><div id="playerList"></div>
 </div>
 
-<div class="card">
-<div style="font-weight:900">2. 上傳三張包剪揼圖片 (你嗰3張已經預設)</div>
-<div class="imgUpload">
-<div>👊 揼<br><input type="file" id="fChui" accept="image/*" style="width:100%"><img id="pChui" src=""></div>
-<div>✌️ 剪<br><input type="file" id="fJian" accept="image/*" style="width:100%"><img id="pJian" src=""></div>
-<div>✋ 包<br><input type="file" id="fBao" accept="image/*" style="width:100%"><img id="pBao" src=""></div>
-</div>
-<div style="font-size:11px;color:#888;text-align:center;margin-top:6px">你上傳嘅圖會自動同步俾對手睇到</div>
-</div>
-
 <div class="card" id="step2" style="display:none">
-<div style="font-weight:900">3. 錄製包剪揼聲音</div>
+<div style="font-weight:900">2. 錄製包剪揼聲音</div>
 <div style="display:flex;gap:8px;margin-top:10px">
-<button class="btn btnB" onclick="document.getElementById('fileIn').click()">🔊 上傳聲音</button>
+<button class="btn" style="background:#2a5bd7;color:#fff;flex:1" onclick="document.getElementById('fileIn').click()">🔊 上傳聲音</button>
 <button class="btn" style="background:#333;color:#fff;flex:1" id="recBtn" onclick="record()">● 錄音</button>
 </div>
 <input type="file" id="fileIn" accept="audio/*" style="display:none">
-<div id="logAudio" class="log" style="display:none"></div>
 <div id="audioList" style="margin-top:8px"></div>
 <button class="btn btnY" style="width:100%;margin-top:10px" onclick="setReady()">✅ 我準備好</button>
-<button class="btn btnG" id="startBtn" style="width:100%;margin-top:8px;display:none" onclick="hostStart()">🎤 全部Ready → 開始放聲揀拳</button>
+<button class="btn btnG" id="startBtn" style="width:100%;margin-top:8px;display:none" onclick="hostStart()">🎤 全部Ready → 開始</button>
 </div>
 
 <div class="card" id="step3" style="display:none">
-<div style="font-weight:900;text-align:center">🎤 放緊你哋嘅合唱聲，快揀！</div>
+<div style="font-weight:900;text-align:center">🎤 放緊合唱聲，快啲用你嗰三張圖揀拳！</div>
 <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
 <div style="display:flex;gap:8px;margin-top:12px">
-<button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img id="cChui"><span>揼</span></button>
-<button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img id="cJian"><span>剪</span></button>
-<button class="choiceBtn" id="btnBao" onclick="choose('包')"><img id="cBao"><span>包</span></button>
+<button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg"><span>揼 Rock</span></button>
+<button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg"><span>剪 Scissors</span></button>
+<button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg"><span>包 Paper</span></button>
 </div>
 <div id="logChoice" class="log">已預設揀咗「包」，放聲時可以轉</div>
-<div id="resultArea" style="margin-top:12px;display:none"></div>
+<div id="resultArea" style="display:none;margin-top:10px"></div>
 </div>
 
 <script>
-// 預設用你上傳嗰3張圖 (轉做dataURL示範，你上傳後會覆蓋)
-let imgMap={ '揼':'', '剪':'', '包':'' };
-// 同步圖片用Peer
+let IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg', '剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg', '包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
 let peer=null, conns={}, myName='Louis', roomCode='', players=[], readyMap={}, audioBank=[], incoming={}, mediaRecorder=null, chunks=[], audioCtx=null, sources=[], myChoice='包';
 const CHUNK=12*1024;
-function logRoom(t){ document.getElementById('logRoom').textContent=t; }
-function logAudio(t){ let e=document.getElementById('logAudio'); e.style.display='block'; e.textContent=t; }
-function base64ToBlob(b64){ let p=b64.split(','), mime=p[0].match(/:(.*?);/)[1], bin=atob(p[1]), a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:mime}); }
-
-function createRoom(){ myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; peer=new Peer('rps-v24-'+roomCode); peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; readyMap[myName]=false; updatePlayers(); logRoom('✅ 已開房 '+roomCode); document.getElementById('step2').style.display='block'; }); peer.on('connection',c=>{ conns[c.peer]=c; c.on('data',onData); c.on('open',()=>c.send({type:'sync', players, readyMap, imgMap, roomCode})); });}
-function joinRoom(){ let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('房號'); return; } myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; peer=new Peer(); peer.on('open',()=>{ let conn=peer.connect('rps-v24-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join', name:myName})); conn.on('data',onData); }); document.getElementById('roomCode').textContent=roomCode; logRoom('✅ 已入房 '+roomCode); document.getElementById('step2').style.display='block';}
-function onData(d){ if(d.type==='join'){ if(players.indexOf(d.name)===-1){ players.push(d.name); readyMap[d.name]=false; } updatePlayers(); broadcast({type:'sync', players, readyMap, imgMap, roomCode}); } if(d.type==='sync'){ players=d.players||players; readyMap=d.readyMap||readyMap; if(d.imgMap){ imgMap=d.imgMap; applyImgs(); } if(d.roomCode) document.getElementById('roomCode').textContent=d.roomCode; updatePlayers(); } if(d.type==='img'){ imgMap[d.key]=d.data; applyImgs(); } if(d.type==='audioStart'){ incoming[d.id]={name:d.name, from:d.from, total:d.total, chunks:[], got:0}; } if(d.type==='audioChunk'){ let inc=incoming[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; if(inc.got===inc.total){ let full=inc.chunks.join(''); let blob=base64ToBlob(full); let url=URL.createObjectURL(blob); audioBank.push({id:d.id, name:inc.name, from:inc.from, data:full, url}); renderAudio(); delete incoming[d.id]; } } if(d.type==='ready'){ readyMap[d.name]=true; updatePlayers(); } if(d.type==='startGame'){ startGamePhase(false); } if(d.type==='choice'){ window.remoteChoices=window.remoteChoices||{}; window.remoteChoices[d.name]=d.choice; } if(d.type==='endGame'){ showResult(false); } }
-function broadcast(m){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send(m); }catch{} }); }
-function updatePlayers(){ let h=''; let readyCount=0; for(let p of players){ let r=readyMap[p]; if(r) readyCount++; h+=`<div class="item ${r?'ok':''}" style="justify-content:space-between"><span>${p} ${p===myName?'(你)':''}</span><span>${r?'✅ 已準備':'⏳ 未準備'}</span></div>`; } document.getElementById('playerList').innerHTML=h; if(players.length>=2 && readyCount===players.length && myName===players[0]){ document.getElementById('startBtn').style.display='block'; } }
-function renderAudio(){ let h=''; for(let a of audioBank){ h+=`<div class="item ok"><div style="flex:1;font-size:12px">以上傳 - ${a.name}</div><audio controls src="${a.url}" style="width:120px"></audio></div>`; } document.getElementById('audioList').innerHTML=h; }
-
-function applyImgs(){
- if(imgMap['揼']){ document.getElementById('pChui').src=imgMap['揼']; document.getElementById('cChui').src=imgMap['揼']; }
- if(imgMap['剪']){ document.getElementById('pJian').src=imgMap['剪']; document.getElementById('cJian').src=imgMap['剪']; }
- if(imgMap['包']){ document.getElementById('pBao').src=imgMap['包']; document.getElementById('cBao').src=imgMap['包']; }
-}
-['fChui','fJian','fBao'].forEach(id=>{
- document.getElementById(id).addEventListener('change',e=>{
-  let file=e.target.files[0]; if(!file) return; let key=id==='fChui'?'揼':id==='fJian'?'剪':'包';
-  let r=new FileReader(); r.onload=ev=>{ imgMap[key]=ev.target.result; applyImgs(); broadcast({type:'img', key, data:ev.target.result}); }; r.readAsDataURL(file);
- });
-});
-
-function setReady(){ readyMap[myName]=true; updatePlayers(); broadcast({type:'ready', name:myName}); }
-function hostStart(){ broadcast({type:'startGame'}); startGamePhase(true); }
-
-async function startGamePhase(isHost){
- document.getElementById('step3').style.display='block'; document.getElementById('step2').style.display='none'; document.getElementById('step1').style.display='none';
- myChoice='包'; window.remoteChoices={}; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel','lock')); document.getElementById('btnBao').classList.add('sel');
- if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume();
- let buffers=[]; for(let a of audioBank){ try{ let blob=base64ToBlob(a.data); let ab=await blob.arrayBuffer(); let b=await audioCtx.decodeAudioData(ab); buffers.push(b);}catch{} }
- if(buffers.length===0) buffers=[audioCtx.createBuffer(1, audioCtx.sampleRate*3, audioCtx.sampleRate)];
- let maxDur=Math.max(...buffers.map(b=>b.duration),3); let when=audioCtx.currentTime+0.3; sources=[]; buffers.forEach(buf=>{ let src=audioCtx.createBufferSource(); src.buffer=buf; src.connect(audioCtx.destination); src.start(when); sources.push(src); });
- let prog=document.getElementById('prog'); let bar=document.getElementById('bar'); prog.style.display='block'; bar.style.width='0%';
+function logRoom(t){document.getElementById('logRoom').textContent=t;}
+function base64ToBlob(b64){let p=b64.split(','), mime=p[0].match(/:(.*?);/)[1], bin=atob(p[1]), a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:mime});}
+function createRoom(){myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; peer=new Peer('rps-v25-'+roomCode); peer.on('open',()=>{document.getElementById('roomCode').textContent=roomCode; players=[myName]; readyMap[myName]=false; updatePlayers(); logRoom('✅ 已開房 '+roomCode); document.getElementById('step2').style.display='block';}); peer.on('connection',c=>{conns[c.peer]=c; c.on('data',onData); c.on('open',()=>c.send({type:'sync',players,readyMap,roomCode}));});}
+function joinRoom(){let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code)return alert('房號'); myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; peer=new Peer(); peer.on('open',()=>{let conn=peer.connect('rps-v25-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join',name:myName})); conn.on('data',onData);}); document.getElementById('roomCode').textContent=roomCode; logRoom('✅ 已入房 '+roomCode); document.getElementById('step2').style.display='block';}
+function onData(d){if(d.type==='join'){if(players.indexOf(d.name)===-1){players.push(d.name); readyMap[d.name]=false;} updatePlayers(); broadcast({type:'sync',players,readyMap,roomCode});} if(d.type==='sync'){players=d.players||players; readyMap=d.readyMap||readyMap; if(d.roomCode)document.getElementById('roomCode').textContent=d.roomCode; updatePlayers();} if(d.type==='audioStart'){incoming[d.id]={name:d.name,from:d.from,total:d.total,chunks:[],got:0};} if(d.type==='audioChunk'){let inc=incoming[d.id]; if(!inc)return; inc.chunks[d.index]=d.chunk; inc.got++; if(inc.got===inc.total){let full=inc.chunks.join(''); let blob=base64ToBlob(full); let url=URL.createObjectURL(blob); audioBank.push({id:d.id,name:inc.name,from:inc.from,data:full,url}); renderAudio(); delete incoming[d.id];}} if(d.type==='ready'){readyMap[d.name]=true; updatePlayers();} if(d.type==='startGame'){startGamePhase(false);} if(d.type==='choice'){window.remoteChoices=window.remoteChoices||{}; window.remoteChoices[d.name]=d.choice;} if(d.type==='endGame'){showResult(false);}}
+function broadcast(m){Object.values(conns).forEach(c=>{try{if(c.open)c.send(m);}catch{}});}
+function updatePlayers(){let h=''; let c=0; for(let p of players){if(readyMap[p])c++; h+=`<div class="item ${readyMap[p]?'ok':''}"><span>${p}</span><span>${readyMap[p]?'✅ 已準備':'⏳ 未準備'}</span></div>`;} document.getElementById('playerList').innerHTML=h; if(players.length>=2&&c===players.length&&myName===players[0])document.getElementById('startBtn').style.display='block';}
+function renderAudio(){let h=''; for(let a of audioBank)h+=`<div class="item ok"><span>以上傳 - ${a.name}</span><audio controls src="${a.url}" style="width:120px"></audio></div>`; document.getElementById('audioList').innerHTML=h;}
+function setReady(){readyMap[myName]=true; updatePlayers(); broadcast({type:'ready',name:myName});}
+function hostStart(){broadcast({type:'startGame'}); startGamePhase(true);}
+async function startGamePhase(){document.getElementById('step3').style.display='block'; document.getElementById('step2').style.display='none'; document.getElementById('step1').style.display='none'; myChoice='包'; window.remoteChoices={}; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel')); document.getElementById('btnBao').classList.add('sel'); if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume(); let buffers=[]; for(let a of audioBank){try{let blob=base64ToBlob(a.data); let ab=await blob.arrayBuffer(); let b=await audioCtx.decodeAudioData(ab); buffers.push(b);}catch{}} if(buffers.length===0)buffers=[audioCtx.createBuffer(1,audioCtx.sampleRate*3,audioCtx.sampleRate)]; let maxDur=Math.max(...buffers.map(b=>b.duration),3); let when=audioCtx.currentTime+0.3; sources=[]; buffers.forEach(buf=>{let src=audioCtx.createBufferSource(); src.buffer=buf; src.connect(audioCtx.destination); src.start(when); sources.push(src);}); let prog=document.getElementById('prog'); let bar=document.getElementById('bar'); prog.style.display='block'; let start=Date.now(); let timer=setInterval(()=>{let e=(Date.now()-start)/1000; bar.style.width=Math.min(e/maxDur*100,100)+'%'; if(e>=maxDur){clearInterval(timer); prog.style.display='none'; lockChoices();}},50);}
+function choose(c){myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel')); if(c==='包')document.getElementById('btnBao').classList.add('sel'); if(c==='剪')document.getElementById('btnJian').classList.add('sel'); if(c==='揼')document.getElementById('btnChui').classList.add('sel'); document.getElementById('logChoice').textContent='你已揀：'+c; broadcast({type:'choice',name:myName,choice:c});}
+function lockChoices(){document.querySelectorAll('.choiceBtn').forEach(b=>b.style.pointerEvents='none'); document.getElementById('logChoice').textContent='⏰ 時間到！鎖定：'+myChoice; broadcast({type:'endGame'}); showResult(true);}
+function showResult(){let area=document.getElementById('resultArea'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,window.remoteChoices||{}); let h='<div style="font-weight:900">結果</div>'; for(let p of players){let ch=all[p]||'包'; h+=`<div class="item"><span>${p}</span><span style="display:flex;align-items:center;gap:6px"><img src="${IMG[ch]}" style="width:30px;height:30px;background:#fff;border-radius:6px">${ch}</span></div>`;} let vals=Object.values(all); let hasBao=vals.includes('包'),hasJian=vals.includes('剪'),hasChui=vals.includes('揼'); let win=''; if(hasBao&&hasJian&&hasChui||vals.every(v=>v===vals[0]))win='平手！'; else if(hasBao&&hasJian)win='剪贏包'; else if(hasBao&&hasChui)win='包贏揼'; else if(hasJian&&hasChui)win='揼贏剪'; h+=`<div class="log">🏆 ${win}</div><button class="btn btnY" style="width:100%;margin-top:10px" onclick="location.reload()">再玩一次</button>`; area.innerHTML=h;}
+function record(){if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop(); document.getElementById('recBtn').textContent='● 錄音'; return;} navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{mediaRecorder=new MediaRecorder(s); chunks=[]; mediaRecorder.ondataavailable=e=>chunks.push(e.data); mediaRecorder.onstop=()=>{let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader(); rd.onload=ev=>{let url=URL.createObjectURL(blob); let item={id:Date.now(),name:'包剪揼 - '+myName,from:myName,data:ev.target.result,url}; audioBank.push(item); renderAudio(); let data=item.data,total=Math.ceil(data.length/CHUNK); broadcast({type:'audioStart',id:item.id,name:item.name,from:item.from,total}); let i=0; function next(){if(i>=total)return; broadcast({type:'audioChunk',id:item.id,index:i,chunk:data.substr(i*CHUNK,CHUNK)}); i++; setTimeout(next,60);} next();}; rd.readAsDataURL(blob);}; mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 停止'; setTimeout(()=>{if(mediaRecorder.state==='recording')mediaRecorder.stop();},4000);}).catch(()=>alert('要麥克風'));}
+document.getElementById('fileIn').addEventListener('change',()=>{let f=document.getElementById('fileIn').files[0]; if(!f)return; let r=new FileReader(); r.onload=e=>{let blob=base64ToBlob(e.target.result); let url=URL.createObjectURL(blob); let item={id:Date.now(),name:f.name+' - '+myName,from:myName,data:e.target.result,url}; audioBank.push(item); renderAudio(); let data=item.data,total=Math.ceil(data.length/CHUNK); broadcast({type:'audioStart',id:item.id,name:item.name,from:item.from,total}); let i=0; function next(){if(i>=total)return; broadcast({type:'audioChunk',id:item.id,index:i,chunk:data.substr(i*CHUNK,CHUNK)}); i++; setTimeout(next,60);} next();}; r.readAsDataURL(f);});
+</script>
+</body></html>
