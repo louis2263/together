@@ -3,102 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V38 錄音合唱版 - 剪刀石頭布連線遊戲</title>
+<title>V39 錄音合唱版 - 可單人測試</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-body { margin:0; background:#0f0f0f; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; padding:10px; min-height:100vh; box-sizing:border-box; }
+body { margin:0; background:#0f0f0f; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; padding:10px; min-height:100vh; }
 .verBadge { position:fixed; top:0; left:0; right:0; background:linear-gradient(90deg,#FFEB00,#00FF88); color:#000; text-align:center; padding:8px; font-weight:900; font-size:15px; z-index:9999; }
 .verTag { position:fixed; top:44px; right:8px; background:#FFEB00; color:#000; padding:4px 12px; border-radius:99px; font-weight:900; font-size:12px; z-index:9999; }
-.card { width:96%; max-width:500px; background:#1a1a1a; border:1px solid #333; border-radius:18px; padding:12px; margin-top:56px; box-sizing:border-box; }
+.card { width:96%; max-width:500px; background:#1a1a1a; border:1px solid #333; border-radius:18px; padding:12px; margin-top:56px; }
 .btn { padding:12px; border-radius:99px; border:0; font-weight:900; cursor:pointer; }
 .btnY { background:#FFEB00; color:#000; width:100%; margin-top:8px; }
 .btnDark { background:#222; color:#fff; width:100%; margin-top:8px; border:1px solid #444; }
-.btnRed { background:#FF4444; color:#fff; width:100%; margin-top:8px; animation:pulse 1s infinite; }
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+.btnRed { background:#FF4444; color:#fff; width:100%; margin-top:8px; }
 .item { padding:10px; background:#151515; border:2px solid #222; border-radius:12px; margin-top:6px; display:flex; justify-content:space-between; align-items:center; }
 .item.ok { border-color:#00FF88; background:#0e2018; }
 .item.wait { border-color:#FFEB00; background:#332e00; }
 .log { font-size:13px; color:#FFEB00; background:#222; border-radius:8px; padding:10px; margin-top:8px; text-align:center; }
 .debug { font-size:10px; color:#0f0; background:#000; border-radius:6px; padding:6px; margin-top:6px; word-break:break-all; }
 .code { font-size:30px; font-weight:900; letter-spacing:5px; color:#00FF88; text-align:center; margin:8px 0; }
-.choiceBtn { flex:1; padding:10px; border-radius:16px; border:3px solid #333; background:#fff; color:#000; font-weight:900; display:flex; flex-direction:column; align-items:center; cursor:pointer; transition:all 0.2s; }
-.choiceBtn.sel { border-color:#FFEB00; box-shadow:0 0 14px #FFEB00; transform:scale(1.03); }
-.choiceBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.choiceBtn { flex:1; padding:10px; border-radius:16px; border:3px solid #333; background:#fff; color:#000; font-weight:900; display:flex; flex-direction:column; align-items:center; }
+.choiceBtn.sel { border-color:#FFEB00; box-shadow:0 0 14px #FFEB00; }
 .countBig { font-size:64px; font-weight:900; color:#FFEB00; text-align:center; display:none; margin:8px 0; }
 .progress { width:100%; height:16px; background:#333; border-radius:99px; margin-top:8px; overflow:hidden; display:none; }
-.bar { height:100%; width:0%; background:linear-gradient(90deg,#FFEB00,#00FF88); transition:width 0.05s linear; }
-.audioList{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
-.audioList audio{width:100%;margin-top:4px}
+.bar { height:100%; width:0%; background:linear-gradient(90deg,#FFEB00,#00FF88); }
+audio{width:100%;margin-top:6px}
 </style>
 </head>
 <body>
 
-<div class="verBadge">方包包包剪揼 V38 - 錄音合唱版 [揀定即合唱]</div>
-<div class="verTag">V38</div>
+<div class="verBadge">方包包包剪揼 V39 - 錄音合唱版 [單人可測]</div>
+<div class="verTag">V39</div>
 
 <div class="card">
-  <b>房間 [V38] <span id="conn" style="color:#888">● 未連線</span></b>
+  <b>🎤 錄音測試區 [V39] - 一入嚟就見到</b>
+  <div id="micLog" class="log">[V39] 檢查緊咪...</div>
+  <button id="micBtn" class="btn btnY" onclick="ensureMic()">🎤 按此開咪權限 (第一次必按)</button>
+  <button id="testRecBtn" class="btn btnDark" onclick="testRecord()" style="display:none">🎤 測試錄音2秒 - 嗌 包剪揼</button>
+  <div id="testAudio"></div>
+  <div class="log" style="font-size:11px">提示：要用 Chrome / Safari 開 https://is2263.github.io 先錄到</div>
+</div>
+
+<div class="card">
+  <b>房間 [V39] <span id="conn" style="color:#888">● 未連線</span></b>
   <div style="display:flex; gap:6px; margin-top:8px;">
-    <input id="nameInput" value="Louis" style="flex:1; padding:12px; border-radius:99px; border:2px solid #444; background:#000; color:#fff;" placeholder="名字">
+    <input id="nameInput" value="Louis" style="flex:1; padding:12px; border-radius:99px; border:2px solid #444; background:#000; color:#fff;">
     <button class="btn" style="background:#FFEB00; color:#000; flex:1;" onclick="createRoom()">開房</button>
     <input id="codeInput" placeholder="房號" style="width:80px; padding:12px; border-radius:99px; border:2px solid #444; background:#000; color:#fff;">
     <button class="btn" style="background:#00FF88; color:#000; flex:1;" onclick="joinRoom()">入房</button>
   </div>
   <div class="code" id="roomCode">----</div>
-  <div id="logRoom" class="log">[V38] 等待入房</div>
+  <div id="logRoom" class="log">[V39] 等待入房</div>
   <div id="debug" class="debug">debug: 就緒</div>
   <div id="playerList"></div>
-  <button id="startBtn" class="btn btnY" style="display:none;">開始遊戲 + 開咪</button>
+  <button id="startBtn" class="btn btnY" style="display:none;">開始遊戲</button>
 </div>
 
 <div class="card" id="gameCard" style="display:none;">
-  <b>🎤 V38 請出拳！會自動錄2秒合唱</b>
-  <div id="statusLog" class="log">[V38] 請出拳，會自動錄你把聲</div>
+  <b>🎮 V39 請出拳！揀完自動錄2秒合唱</b>
+  <div id="statusLog" class="log">[V39] 請出拳</div>
   <div style="display:flex; gap:8px; margin-top:10px;">
-    <button class="choiceBtn" id="btnChui" onclick="choose('揼')">
-      <img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" width="70"><span>揼</span>
-    </button>
-    <button class="choiceBtn" id="btnJian" onclick="choose('剪')">
-      <img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" width="70"><span>剪</span>
-    </button>
-    <button class="choiceBtn" id="btnBao" onclick="choose('包')">
-      <img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" width="70"><span>包</span>
-    </button>
+    <button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" width="70"><span>揼</span></button>
+    <button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" width="70"><span>剪</span></button>
+    <button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" width="70"><span>包</span></button>
   </div>
-  <div id="choiceLog" class="log">[V38] 你未揀</div>
+  <div id="choiceLog" class="log">[V39] 你未揀</div>
   <div id="whoChosen"></div>
-  <div class="audioList" id="audioList"></div>
+  <div id="audioList"></div>
   <div class="countBig" id="countBig">3</div>
   <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
   <div id="result" style="display:none; margin-top:10px;"></div>
 </div>
 
 <script>
-const VERSION = 'V38';
-const IMG = { '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
+const VERSION='V39';
+const IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
 let peer=null, conns={}, myName='', roomCode='', players=[], isHost=false, myChoice=null, remoteChoices={}, choiceDone=false, gameStarted=false, audioCtx=null, choiceSendInterval=null, reconnectInterval=null, countdownTimer=null;
 let myAudioBlob=null, remoteAudios={}, mediaRecorder=null, micStream=null, isRecording=false;
 
 function dbg(t){ document.getElementById('debug').textContent=t; }
 function log(t){ document.getElementById('logRoom').textContent='['+VERSION+'] '+t; }
 function slog(t){ document.getElementById('statusLog').textContent='['+VERSION+'] '+t; }
+function micLog(t){ document.getElementById('micLog').textContent='['+VERSION+'] '+t; }
 function sendAll(m){ for(let k in conns){ try{ if(conns[k]&&conns[k].open) conns[k].send(m);}catch{} } }
 function sendRetry(m){ for(let i=0;i<8;i++) setTimeout(()=>sendAll(m), i*150); }
 function clearChoiceInterval(){ if(choiceSendInterval){ clearInterval(choiceSendInterval); choiceSendInterval=null; } }
 
 async function ensureMic(){
- if(micStream) return true;
  try{
-   micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
-   log('咪已開'); dbg('mic ok'); return true;
- }catch(e){ log('開咪失敗，請用https'); alert('要開咪權限先可以合唱，請用https開啟'); return false; }
+   micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+   micLog('✅ 咪已開！可以錄音喇'); document.getElementById('micBtn').style.display='none'; document.getElementById('testRecBtn').style.display='block';
+   dbg('mic ok'); return true;
+ }catch(e){ micLog('❌ 開咪失敗：'+e.message+' 請用https + Allow咪'); alert('要開咪：請用Chrome開 https://is2263.github.io 再按Allow'); return false; }
 }
+async function testRecord(){
+ if(isRecording) return;
+ let chunks=[]; mediaRecorder=new MediaRecorder(micStream);
+ mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+ mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'audio/webm'}); let url=URL.createObjectURL(blob); document.getElementById('testAudio').innerHTML=`<div class="item ok"><span>你剛錄的</span><audio controls src="${url}"></audio></div>`; micLog('錄好！有聲就代表得喇'); };
+ mediaRecorder.start(); micLog('🎤 錄緊... 大聲嗌 包剪揼！'); setTimeout(()=>mediaRecorder.stop(), 2000);
+}
+window.addEventListener('load', ()=>{ setTimeout(()=>ensureMic(), 800); });
 
 function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; isHost=true;
  if(peer) peer.destroy(); peer=new Peer(VERSION+'-'+roomCode);
- peer.on('open',()=>{ document.getElementById('conn').style.color='#0f0'; document.getElementById('conn').textContent='● 已連線 (房主)'; document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode); dbg('host id='+VERSION+'-'+roomCode); });
- peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>c.send({type:'sync',players,roomCode,ver:VERSION})); c.on('data',onData); c.on('close',()=>{ delete conns[c.peer]; }); });
+ peer.on('open',()=>{ document.getElementById('conn').style.color='#0f0'; document.getElementById('conn').textContent='● 已連線 (房主)'; document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode); });
+ peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>c.send({type:'sync',players,roomCode,ver:VERSION})); c.on('data',onData); });
 }
 function joinRoom(){
  let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code) return; myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; isHost=false;
@@ -108,7 +117,7 @@ function joinRoom(){
 function connectToHost(){
  let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn;
  conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; });
- conn.on('data',onData); conn.on('close',()=>{ delete conns['host']; });
+ conn.on('data',onData);
 }
 function onData(d){
  if(!d||d.ver!==VERSION) return;
@@ -116,7 +125,7 @@ function onData(d){
  if(d.type==='sync'){ players=d.players||players; updatePlayers(); }
  if(d.type==='goGame'){ startRound(); }
  if(d.type==='choice'){ remoteChoices[d.name]=d.choice; log('收到 '+d.name+' 揀 '+d.choice); renderWho(); checkAll(); }
- if(d.type==='audio'){ remoteAudios[d.name]=d.blob; dbg('收到 '+d.name+' 錄音 '+d.blob.size+'bytes'); renderAudio(); checkAll(); }
+ if(d.type==='audio'){ remoteAudios[d.name]=d.blob; renderAudio(); checkAll(); }
  if(d.type==='preReveal'){ doCountdown(d.at); }
  if(d.type==='reveal'){ showResult(); }
  if(d.type==='restart'){ startRound(); }
@@ -124,105 +133,60 @@ function onData(d){
 function updatePlayers(){
  let h=''; for(let p of players){ h+=`<div class="item ok"><span>${p}${p===myName?' (你)':''}</span><span>✅ 已入房</span></div>`; }
  document.getElementById('playerList').innerHTML=h;
- if(players.length>=2 && !gameStarted){ let btn=document.getElementById('startBtn'); btn.style.display='block'; btn.onclick=async()=>{ if(await ensureMic()){ sendRetry({type:'goGame',ver:VERSION}); startRound(); } }; }
+ // V39: 1個人都可以開始，方便測試
+ let btn=document.getElementById('startBtn');
+ if(players.length>=1){ btn.style.display='block'; btn.textContent= players.length>=2 ? '開始遊戲 + 合唱 [V39]' : '單人測試開始 [V39]（1人都得）'; btn.onclick=async()=>{ if(await ensureMic()){ sendRetry({type:'goGame',ver:VERSION}); startRound(); } }; }
 }
 function startRound(){
  gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={}; remoteAudios={}; myAudioBlob=null;
  clearChoiceInterval(); if(countdownTimer) clearInterval(countdownTimer);
  document.getElementById('gameCard').style.display='block'; document.getElementById('startBtn').style.display='none';
  document.querySelectorAll('.choiceBtn').forEach(b=>{ b.classList.remove('sel'); b.disabled=false; });
- document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀，揀完會自動錄2秒'; document.getElementById('result').style.display='none'; document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none'; document.getElementById('bar').style.width='0%'; document.getElementById('audioList').innerHTML='';
- slog('請出拳！揀完自動錄「包剪揼」'); renderWho(); dbg('新一局開始，準備錄音');
+ document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀，揀完會錄2秒'; document.getElementById('result').style.display='none'; document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none'; document.getElementById('bar').style.width='0%'; document.getElementById('audioList').innerHTML='';
+ slog('請出拳，揀完自動錄「包剪揼」'); renderWho();
 }
-
 function choose(c){
- if(choiceDone) return;
- myChoice=c;
+ if(choiceDone) return; myChoice=c;
  document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
  if(c==='揼') btnChui.classList.add('sel'); if(c==='剪') btnJian.classList.add('sel'); if(c==='包') btnBao.classList.add('sel');
- document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀 '+c+'，錄音中...';
- renderWho(); sendRetry({type:'choice',name:myName,choice:c,ver:VERSION});
- startRecordAndSend();
- checkAll();
- clearChoiceInterval();
- choiceSendInterval=setInterval(()=>{ if(choiceDone){ clearChoiceInterval(); return; } sendAll({type:'choice',name:myName,choice:c,ver:VERSION}); },800);
+ document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀 '+c+'，錄音中...'; renderWho(); sendRetry({type:'choice',name:myName,choice:c,ver:VERSION}); startRecordAndSend(); checkAll();
+ clearChoiceInterval(); choiceSendInterval=setInterval(()=>{ if(choiceDone){ clearChoiceInterval(); return; } sendAll({type:'choice',name:myName,choice:c,ver:VERSION}); },800);
 }
-
 async function startRecordAndSend(){
- if(isRecording) return;
- if(!micStream){ if(!(await ensureMic())) return; }
- isRecording=true;
- let chunks=[];
- mediaRecorder=new MediaRecorder(micStream, {mimeType:'audio/webm;codecs=opus'});
- mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
- mediaRecorder.onstop=()=>{
-   myAudioBlob=new Blob(chunks, {type:'audio/webm'});
-   dbg('錄好 '+myAudioBlob.size+'bytes');
-   renderAudio();
-   // 發送錄音
-   sendRetry({type:'audio', name:myName, blob:myAudioBlob, ver:VERSION});
-   isRecording=false;
-   checkAll();
- };
- mediaRecorder.start();
- slog('🎤 錄音中...大聲嗌 包剪揼！');
- setTimeout(()=>{ if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop(); }, 2200);
+ if(isRecording) return; if(!micStream){ if(!(await ensureMic())) return; }
+ isRecording=true; let chunks=[]; mediaRecorder=new MediaRecorder(micStream);
+ mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+ mediaRecorder.onstop=()=>{ myAudioBlob=new Blob(chunks,{type:'audio/webm'}); dbg('錄好 '+myAudioBlob.size+'bytes'); renderAudio(); sendRetry({type:'audio',name:myName,blob:myAudioBlob,ver:VERSION}); isRecording=false; checkAll(); };
+ mediaRecorder.start(); slog('🎤 錄音中...嗌 包剪揼！'); setTimeout(()=>{ if(mediaRecorder&&mediaRecorder.state==='recording') mediaRecorder.stop(); },2200);
 }
-
 function renderAudio(){
- let div=document.getElementById('audioList'); let h='';
- if(myAudioBlob){ let url=URL.createObjectURL(myAudioBlob); h+=`<div class="item ok"><span>${myName}(你) 錄音</span><audio controls src="${url}"></audio></div>`; }
- for(let name in remoteAudios){ let blob=remoteAudios[name]; let url=URL.createObjectURL(blob); h+=`<div class="item ok"><span>${name} 錄音</span><audio controls src="${url}"></audio></div>`; }
+ let div=document.getElementById('audioList'); let h=''; if(myAudioBlob){ let url=URL.createObjectURL(myAudioBlob); h+=`<div class="item ok"><span>${myName}(你) 錄音</span><audio controls src="${url}"></audio></div>`; }
+ for(let name in remoteAudios){ let url=URL.createObjectURL(remoteAudios[name]); h+=`<div class="item ok"><span>${name} 錄音</span><audio controls src="${url}"></audio></div>`; }
  div.innerHTML=h;
 }
-
 function renderWho(){
  let h=''; h+=`<div class="item ${myChoice?'ok':'wait'}"><span>${myName} (你)</span><span>${myChoice?'✅ 已揀好 '+myChoice:'⏳ 未揀'}</span><span>${myAudioBlob?'🎤已錄':''}</span></div>`;
  for(let name in remoteChoices){ if(name!==myName){ h+=`<div class="item ok"><span>${name}</span><span>✅ 已揀好 ${remoteChoices[name]} ${remoteAudios[name]?'🎤已錄':''}</span></div>`; } }
  for(let p of players){ if(p!==myName && !remoteChoices[p]){ h+=`<div class="item wait"><span>${p}</span><span>⏳ 未揀</span></div>`; } }
  document.getElementById('whoChosen').innerHTML=h;
 }
-
 function checkAll(){
  let hasRemoteChoice = Object.keys(remoteChoices).length>0;
- let hasRemoteAudio = Object.keys(remoteAudios).length>0;
- let all = (myChoice!==null) && hasRemoteChoice && myAudioBlob && hasRemoteAudio;
- // 如果對面冇錄音，都至少要揀好先可以倒數，錄音係加分
- let basicAll = (myChoice!==null) && hasRemoteChoice;
- if(!all && basicAll && !myAudioBlob){ dbg('等錄音 myAudio='+!!myAudioBlob+' remoteAudio='+hasRemoteAudio); }
- if(basicAll && !choiceDone && myAudioBlob){ 
-   // 有基本選擇就可倒數，如果都有錄音就合唱
-   choiceDone=true; clearChoiceInterval(); slog('兩邊都揀好！準備合唱倒數'); document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true);
-   if(isHost){ let at=Date.now()+1500; sendRetry({type:'preReveal',at,ver:VERSION}); doCountdown(at); }
- }
- dbg('checkAll my='+myChoice+' remote='+Object.keys(remoteChoices).length+' myAud='+!!myAudioBlob+' remoteAud='+Object.keys(remoteAudios).length+' all='+all);
+ let basicAll = (myChoice!==null) && (players.length<2 || hasRemoteChoice);
+ if(basicAll && !choiceDone && myAudioBlob){ choiceDone=true; clearChoiceInterval(); slog('兩邊都揀好！準備合唱倒數'); document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true); if(isHost){ let at=Date.now()+1500; sendRetry({type:'preReveal',at,ver:VERSION}); doCountdown(at); } }
 }
-
 async function doCountdown(at){
  try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') await audioCtx.resume(); }catch(e){}
- let big=document.getElementById('countBig'), prog=document.getElementById('prog'), bar=document.getElementById('bar');
- big.style.display='block'; prog.style.display='block'; bar.style.width='0%';
- let delay=Math.max(0,(at-Date.now())/1000);
- // 合唱播放！
- renderAudio();
- // 同時播晒所有錄音
- setTimeout(()=>{
-   document.querySelectorAll('#audioList audio').forEach(a=>{ a.currentTime=0; a.play().catch(()=>{}); });
- }, delay*1000);
- if(audioCtx){ let when=audioCtx.currentTime+delay; for(let i=0;i<3;i++){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=700; g.gain.setValueAtTime(0.3,when+i*0.7); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.7+0.2); o.connect(g).connect(audioCtx.destination); o.start(when+i*0.7); o.stop(when+i*0.7+0.2); } }
- let st=Date.now()+delay*1000, dur=2100;
- if(countdownTimer) clearInterval(countdownTimer);
+ let big=document.getElementById('countBig'), prog=document.getElementById('prog'), bar=document.getElementById('bar'); big.style.display='block'; prog.style.display='block'; bar.style.width='0%'; let delay=Math.max(0,(at-Date.now())/1000);
+ setTimeout(()=>{ document.querySelectorAll('#audioList audio').forEach(a=>{ a.currentTime=0; a.play().catch(()=>{}); }); }, delay*1000);
+ let st=Date.now()+delay*1000, dur=2100; if(countdownTimer) clearInterval(countdownTimer);
  countdownTimer=setInterval(()=>{ let e=Date.now()-st; big.textContent=e<700?'3':e<1400?'2':'1'; bar.style.width=Math.min((e/dur)*100,100)+'%'; if(e>=dur){ clearInterval(countdownTimer); big.textContent='揭曉！'; setTimeout(()=>{ if(isHost) sendRetry({type:'reveal',ver:VERSION}); showResult(); },400); } },50);
 }
-
 function showResult(){
- let area=document.getElementById('result'); area.style.display='block';
- let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
- let h='<b>['+VERSION+'] 結果 + 合唱回放</b>';
- for(let k in all){ let choiceName=all[k]||'未揀'; let imgSrc=IMG[choiceName]||''; h+=`<div class="item"><span>${k}</span><span><img src="${imgSrc}" width="20" style="vertical-align:middle;margin-right:4px;"> ${choiceName}</span></div>`; }
+ let area=document.getElementById('result'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
+ let h='<b>['+VERSION+'] 結果 + 合唱</b>'; for(let k in all){ h+=`<div class="item"><span>${k}</span><span><img src="${IMG[all[k]]||''}" width="20"> ${all[k]}</span></div>`; }
  let v=Object.values(all); let win=''; if(new Set(v).size===1||new Set(v).size===3){ win='平手！'; } else if(v.includes('包')&&v.includes('剪')){ win='剪刀勝！'; } else if(v.includes('包')&&v.includes('揼')){ win='包勝！'; } else { win='石頭勝！'; }
- h+=`<div class="log">🏆 ${win} [${VERSION}]</div><div class="log">🎧 再聽一次合唱</div><button class="btn btnDark" onclick="document.querySelectorAll('#audioList audio').forEach(a=>{a.currentTime=0;a.play()})">🔊 重播合唱</button><button class="btn btnY" onclick="restart()">🔄 再玩一次 [${VERSION}]</button><button class="btn btnDark" onclick="location.reload()">離開</button>`;
- area.innerHTML=h;
+ h+=`<div class="log">🏆 ${win}</div><button class="btn btnDark" onclick="document.querySelectorAll('#audioList audio').forEach(a=>{a.currentTime=0;a.play()})">🔊 重播合唱</button><button class="btn btnY" onclick="restart()">🔄 再玩一次</button><button class="btn btnDark" onclick="location.reload()">離開</button>`; area.innerHTML=h;
 }
 function restart(){ sendRetry({type:'restart',ver:VERSION}); startRound(); }
 </script>
