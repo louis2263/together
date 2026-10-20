@@ -1,26 +1,26 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V32 無限再玩版</title>
+<title>V34 斷線重連版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:10px}
-.verBadge{position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;text-align:center;padding:6px;font-weight:900;font-size:14px;z-index:9999}
-.verTag{position:fixed;top:38px;right:8px;background:#FFEB00;color:#000;padding:4px 10px;border-radius:99px;font-weight:900;font-size:11px;z-index:9999}
-.card{width:96%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:12px;margin-top:48px}
+.verBadge{position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;text-align:center;padding:8px;font-weight:900;font-size:15px;z-index:9999}
+.verTag{position:fixed;top:44px;right:8px;background:#FFEB00;color:#000;padding:4px 12px;border-radius:99px;font-weight:900;font-size:12px;z-index:9999}
+.card{width:96%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:12px;margin-top:52px}
 .btn{padding:13px;border-radius:99px;border:0;font-weight:900;cursor:pointer}.btnY{background:#FFEB00;color:#000;width:100%;margin-top:8px}.btnDark{background:#222;color:#fff;width:100%;margin-top:8px;border:1px solid #444}
 .item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:6px;display:flex;justify-content:space-between}.item.ok{border-color:#00FF88;background:#0e2018}.item.wait{border-color:#FFEB00;background:#332e00}
 .log{font-size:13px;color:#FFEB00;background:#222;border-radius:8px;padding:10px;margin-top:8px;text-align:center}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}.green{background:#00FF88}.red{background:#FF4444}.yellow{background:#FFEB00}
 .code{font-size:32px;font-weight:900;letter-spacing:6px;color:#00FF88;text-align:center}
 .choiceBtn{flex:1;padding:10px;border-radius:16px;border:3px solid #333;background:#fff;color:#000;font-weight:900;display:flex;flex-direction:column;align-items:center}.choiceBtn img{width:72px;height:72px}.choiceBtn.sel{border-color:#FFEB00;transform:scale(1.08);box-shadow:0 0 12px #FFEB00}
-.countBig{font-size:56px;font-weight:900;color:#FFEB00;text-align:center;margin:10px 0;display:none}
+.countBig{font-size:60px;font-weight:900;color:#FFEB00;text-align:center;margin:10px 0;display:none}
 .progress{width:100%;height:16px;background:#333;border-radius:99px;margin-top:8px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
-.footerVer{margin-top:18px;color:#555;font-size:10px;text-align:center}
 </style>
 </head><body>
-<div class="verBadge">方包包包剪揼 V32 - 無限再玩版</div>
-<div class="verTag">V32</div>
+<div class="verBadge">方包包包剪揼 V34 - 斷線重連版 [揀定先倒數]</div>
+<div class="verTag">V34</div>
 
 <div class="card">
-<b>登入房間 [V32]</b>
+<b>房間 [V34] <span id="connDot"><span class="dot red"></span>未連線</span></b>
 <div style="display:flex;gap:6px;margin-top:8px">
 <input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
 <button class="btn" style="background:#FFEB00;color:#000;flex:1" onclick="createRoom()">開房</button>
@@ -28,134 +28,139 @@ body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;
 <button class="btn" style="background:#00FF88;color:#000;flex:1" onclick="joinRoom()">入房</button>
 </div>
 <div class="code" id="roomCode">----</div>
-<div id="logRoom" class="log">[V32] 未入房</div>
+<div id="logRoom" class="log">[V34] 未入房</div>
 <div id="playerList"></div>
-<button id="startBtn" class="btn btnY" style="display:none">🎤 房主按：開始揀拳</button>
+<button id="startBtn" class="btn btnY" style="display:none">🎤 房主按：開始揀拳 [V34]</button>
+<button class="btn btnDark" style="display:none" id="reconnBtn" onclick="reconnect()">🔄 重連</button>
 </div>
 
 <div class="card" id="gameCard" style="display:none">
-<b>🎮 V32 請出拳！揀定先倒數</b>
-<div id="statusLog" class="log">[V32] 請出拳...</div>
+<b>🎮 V34 請出拳！都揀好先倒數</b>
+<div id="statusLog" class="log">[V34] 請出拳...</div>
 <div style="display:flex;gap:8px;margin-top:10px">
 <button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg"><span>揼</span></button>
 <button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg"><span>剪</span></button>
 <button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg"><span>包</span></button>
 </div>
-<div id="choiceLog" class="log">[V32] 你未揀</div>
+<div id="choiceLog" class="log">[V34] 你未揀</div>
 <div id="whoChosen"></div>
+<div style="display:flex;gap:6px;margin-top:8px">
+<button class="btn btnDark" onclick="resendChoice()">📡 重發我的選擇</button>
+</div>
 <div class="countBig" id="countBig">3</div>
 <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
 <div id="result" style="display:none;margin-top:10px"></div>
 </div>
 
-<div class="footerVer">V32 | 無限再玩 | PeerID: <span id="peerId">-</span></div>
-
 <script>
-const VERSION='V32';
+const VERSION='V34';
 let IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
-let peer=null, conns={}, myName='', roomCode='', players=[], readyMap={}, isHost=false, myChoice=null, audioCtx=null, gameStarted=false;
-let remoteChoices={}, choiceDone=false;
+let peer=null, conns={}, myName='', roomCode='', players=[], isHost=false, myChoice=null, remoteChoices={}, choiceDone=false, gameStarted=false, audioCtx=null, resendTimer=null;
 
 function log(t){document.getElementById('logRoom').textContent='['+VERSION+'] '+t}
 function slog(t){document.getElementById('statusLog').textContent='['+VERSION+'] '+t}
-function sendAll(m){ Object.values(conns).forEach(c=>{ try{if(c.open) c.send(m)}catch{} }); }
-function sendAllRetry(m){ for(let i=0;i<15;i++) setTimeout(()=>sendAll(m), i*180); }
+function setConn(ok){ document.getElementById('connDot').innerHTML= ok?'<span class="dot green"></span>已連線':'<span class="dot red"></span>未連線/斷線'; document.getElementById('reconnBtn').style.display= ok?'none':'block'; }
+function sendAll(m){ let sent=false; Object.values(conns).forEach(c=>{ try{if(c && c.open){ c.send(m); sent=true; }}catch(e){} }); return sent; }
+function sendAllRetry(m){ let tries=0; let iv=setInterval(()=>{ if(sendAll(m)) tries++; if(tries>25) clearInterval(iv); },180); }
 
 function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; isHost=true;
- peer=new Peer(VERSION+'-'+roomCode); peer.on('open',(id)=>{ document.getElementById('peerId').textContent=id; document.getElementById('roomCode').textContent=roomCode; players=[myName]; readyMap[myName]=true; updatePlayers(); log('已開房 '+roomCode); });
- peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>c.send({type:'sync',players,readyMap,roomCode,ver:VERSION})); c.on('data',onData); });
+ peer=new Peer(VERSION+'-'+roomCode,{config:{iceServers:[{urls:'stun:stun.l.google.com:19302'}]}}); 
+ peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode+' 等朋友'); setConn(true); });
+ peer.on('connection',c=>{ 
+   conns[c.peer]=c; setupConn(c);
+   c.on('open',()=>{ c.send({type:'sync',players,ver:VERSION,roomCode}); setConn(true); });
+ });
 }
 function joinRoom(){
  let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code) return alert('房號'); myName=document.getElementById('nameInput').value.trim()||'Bella'; roomCode=code; isHost=false;
- peer=new Peer(); peer.on('open',(id)=>{ document.getElementById('peerId').textContent=id; let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn; conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; }); conn.on('data',onData); });
+ peer=new Peer({config:{iceServers:[{urls:'stun:stun.l.google.com:19302'}]}}); 
+ peer.on('open',()=>{
+   let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn; setupConn(conn);
+   conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; setConn(true); });
+   conn.on('error',()=>setConn(false));
+ });
+}
+function setupConn(c){
+ c.on('data',onData);
+ c.on('close',()=>{ setConn(false); log('連線斷咗，按重連或重發'); });
+ c.on('error',()=>setConn(false));
+}
+function reconnect(){
+ if(isHost) return; document.getElementById('logRoom').textContent='重連中...'; let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn; setupConn(conn);
+ conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); if(myChoice) conn.send({type:'choice',name:myName,choice:myChoice,ver:VERSION}); setConn(true); log('重連成功'); });
 }
 function onData(d){
- if(d.type==='join'){ if(!players.includes(d.name)){ players.push(d.name); readyMap[d.name]=true; } updatePlayers(); sendAllRetry({type:'sync',players,readyMap,roomCode,ver:VERSION}); }
- if(d.type==='sync'){ players=d.players||players; readyMap=d.readyMap||readyMap; if(d.roomCode) document.getElementById('roomCode').textContent=d.roomCode; updatePlayers(); }
- if(d.type==='goGame'){ doStartGame(); }
- if(d.type==='choice'){ remoteChoices[d.name]=d.choice; renderWhoChosen(); checkAllChosen(); }
- if(d.type==='preReveal'){ startRevealCountdown(d.at); }
+ if(d.ver && d.ver!==VERSION){ log('版本唔同 對面'+d.ver); return; }
+ if(d.type==='join'){ if(!players.includes(d.name)){ players.push(d.name); } updatePlayers(); sendAllRetry({type:'sync',players,ver:VERSION,roomCode}); }
+ if(d.type==='sync'){ players=d.players||players; if(d.roomCode) document.getElementById('roomCode').textContent=d.roomCode; updatePlayers(); }
+ if(d.type==='goGame'){ startNewRound(); }
+ if(d.type==='choice'){ 
+   remoteChoices[d.name]=d.choice; 
+   renderWho(); checkAll(); 
+   // 回覆ACK
+   sendAllRetry({type:'ack',name:myName,got:d.name,ver:VERSION});
+   log('收到 '+d.name+' 揀咗 '+d.choice);
+ }
+ if(d.type==='ack'){ log('對面已收到你揀咗'); setConn(true); }
+ if(d.type==='preReveal'){ doCountdown(d.at); }
  if(d.type==='reveal'){ showResult(); }
- if(d.type==='restart'){ doStartGame(); } // V32 核心：再玩直接開新局，唔返大廳
+ if(d.type==='restart'){ startNewRound(); }
 }
 function updatePlayers(){
- let h='', cnt=players.length; for(let p of players){ let r=readyMap[p]; h+=`<div class="item ${r?'ok':''}"><span>${p}${p===myName?' (你)':''}</span><span>${r?'✅ 已入房':'⏳'}</span></div>`; }
+ let h=''; for(let p of players){ h+=`<div class="item ok"><span>${p}${p===myName?' (你)':''}</span><span>✅ 已入房</span></div>`; }
  document.getElementById('playerList').innerHTML=h;
- if(cnt>=2 && isHost && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=hostGoGame; log(cnt+'人已入房，房主按開始'); }
+ if(players.length>=2 && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=()=>{ sendAllRetry({type:'goGame',ver:VERSION}); startNewRound(); }; log(players.length+'人已入房'); }
 }
-function hostGoGame(){ sendAllRetry({type:'goGame',ver:VERSION}); doStartGame(); }
-function doStartGame(){
- gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={};
+function startNewRound(){
+ gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={}; if(resendTimer) clearInterval(resendTimer);
  document.getElementById('gameCard').style.display='block'; document.getElementById('startBtn').style.display='none';
  document.querySelectorAll('.choiceBtn').forEach(b=>{b.classList.remove('sel'); b.disabled=false;});
  document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀，請出拳！';
- document.getElementById('whoChosen').innerHTML=''; document.getElementById('result').style.display='none';
- document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none';
- document.getElementById('bar').style.width='0%';
- slog('請出拳！揀好等對面');
- renderWhoChosen();
+ document.getElementById('result').style.display='none'; document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none'; document.getElementById('bar').style.width='0%';
+ slog('請出拳！揀好等對面'); renderWho();
 }
 function choose(c){
  myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
  if(c==='揼') btnChui.classList.add('sel'); if(c==='剪') btnJian.classList.add('sel'); if(c==='包') btnBao.classList.add('sel');
- document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀：'+c+'，等緊對面...';
- renderWhoChosen();
+ document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀：'+c+'，不停重發中...';
+ renderWho(); 
  sendAllRetry({type:'choice',name:myName,choice:c,ver:VERSION});
- checkAllChosen();
+ if(resendTimer) clearInterval(resendTimer);
+ resendTimer=setInterval(()=>{ if(myChoice) sendAll({type:'choice',name:myName,choice:myChoice,ver:VERSION}); },800);
+ checkAll();
 }
-function renderWhoChosen(){
- let h=''; for(let p of players){
-   let has = (p===myName? myChoice : remoteChoices[p]);
-   let txt = has ? '✅ 已揀好' : '⏳ 未揀';
-   let cls = has ? 'ok' : 'wait';
-   h+=`<div class="item ${cls}"><span>${p}</span><span>${txt}</span></div>`;
- }
+function resendChoice(){ if(!myChoice) return alert('你未揀'); sendAllRetry({type:'choice',name:myName,choice:myChoice,ver:VERSION}); log('已重發 '+myChoice); }
+function renderWho(){
+ let h=''; for(let p of players){ let has = (p===myName? myChoice : remoteChoices[p]); h+=`<div class="item ${has?'ok':'wait'}"><span>${p}</span><span>${has?'✅ 已揀好 '+has:'⏳ 未揀'}</span></div>`; }
  document.getElementById('whoChosen').innerHTML=h;
 }
-function checkAllChosen(){
- let allChosen = myChoice!==null && players.every(p=> p===myName ? true : !!remoteChoices[p]);
- if(allChosen && !choiceDone){
-   choiceDone=true;
-   slog('全部揀好晒，準備倒數揭曉！');
-   document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true);
-   if(isHost){
-     let at=Date.now()+800;
-     sendAllRetry({type:'preReveal', at, ver:VERSION});
-     startRevealCountdown(at);
-   }
+function checkAll(){
+ let all = myChoice!==null && players.every(p=> p===myName ? true : !!remoteChoices[p]);
+ if(all && !choiceDone){ choiceDone=true; if(resendTimer) clearInterval(resendTimer); slog('全部揀好晒！準備倒數'); document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true);
+   if(isHost){ let at=Date.now()+600; sendAllRetry({type:'preReveal',at,ver:VERSION}); doCountdown(at); }
  }
 }
-async function startRevealCountdown(at){
+async function doCountdown(at){
  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume();
- let big=document.getElementById('countBig'); let prog=document.getElementById('prog'); let bar=document.getElementById('bar');
+ let big=document.getElementById('countBig'), prog=document.getElementById('prog'), bar=document.getElementById('bar');
  big.style.display='block'; prog.style.display='block'; bar.style.width='0%';
- let delay=Math.max(0,(at-Date.now())/1000); let when=audioCtx.currentTime+delay;
- for(let i=0;i<3;i++){ let osc=audioCtx.createOscillator(), g=audioCtx.createGain(); osc.frequency.value=600; g.gain.setValueAtTime(0.6,when+i*0.8); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.8+0.3); osc.connect(g).connect(audioCtx.destination); osc.start(when+i*0.8); osc.stop(when+i*0.8+0.3); }
- let start=Date.now()+delay*1000; let dur=2400;
- let iv=setInterval(()=>{
-   let e=Date.now()-start; let show='3'; if(e>800) show='2'; if(e>1600) show='1';
-   big.textContent=show; bar.style.width=Math.min(e/dur*100,100)+'%';
-   if(e>=dur){ clearInterval(iv); big.textContent='揭曉！';
-     let osc=audioCtx.createOscillator(), g=audioCtx.createGain(); osc.frequency.value=1200; g.gain.setValueAtTime(0.8,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.5); osc.connect(g).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.5);
-     setTimeout(()=>{ sendAllRetry({type:'reveal',ver:VERSION}); showResult(); },500);
-   }
- },60);
+ let delay=Math.max(0,(at-Date.now())/1000), when=audioCtx.currentTime+delay;
+ for(let i=0;i<3;i++){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=700; g.gain.setValueAtTime(0.5,when+i*0.8); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.8+0.25); o.connect(g).connect(audioCtx.destination); o.start(when+i*0.8); o.stop(when+i*0.8+0.25); }
+ let st=Date.now()+delay*1000, dur=2400;
+ let iv=setInterval(()=>{ let e=Date.now()-st; big.textContent=e<800?'3':e<1600?'2':'1'; bar.style.width=Math.min(e/dur*100,100)+'%';
+   if(e>=dur){ clearInterval(iv); big.textContent='揭曉！'; let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=1200; g.gain.setValueAtTime(0.8,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.5); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.5); setTimeout(()=>{ sendAllRetry({type:'reveal',ver:VERSION}); showResult(); },500); }
+ },50);
 }
 function showResult(){
- let area=document.getElementById('result'); area.style.display='block';
- let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
+ let area=document.getElementById('result'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
  let h='<b>['+VERSION+'] 結果</b>'; for(let p of players){ let ch=all[p]||'?'; h+=`<div class="item"><span>${p}</span><span><img src="${IMG[ch]||''}" style="width:24px"> ${ch}</span></div>`; }
- let v=Object.values(all); let win=(new Set(v).size===1||new Set(v).size===3)?'平手！': v.includes('包')&&v.includes('剪')?'剪贏包 ✌️':v.includes('包')&&v.includes('揼')?'包贏揼 ✋':'揼贏剪 👊';
+ let v=Object.values(all); let win=(new Set(v).size===1||new Set(v).size===3)?'平手！':v.includes('包')&&v.includes('剪')?'剪贏包':v.includes('包')&&v.includes('揼')?'包贏揼':'揼贏剪';
  h+=`<div class="log">🏆 ${win} [${VERSION}]</div>
- <button class="btn btnY" onclick="restartRound()">🔄 再玩一次 [${VERSION}] - 即刻再開</button>
- <button class="btn btnDark" onclick="location.reload()">🚪 離開房間</button>`;
+ <button class="btn btnY" onclick="restart()">🔄 再玩一次 [${VERSION}]</button>
+ <button class="btn btnDark" onclick="location.reload()">🚪 離開</button>`;
  area.innerHTML=h;
 }
-function restartRound(){
- // V32：直接開新局，兩邊同步清狀態
- sendAllRetry({type:'restart',ver:VERSION});
- doStartGame();
-}
+function restart(){ sendAllRetry({type:'restart',ver:VERSION}); startNewRound(); }
 </script>
 </body></html>
