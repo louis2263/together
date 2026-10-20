@@ -1,138 +1,123 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包 V18 分段傳聲音</title>
+<title>方包包 V19 無上限修復</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px;min-height:100vh}
 .ver{position:fixed;top:8px;right:8px;background:#FFEB00;color:#000;padding:4px 10px;border-radius:99px;font-weight:900;font-size:11px;z-index:99}
 .card{width:92%;max-width:520px;background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:16px;margin-top:14px}
 .input{width:100%;padding:12px;border-radius:10px;border:2px solid #444;background:#000;color:#fff;font-size:15px;box-sizing:border-box}
-.btn{padding:14px;border-radius:99px;border:0;font-weight:900;font-size:14px;margin-top:8px;cursor:pointer}
-.btnY{background:#FFEB00;color:#000;flex:1}.btnG2{background:#00FF88;color:#000;flex:1}.btnB{background:#2a5bd7;color:#fff;flex:1}
-.item{display:flex;gap:8px;padding:10px;background:#151515;border:1px solid #222;border-radius:10px;margin-top:6px;font-size:13px;align-items:center}
-.pos{width:52px;height:26px;background:#FFEB00;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
+.btn{padding:12px;border-radius:99px;border:0;font-weight:900;font-size:13px;margin-top:8px;cursor:pointer}
+.btnY{background:#FFEB00;color:#000;flex:1}.btnG2{background:#00FF88;color:#000;flex:1}.btnB{background:#2a5bd7;color:#fff;flex:1}.btnR{background:#333;color:#aaa;flex:1}
+.pos{width:52px;height:24px;background:#FFEB00;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
 .posA{background:#00FF88}
-.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:10px;margin-top:10px;white-space:pre-line;text-align:center}
-.code{font-size:36px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center;margin:10px 0}
-.row{display:flex;justify-content:space-between;background:#222;padding:10px 12px;border-radius:10px;margin-top:8px;border:1px solid #222}
-audio{width:160px;height:32px}
-.progress{width:100%;height:6px;background:#333;border-radius:99px;margin-top:6px;overflow:hidden}
-.bar{height:100%;width:0%;background:#00FF88;transition:width .2s}
+.item{display:flex;gap:8px;padding:10px;background:#151515;border:1px solid #222;border-radius:10px;margin-top:6px;font-size:13px;align-items:center}
+.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:8px;margin-top:8px;white-space:pre-line;text-align:center}
+.code{font-size:32px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center;margin:8px 0}
+.row{display:flex;justify-content:space-between;background:#222;padding:8px 12px;border-radius:10px;margin-top:6px}
+.progress{width:100%;height:6px;background:#333;border-radius:99px;margin-top:6px;overflow:hidden;display:none}
+.bar{height:100%;width:0%;background:#00FF88}
+audio{width:150px;height:30px}
 </style>
 </head><body>
-<div class="ver">V18 分段修復版</div>
-<h1 style="color:#FFEB00;margin:36px 0 5px">方包包 V18</h1>
-<div style="color:#888;font-size:11px">修復：聲音分段傳，唔會再塞死</div>
+<div class="ver">V19 無上限修復</div>
+<h1 style="color:#FFEB00;margin:32px 0 4px;font-size:22px">方包包 V19</h1>
+<div style="color:#888;font-size:11px">修復5-6筆上限：只傳增量 + Blob播放</div>
 
 <div class="card">
 <div style="font-weight:900">1. 登入房間</div>
-<input id="nameInput" class="input" value="Louis" style="margin-top:10px">
-<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btnY" onclick="createRoom()">開新房間</button><button class="btn btnG2" onclick="joinRoom()">加入房間</button></div>
-<input id="codeInput" class="input" placeholder="加入輸入房號" style="margin-top:10px">
-<div id="roomInfo" style="display:none"><div class="code" id="roomCode">----</div><div id="roomLink" style="font-size:11px;color:#00FF88;word-break:break-all;text-align:center"></div></div>
-<div id="logRoom" class="log">未入房</div>
+<input id="nameInput" class="input" value="Louis" style="margin-top:8px">
+<div style="display:flex;gap:6px;margin-top:8px"><button class="btn btnY" onclick="createRoom()">開房</button><button class="btn btnG2" onclick="joinRoom()">入房</button><button class="btn btnR" onclick="clearAll()">清全部</button></div>
+<input id="codeInput" class="input" placeholder="房號" style="margin-top:8px">
+<div id="roomInfo" style="display:none"><div class="code" id="roomCode">----</div></div>
+<div id="logRoom" class="log">未入房 - 開房後文字同聲音分開傳，唔會再卡</div>
 </div>
 
 <div class="card">
-<div style="font-weight:900">2. 上傳字庫</div>
-<textarea id="wordBox" class="input" style="height:70px;margin-top:8px" placeholder="一行一詞"></textarea>
+<div style="font-weight:900">2. 上傳文字</div>
+<textarea id="wordBox" class="input" style="height:60px;margin-top:6px" placeholder="一行一詞"></textarea>
 <button class="btn btnY" style="width:100%" onclick="saveWords()">💾 上傳文字</button>
-<div style="font-weight:900;margin-top:14px">2.1 上傳聲音（已修復）</div>
-<div style="font-size:11px;color:#888">最長15秒，自動分段傳，唔會卡死</div>
-<div style="display:flex;gap:8px;margin-top:8px"><input type="file" id="audioFile" accept="audio/*" style="color:#888;flex:1"><button class="btn btnB" onclick="uploadAudio()">🔊 上傳</button></div>
-<button class="btn" style="width:100%;background:#333;color:#fff" onclick="startRecord()" id="recBtn">● 撳一下開始錄（15秒內）</button>
-<div class="progress" style="display:none" id="prog"><div class="bar" id="bar"></div></div>
+<div style="font-weight:900;margin-top:12px">2.1 上傳聲音</div>
+<input type="file" id="audioFile" accept="audio/*" style="color:#888;margin-top:6px;width:100%">
+<div style="display:flex;gap:6px"><button class="btn btnB" onclick="uploadAudio()">🔊 上傳檔案</button><button class="btn" style="background:#333;color:#fff;flex:1" id="recBtn" onclick="startRecord()">● 錄音15秒</button></div>
+<div class="progress" id="prog"><div class="bar" id="bar"></div></div>
 <div id="logAudio" class="log" style="display:none"></div>
 <div id="logWords" class="log" style="display:none"></div>
 </div>
 
 <div class="card">
 <div style="font-weight:900">3. 等候區</div><div id="playerList"></div><div id="logWait" class="log">未入房</div>
-<div style="font-weight:900;margin-top:14px">4. 📍 位置顯示</div><div id="posList"></div><div id="audioPosList" style="margin-top:8px"></div>
+<div style="font-weight:900;margin-top:12px">4. 📍 位置顯示 - 上限20筆</div>
+<div id="posList"></div><div id="audioPosList" style="margin-top:6px"></div>
 </div>
 
 <script>
 let peer=null, conns={}, myName='Louis', roomCode='', players=[], wordBank=[], audioBank=[];
-let incomingAudio={}, mediaRecorder=null, chunks=[];
-const CHUNK=16*1024;
+let incoming={}, mediaRecorder=null, chunks=[], MAX=20;
+const CHUNK=12*1024;
 
 function logRoom(t){ document.getElementById('logRoom').textContent=t; }
 function logWords(t){ let e=document.getElementById('logWords'); e.style.display='block'; e.textContent=t; }
 function logAudio(t){ let e=document.getElementById('logAudio'); e.style.display='block'; e.textContent=t; }
-function setProg(p,show){ let pr=document.getElementById('prog'), b=document.getElementById('bar'); if(show) pr.style.display='block'; b.style.width=p+'%'; if(p>=100) setTimeout(()=>pr.style.display='none',800); }
+function prog(p,show){ let pr=document.getElementById('prog'), b=document.getElementById('bar'); pr.style.display=show?'block':'none'; b.style.width=p+'%'; }
 
 function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis';
  roomCode=Math.random().toString(36).substring(2,6).toUpperCase();
  document.getElementById('codeInput').value=roomCode;
- peer=new Peer('nosay-'+roomCode);
- peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; document.getElementById('roomLink').textContent=location.origin+location.pathname+'?room='+roomCode; players=[myName]; updateWait(); logRoom('✅ 已開房：'+roomCode); });
- peer.on('connection', c=>{ conns[c.peer]=c; c.on('data', onData); c.on('open',()=>c.send({type:'sync', players, wordBank, audioBank, roomCode})); });
+ peer=new Peer('nosay-v19-'+roomCode);
+ peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; players=[myName]; updateWait(); logRoom('✅ 已開房 '+roomCode+' 上限20筆，分開傳唔會爆'); });
+ peer.on('connection', c=>{ conns[c.peer]=c; c.on('data', onData); c.on('open',()=>c.send({type:'syncLite', players, wordBank, count:audioBank.length, roomCode})); });
 }
 function joinRoom(){
- let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('輸入房號'); return; }
+ let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('房號'); return; }
  myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code;
- peer=new Peer();
- peer.on('open',()=>{ let conn=peer.connect('nosay-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join', name:myName})); conn.on('data', onData); });
+ peer=new Peer(); peer.on('open',()=>{ let conn=peer.connect('nosay-v19-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join', name:myName})); conn.on('data', onData); });
  document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block';
 }
 
 function onData(d){
- if(d.type==='join'){ if(players.indexOf(d.name)===-1) players.push(d.name); updateWait(); broadcast({type:'sync', players, wordBank, audioBank, roomCode}); }
- if(d.type==='sync'){ players=d.players; wordBank=d.wordBank||[]; audioBank=d.audioBank||[]; roomCode=d.roomCode||roomCode; document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; logRoom('✅ 已加入：'+roomCode); updateWait(); renderAll(); }
+ if(d.type==='join'){ if(players.indexOf(d.name)===-1) players.push(d.name); updateWait(); broadcastLite(); }
+ if(d.type==='syncLite'){ players=d.players; wordBank=d.wordBank||[]; roomCode=d.roomCode||roomCode; document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; logRoom('✅ 已入房 '+roomCode+' 文字'+wordBank.length+' 聲音'+d.count+'段'); updateWait(); renderAll(); }
  if(d.type==='wordUpdate'){ wordBank=d.wordBank; renderAll(); }
- // 分段聲音
- if(d.type==='audioStart'){ incomingAudio[d.id]={name:d.name, from:d.from, total:d.total, chunks:[], got:0}; logAudio('📥 接收聲音中 '+d.name+' 0%'); }
- if(d.type==='audioChunk'){ let inc=incomingAudio[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; let pct=Math.round(inc.got/inc.total*100); setProg(pct,true); logAudio('📥 接收中 '+pct+'%'); if(inc.got===inc.total){ let data=inc.chunks.join(''); audioBank.push({id:d.id, name:inc.name, from:inc.from, data}); renderAll(); logAudio('✅ 收到聲音：'+inc.name); delete incomingAudio[d.id]; setProg(100,false); } }
+ if(d.type==='audioStart'){ incoming[d.id]={name:d.name, from:d.from, total:d.total, chunks:[], got:0}; prog(0,true); }
+ if(d.type==='audioChunk'){ let inc=incoming[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; prog(Math.round(inc.got/inc.total*100),true); if(inc.got===inc.total){ let full=inc.chunks.join(''); // 轉 Blob URL 播放，解決 0:00 問題
+   let blob=base64ToBlob(full); let url=URL.createObjectURL(blob);
+   audioBank.push({id:d.id, name:inc.name, from:inc.from, data:full, url}); renderAll(); logAudio('✅ 收到 '+inc.name); delete incoming[d.id]; setTimeout(()=>prog(0,false),800); } }
 }
 
-function broadcast(msg){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send(msg); }catch(e){} }); }
+function broadcastLite(){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send({type:'syncLite', players, wordBank, count:audioBank.length, roomCode}); }catch{} }); }
+function broadcastWord(){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send({type:'wordUpdate', wordBank}); }catch{} }); }
+
+function base64ToBlob(b64){ let parts=b64.split(','), mime=parts[0].match(/:(.*?);/)[1], bin=atob(parts[1]), arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return new Blob([arr],{type:mime}); }
 
 function saveWords(){
  let txt=document.getElementById('wordBox').value.trim(); if(!txt) return;
- wordBank=txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s);
- logWords('✅ 上傳文字 '+wordBank.length+' 詞'); renderAll();
- broadcast({type:'wordUpdate', wordBank});
- broadcast({type:'sync', players, wordBank, audioBank, roomCode});
+ if(wordBank.length>=MAX){ alert('文字已到'+MAX+'筆上限，請先清'); return; }
+ wordBank=txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s).slice(0,MAX);
+ logWords('✅ 文字 '+wordBank.length); renderAll(); broadcastWord(); broadcastLite();
 }
-
-function sendAudioChunked(item){
- let id=item.id, data=item.data, total=Math.ceil(data.length/CHUNK);
- broadcast({type:'audioStart', id, name:item.name, from:item.from, total});
- let i=0;
- function sendNext(){
-  if(i>=total){ logAudio('✅ 已傳完：'+item.name); return; }
-  let chunk=data.substr(i*CHUNK, CHUNK);
-  broadcast({type:'audioChunk', id, index:i, chunk});
-  i++; let pct=Math.round(i/total*100); setProg(pct,true); logAudio('📤 傳送中 '+pct+'%');
-  setTimeout(sendNext, 60);
- }
- sendNext();
+function sendChunked(item){
+ if(audioBank.length>MAX){ alert('聲音已到'+MAX+'筆，請清'); return; }
+ let data=item.data, total=Math.ceil(data.length/CHUNK);
+ broadcast({type:'audioStart', id:item.id, name:item.name, from:item.from, total});
+ let i=0; function next(){ if(i>=total){ logAudio('✅ 傳完 '+item.name+' 共'+total+'塊'); return; } broadcast({type:'audioChunk', id:item.id, index:i, chunk:data.substr(i*CHUNK, CHUNK)}); i++; prog(Math.round(i/total*100),true); setTimeout(next, 80); } next();
+ function broadcast(m){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send(m); }catch{} }); }
 }
-
 function uploadAudio(){
- let f=document.getElementById('audioFile').files[0]; if(!f){ alert('揀檔案'); return; }
- let r=new FileReader();
- r.onload=e=>{
-  let item={id:Date.now(), name:f.name, from:myName, data:e.target.result};
-  audioBank.push(item); renderAll(); logAudio('✅ 本地已上傳，開始分段傳...'); sendAudioChunked(item);
- };
- r.readAsDataURL(f);
+ let f=document.getElementById('audioFile').files[0]; if(!f){ alert('揀檔'); return; } if(audioBank.length>=MAX){ alert('已到'+MAX+'筆'); return; }
+ let r=new FileReader(); r.onload=e=>{
+  let blob=base64ToBlob(e.target.result); let url=URL.createObjectURL(blob);
+  let item={id:Date.now(), name:f.name, from:myName, data:e.target.result, url}; audioBank.push(item); renderAll(); logAudio('✅ 本地 '+f.name); sendChunked(item);
+ }; r.readAsDataURL(f);
 }
 function startRecord(){
- if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); document.getElementById('recBtn').textContent='● 撳一下開始錄（15秒內）'; return; }
+ if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); document.getElementById('recBtn').textContent='● 錄音15秒'; return; }
  navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{
-  mediaRecorder=new MediaRecorder(s, {mimeType:'audio/webm;codecs=opus', bitsPerSecond:64000}); chunks=[];
+  mediaRecorder=new MediaRecorder(s,{mimeType:'audio/webm;codecs=opus', bitsPerSecond:32000}); chunks=[];
   mediaRecorder.ondataavailable=e=>chunks.push(e.data);
-  mediaRecorder.onstop=()=>{
-   let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader();
-   rd.onload=ev=>{
-    let item={id:Date.now(), name:'錄音'+(audioBank.length+1), from:myName, data:ev.target.result};
-    audioBank.push(item); renderAll(); logAudio('✅ 錄完，開始分段傳...'); sendAudioChunked(item);
-   }; rd.readAsDataURL(blob);
-  };
-  mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 撳一下停止';
-  setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); },15000);
- }).catch(()=>alert('要開麥克風權限'));
+  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader(); rd.onload=ev=>{ let url=URL.createObjectURL(blob); let item={id:Date.now(), name:'錄音'+(audioBank.length+1), from:myName, data:ev.target.result, url}; if(audioBank.length>=MAX){ alert('上限'); return; } audioBank.push(item); renderAll(); sendChunked(item); }; rd.readAsDataURL(blob); };
+  mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 停止'; setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); },15000);
+ }).catch(()=>alert('要麥克風權限'));
 }
 function renderAll(){ renderPos(); renderAudioPos(); }
 function renderPos(){
@@ -142,13 +127,14 @@ function renderPos(){
 }
 function renderAudioPos(){
  if(!audioBank.length){ document.getElementById('audioPosList').innerHTML='<div style="color:#555;text-align:center;padding:6px;font-size:12px">未有聲音</div>'; return; }
- let h=''; for(let i=0;i<audioBank.length;i++){ let a=audioBank[i]; h+=`<div class="item"><div class="pos posA">🔊 ${i+1}號位</div><div style="flex:1"><div style="font-size:12px">${a.name} - ${a.from}</div><audio controls src="${a.data}"></audio></div></div>`; }
+ let h=''; for(let i=0;i<audioBank.length;i++){ let a=audioBank[i]; let src=a.url||a.data; h+=`<div class="item"><div class="pos posA">🔊 ${i+1}號位</div><div style="flex:1"><div style="font-size:12px">${a.name} - ${a.from}</div><audio controls src="${src}"></audio></div></div>`; }
  document.getElementById('audioPosList').innerHTML=h;
 }
 function updateWait(){
  let h=''; for(let i=0;i<players.length;i++){ let isMe=players[i]==myName; h+=`<div class="row" style="${isMe?'border-color:#FFEB00;background:#2a2a00':''}"><span>${i+1}. ${players[i]} ${isMe?'(你)':''}</span><span style="font-size:11px;color:#888">${i+1}號位</span></div>`; }
- document.getElementById('playerList').innerHTML=h; document.getElementById('logWait').textContent=`等候區：共 ${players.length} 人 - ${players.join(', ')}`; renderAll();
+ document.getElementById('playerList').innerHTML=h; document.getElementById('logWait').textContent=`等候區：共 ${players.length} 人`; renderAll();
 }
+function clearAll(){ if(!confirm('清晒文字+聲音？')) return; wordBank=[]; audioBank=[]; renderAll(); broadcastLite(); broadcastWord(); logAudio('已清'); logWords('已清'); }
 (function(){ let p=new URLSearchParams(location.search); let r=p.get('room'); if(r) document.getElementById('codeInput').value=r.toUpperCase(); })();
 </script>
 </body></html>
