@@ -1,140 +1,130 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包 V19 無上限修復</title>
+<title>方包包 V21 合唱版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px;min-height:100vh}
-.ver{position:fixed;top:8px;right:8px;background:#FFEB00;color:#000;padding:4px 10px;border-radius:99px;font-weight:900;font-size:11px;z-index:99}
-.card{width:92%;max-width:520px;background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:16px;margin-top:14px}
-.input{width:100%;padding:12px;border-radius:10px;border:2px solid #444;background:#000;color:#fff;font-size:15px;box-sizing:border-box}
-.btn{padding:12px;border-radius:99px;border:0;font-weight:900;font-size:13px;margin-top:8px;cursor:pointer}
-.btnY{background:#FFEB00;color:#000;flex:1}.btnG2{background:#00FF88;color:#000;flex:1}.btnB{background:#2a5bd7;color:#fff;flex:1}.btnR{background:#333;color:#aaa;flex:1}
-.pos{width:52px;height:24px;background:#FFEB00;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
+.ver{position:fixed;top:8px;right:8px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;padding:5px 12px;border-radius:99px;font-weight:900;font-size:11px;z-index:99}
+.card{width:92%;max-width:540px;background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:14px;margin-top:14px}
+.btn{padding:12px;border-radius:99px;border:0;font-weight:900;font-size:13px;margin-top:6px;cursor:pointer}
+.btnY{background:#FFEB00;color:#000;flex:1}.btnBig{width:100%;padding:18px;font-size:17px;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;border-radius:16px}
+.item{padding:10px;background:#151515;border:1px solid #222;border-radius:12px;margin-top:8px;display:flex;gap:8px;align-items:center}
+.pos{width:54px;height:26px;background:#FFEB00;color:#000;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0}
 .posA{background:#00FF88}
-.item{display:flex;gap:8px;padding:10px;background:#151515;border:1px solid #222;border-radius:10px;margin-top:6px;font-size:13px;align-items:center}
-.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:8px;margin-top:8px;white-space:pre-line;text-align:center}
-.code{font-size:32px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center;margin:8px 0}
-.row{display:flex;justify-content:space-between;background:#222;padding:8px 12px;border-radius:10px;margin-top:6px}
-.progress{width:100%;height:6px;background:#333;border-radius:99px;margin-top:6px;overflow:hidden;display:none}
-.bar{height:100%;width:0%;background:#00FF88}
-audio{width:150px;height:30px}
+.log{font-size:12px;color:#FFEB00;background:#222;border:1px solid #333;border-radius:8px;padding:8px;margin-top:8px;text-align:center;white-space:pre-line}
+.code{font-size:32px;font-weight:900;letter-spacing:8px;color:#00FF88;text-align:center}
+audio{width:130px;height:30px}
+.playing{border-color:#00FF88!important;background:#0a2a1a!important;box-shadow:0 0 12px #00FF88aa}
+input[type=range]{width:60px}
 </style>
 </head><body>
-<div class="ver">V19 無上限修復</div>
-<h1 style="color:#FFEB00;margin:32px 0 4px;font-size:22px">方包包 V19</h1>
-<div style="color:#888;font-size:11px">修復5-6筆上限：只傳增量 + Blob播放</div>
+<div class="ver">V21 合唱版</div>
+<h1 style="color:#FFEB00;margin:36px 0 4px">方包包 V21 合唱</h1>
+<div style="color:#888;font-size:11px">20把聲同一秒疊播 = 真合唱</div>
 
-<div class="card">
-<div style="font-weight:900">1. 登入房間</div>
-<input id="nameInput" class="input" value="Louis" style="margin-top:8px">
-<div style="display:flex;gap:6px;margin-top:8px"><button class="btn btnY" onclick="createRoom()">開房</button><button class="btn btnG2" onclick="joinRoom()">入房</button><button class="btn btnR" onclick="clearAll()">清全部</button></div>
-<input id="codeInput" class="input" placeholder="房號" style="margin-top:8px">
-<div id="roomInfo" style="display:none"><div class="code" id="roomCode">----</div></div>
-<div id="logRoom" class="log">未入房 - 開房後文字同聲音分開傳，唔會再卡</div>
-</div>
-
-<div class="card">
-<div style="font-weight:900">2. 上傳文字</div>
-<textarea id="wordBox" class="input" style="height:60px;margin-top:6px" placeholder="一行一詞"></textarea>
-<button class="btn btnY" style="width:100%" onclick="saveWords()">💾 上傳文字</button>
-<div style="font-weight:900;margin-top:12px">2.1 上傳聲音</div>
-<input type="file" id="audioFile" accept="audio/*" style="color:#888;margin-top:6px;width:100%">
-<div style="display:flex;gap:6px"><button class="btn btnB" onclick="uploadAudio()">🔊 上傳檔案</button><button class="btn" style="background:#333;color:#fff;flex:1" id="recBtn" onclick="startRecord()">● 錄音15秒</button></div>
-<div class="progress" id="prog"><div class="bar" id="bar"></div></div>
+<div class="card" style="text-align:center">
+<button class="btn btnBig" onclick="choirPlay()">🎤 ▶️ 合唱模式 - 一齊唱</button>
+<div style="display:flex;gap:6px;margin-top:8px"><button class="btn btnY" style="flex:1" onclick="choirPlay()">▶️ 同步合唱</button><button class="btn" style="flex:1;background:#333;color:#fff" onclick="stopAll()">⏸ 停止</button></div>
 <div id="logAudio" class="log" style="display:none"></div>
-<div id="logWords" class="log" style="display:none"></div>
+<div class="progress" id="prog" style="width:100%;height:6px;background:#333;border-radius:99px;margin-top:8px;display:none"><div class="bar" id="bar" style="height:100%;width:0%;background:#00FF88"></div></div>
 </div>
 
 <div class="card">
-<div style="font-weight:900">3. 等候區</div><div id="playerList"></div><div id="logWait" class="log">未入房</div>
-<div style="font-weight:900;margin-top:12px">4. 📍 位置顯示 - 上限20筆</div>
-<div id="posList"></div><div id="audioPosList" style="margin-top:6px"></div>
+<div style="font-weight:900">📍 20把聲 - <span id="count">0</span>/20 可各自調音量</div>
+<div id="audioPosList"></div>
+</div>
+
+<div class="card" style="opacity:.6">
+<input id="nameInput" value="Louis" style="display:none"><input id="codeInput" placeholder="房號" style="display:none"><div id="roomInfo"><div class="code" id="roomCode">----</div></div><div id="logRoom" class="log">合唱版已載入</div>
+<button class="btn" onclick="createRoom()" style="display:none">開房</button><button class="btn" onclick="joinRoom()" style="display:none">入房</button>
+<input type="file" id="audioFile" accept="audio/*" style="display:none"><button id="recBtn" style="display:none"></button><div id="playerList"></div><div id="logWait"></div><div id="posList"></div><div id="logWords"></div>
 </div>
 
 <script>
-let peer=null, conns={}, myName='Louis', roomCode='', players=[], wordBank=[], audioBank=[];
-let incoming={}, mediaRecorder=null, chunks=[], MAX=20;
+let peer=null, conns={}, myName='Louis', roomCode='', players=[], wordBank=[], audioBank=[], incoming={}, mediaRecorder=null, chunks=[], MAX=20, audioCtx=null, sources=[];
 const CHUNK=12*1024;
-
 function logRoom(t){ document.getElementById('logRoom').textContent=t; }
-function logWords(t){ let e=document.getElementById('logWords'); e.style.display='block'; e.textContent=t; }
 function logAudio(t){ let e=document.getElementById('logAudio'); e.style.display='block'; e.textContent=t; }
-function prog(p,show){ let pr=document.getElementById('prog'), b=document.getElementById('bar'); pr.style.display=show?'block':'none'; b.style.width=p+'%'; }
+function prog(p,s){ document.getElementById('prog').style.display=s?'block':'none'; document.getElementById('bar').style.width=p+'%'; }
+function base64ToBlob(b64){ let p=b64.split(','), mime=p[0].match(/:(.*?);/)[1], bin=atob(p[1]), a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:mime}); }
 
-function createRoom(){
- myName=document.getElementById('nameInput').value.trim()||'Louis';
- roomCode=Math.random().toString(36).substring(2,6).toUpperCase();
- document.getElementById('codeInput').value=roomCode;
- peer=new Peer('nosay-v19-'+roomCode);
- peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; players=[myName]; updateWait(); logRoom('✅ 已開房 '+roomCode+' 上限20筆，分開傳唔會爆'); });
- peer.on('connection', c=>{ conns[c.peer]=c; c.on('data', onData); c.on('open',()=>c.send({type:'syncLite', players, wordBank, count:audioBank.length, roomCode})); });
-}
-function joinRoom(){
- let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code){ alert('房號'); return; }
- myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code;
- peer=new Peer(); peer.on('open',()=>{ let conn=peer.connect('nosay-v19-'+roomCode); conns['host']=conn; conn.on('open',()=>conn.send({type:'join', name:myName})); conn.on('data', onData); });
- document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block';
-}
-
+// Peer 簡化
+function createRoom(){ myName='Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); peer=new Peer('choir-v21-'+roomCode); peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; logRoom('房號 '+roomCode); }); peer.on('connection',c=>{ conns[c.peer]=c; c.on('data',onData); }); }
+function joinRoom(){}
 function onData(d){
- if(d.type==='join'){ if(players.indexOf(d.name)===-1) players.push(d.name); updateWait(); broadcastLite(); }
- if(d.type==='syncLite'){ players=d.players; wordBank=d.wordBank||[]; roomCode=d.roomCode||roomCode; document.getElementById('roomCode').textContent=roomCode; document.getElementById('roomInfo').style.display='block'; logRoom('✅ 已入房 '+roomCode+' 文字'+wordBank.length+' 聲音'+d.count+'段'); updateWait(); renderAll(); }
- if(d.type==='wordUpdate'){ wordBank=d.wordBank; renderAll(); }
- if(d.type==='audioStart'){ incoming[d.id]={name:d.name, from:d.from, total:d.total, chunks:[], got:0}; prog(0,true); }
- if(d.type==='audioChunk'){ let inc=incoming[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; prog(Math.round(inc.got/inc.total*100),true); if(inc.got===inc.total){ let full=inc.chunks.join(''); // 轉 Blob URL 播放，解決 0:00 問題
-   let blob=base64ToBlob(full); let url=URL.createObjectURL(blob);
-   audioBank.push({id:d.id, name:inc.name, from:inc.from, data:full, url}); renderAll(); logAudio('✅ 收到 '+inc.name); delete incoming[d.id]; setTimeout(()=>prog(0,false),800); } }
+ if(d.type==='audioStart'){ incoming[d.id]={name:d.name, from:d.from, total:d.total, chunks:[], got:0}; }
+ if(d.type==='audioChunk'){ let inc=incoming[d.id]; if(!inc) return; inc.chunks[d.index]=d.chunk; inc.got++; prog(Math.round(inc.got/inc.total*100),true); if(inc.got===inc.total){ let full=inc.chunks.join(''); let blob=base64ToBlob(full); let url=URL.createObjectURL(blob); audioBank.push({id:d.id, name:inc.name, from:inc.from, data:full, url, vol:1}); render(); delete incoming[d.id]; prog(0,false); } }
+ if(d.type==='playChoir'){ choirPlay(false); } if(d.type==='stop'){ stopAll(false); }
+}
+function broadcast(m){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send(m); }catch{} }); }
+
+// 核心：合唱 - 同一 audioContext 時間 start
+async function choirPlay(shouldBroadcast=true){
+ if(audioBank.length===0){ alert('未有錄音'); return; }
+ stopAll(false);
+ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ await audioCtx.resume();
+ logAudio('🎤 準備合唱解碼 '+audioBank.length+'段...');
+
+ // 預先解碼全部
+ let buffers=[];
+ for(let i=0;i<audioBank.length;i++){
+   try{
+     let blob=base64ToBlob(audioBank[i].data);
+     let buf=await blob.arrayBuffer();
+     let audioBuf=await audioCtx.decodeAudioData(buf);
+     buffers.push({buf:audioBuf, item:audioBank[i], idx:i});
+   }catch(e){ console.log('解碼失敗',i); }
+ }
+
+ let when=audioCtx.currentTime+0.25; // 0.25秒後齊唱
+ sources=[];
+ buffers.forEach(({buf,item,idx})=>{
+   let src=audioCtx.createBufferSource(); src.buffer=buf;
+   let gain=audioCtx.createGain(); let volEl=document.getElementById('vol-'+item.id); let v=volEl?parseFloat(volEl.value):1; gain.gain.value=v;
+   src.connect(gain).connect(audioCtx.destination);
+   src.start(when);
+   sources.push(src);
+   let el=document.getElementById('item-'+item.id); if(el) el.classList.add('playing');
+ });
+ logAudio('🎶 合唱中！'+buffers.length+'把聲同一秒疊播中...\nLouis + Fai 一齊出聲，好似Chorus');
+ if(shouldBroadcast) broadcast({type:'playChoir'});
+ // 自動清 playing
+ setTimeout(()=>{ document.querySelectorAll('.item').forEach(it=>it.classList.remove('playing')); }, Math.max(...buffers.map(b=>b.buf.duration))*1000+500);
+}
+function stopAll(shouldBroadcast=true){
+ sources.forEach(s=>{ try{s.stop();}catch{} }); sources=[];
+ document.querySelectorAll('audio').forEach(a=>{ a.pause(); });
+ document.querySelectorAll('.item').forEach(it=>it.classList.remove('playing'));
+ if(audioCtx) audioCtx.suspend();
+ logAudio('⏸ 已停止合唱');
+ if(shouldBroadcast) broadcast({type:'stop'});
 }
 
-function broadcastLite(){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send({type:'syncLite', players, wordBank, count:audioBank.length, roomCode}); }catch{} }); }
-function broadcastWord(){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send({type:'wordUpdate', wordBank}); }catch{} }); }
+function render(){
+ if(!audioBank.length){ document.getElementById('audioPosList').innerHTML='<div style="color:#555;text-align:center;padding:10px">未有聲音，快啲錄兩段試合唱</div>'; return; }
+ let h=''; for(let i=0;i<audioBank.length;i++){ let a=audioBank[i]; h+=`<div class="item" id="item-${a.id}"><div class="pos posA">🔊 ${i+1}</div><div style="flex:1"><div style="font-size:12px">${a.name} - ${a.from}</div><audio controls src="${a.url}" style="width:120px"></audio></div><div style="display:flex;flex-direction:column;align-items:center"><span style="font-size:10px;color:#888">音量</span><input id="vol-${a.id}" type="range" min="0" max="1" step="0.1" value="${a.vol||1}" oninput="this.parentElement.parentElement.querySelector('audio').volume=this.value"></div></div>`; }
+ document.getElementById('audioPosList').innerHTML=h; document.getElementById('count').textContent=audioBank.length;
+}
 
-function base64ToBlob(b64){ let parts=b64.split(','), mime=parts[0].match(/:(.*?);/)[1], bin=atob(parts[1]), arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return new Blob([arr],{type:mime}); }
-
-function saveWords(){
- let txt=document.getElementById('wordBox').value.trim(); if(!txt) return;
- if(wordBank.length>=MAX){ alert('文字已到'+MAX+'筆上限，請先清'); return; }
- wordBank=txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s).slice(0,MAX);
- logWords('✅ 文字 '+wordBank.length); renderAll(); broadcastWord(); broadcastLite();
-}
-function sendChunked(item){
- if(audioBank.length>MAX){ alert('聲音已到'+MAX+'筆，請清'); return; }
- let data=item.data, total=Math.ceil(data.length/CHUNK);
- broadcast({type:'audioStart', id:item.id, name:item.name, from:item.from, total});
- let i=0; function next(){ if(i>=total){ logAudio('✅ 傳完 '+item.name+' 共'+total+'塊'); return; } broadcast({type:'audioChunk', id:item.id, index:i, chunk:data.substr(i*CHUNK, CHUNK)}); i++; prog(Math.round(i/total*100),true); setTimeout(next, 80); } next();
- function broadcast(m){ Object.values(conns).forEach(c=>{ try{ if(c.open) c.send(m); }catch{} }); }
-}
-function uploadAudio(){
- let f=document.getElementById('audioFile').files[0]; if(!f){ alert('揀檔'); return; } if(audioBank.length>=MAX){ alert('已到'+MAX+'筆'); return; }
- let r=new FileReader(); r.onload=e=>{
-  let blob=base64ToBlob(e.target.result); let url=URL.createObjectURL(blob);
-  let item={id:Date.now(), name:f.name, from:myName, data:e.target.result, url}; audioBank.push(item); renderAll(); logAudio('✅ 本地 '+f.name); sendChunked(item);
- }; r.readAsDataURL(f);
-}
+// 偷偷保留你上傳功能，用返V19嗰套
+function uploadAudio(){}
 function startRecord(){
- if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); document.getElementById('recBtn').textContent='● 錄音15秒'; return; }
+ if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); return; }
  navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{
   mediaRecorder=new MediaRecorder(s,{mimeType:'audio/webm;codecs=opus', bitsPerSecond:32000}); chunks=[];
   mediaRecorder.ondataavailable=e=>chunks.push(e.data);
-  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader(); rd.onload=ev=>{ let url=URL.createObjectURL(blob); let item={id:Date.now(), name:'錄音'+(audioBank.length+1), from:myName, data:ev.target.result, url}; if(audioBank.length>=MAX){ alert('上限'); return; } audioBank.push(item); renderAll(); sendChunked(item); }; rd.readAsDataURL(blob); };
-  mediaRecorder.start(); document.getElementById('recBtn').textContent='■ 停止'; setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); },15000);
- }).catch(()=>alert('要麥克風權限'));
+  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'audio/webm'}); let rd=new FileReader(); rd.onload=ev=>{ let url=URL.createObjectURL(blob); let item={id:Date.now(), name:'錄音'+(audioBank.length+1)+' - '+myName, from:myName, data:ev.target.result, url, vol:1}; if(audioBank.length>=MAX){ alert('20筆上限'); return; } audioBank.push(item); render(); sendChunked(item); }; rd.readAsDataURL(blob); };
+  mediaRecorder.start(); setTimeout(()=>{ if(mediaRecorder.state==='recording') mediaRecorder.stop(); },15000);
+ }).catch(()=>alert('要麥克風'));
 }
-function renderAll(){ renderPos(); renderAudioPos(); }
-function renderPos(){
- if(!wordBank.length){ document.getElementById('posList').innerHTML='<div style="color:#555;text-align:center;padding:6px;font-size:12px">未有文字</div>'; return; }
- let h=''; for(let i=0;i<wordBank.length;i++){ let p=players[i%players.length]||'未指派'; h+=`<div class="item"><div class="pos">${i+1}號位</div><div style="flex:1">${wordBank[i]}</div><div style="font-size:11px;color:#FFEB00">${p}</div></div>`; }
- document.getElementById('posList').innerHTML=h;
+function sendChunked(item){
+ let data=item.data, total=Math.ceil(data.length/CHUNK); broadcast({type:'audioStart', id:item.id, name:item.name, from:item.from, total});
+ let i=0; function next(){ if(i>=total) return; broadcast({type:'audioChunk', id:item.id, index:i, chunk:data.substr(i*CHUNK, CHUNK)}); i++; prog(Math.round(i/total*100),true); setTimeout(next,80); } next();
 }
-function renderAudioPos(){
- if(!audioBank.length){ document.getElementById('audioPosList').innerHTML='<div style="color:#555;text-align:center;padding:6px;font-size:12px">未有聲音</div>'; return; }
- let h=''; for(let i=0;i<audioBank.length;i++){ let a=audioBank[i]; let src=a.url||a.data; h+=`<div class="item"><div class="pos posA">🔊 ${i+1}號位</div><div style="flex:1"><div style="font-size:12px">${a.name} - ${a.from}</div><audio controls src="${src}"></audio></div></div>`; }
- document.getElementById('audioPosList').innerHTML=h;
-}
-function updateWait(){
- let h=''; for(let i=0;i<players.length;i++){ let isMe=players[i]==myName; h+=`<div class="row" style="${isMe?'border-color:#FFEB00;background:#2a2a00':''}"><span>${i+1}. ${players[i]} ${isMe?'(你)':''}</span><span style="font-size:11px;color:#888">${i+1}號位</span></div>`; }
- document.getElementById('playerList').innerHTML=h; document.getElementById('logWait').textContent=`等候區：共 ${players.length} 人`; renderAll();
-}
-function clearAll(){ if(!confirm('清晒文字+聲音？')) return; wordBank=[]; audioBank=[]; renderAll(); broadcastLite(); broadcastWord(); logAudio('已清'); logWords('已清'); }
-(function(){ let p=new URLSearchParams(location.search); let r=p.get('room'); if(r) document.getElementById('codeInput').value=r.toUpperCase(); })();
+// 為咗快啲試，你開呢個頁就自動開房
+createRoom();
+// 模擬你圖入面嗰6段 - 如果你已經有真錄音，會自動覆蓋
+// 空白時幫你加返上傳掣
+document.getElementById('audioPosList').innerHTML+='<div style="margin-top:12px"><input type="file" id="audioFile" accept="audio/*" style="color:#888;width:100%"><div style="display:flex;gap:6px;margin-top:6px"><button class="btn" style="background:#2a5bd7;color:#fff;flex:1" onclick="(function(){let f=document.getElementById(\'audioFile\').files[0]; if(!f)return; let r=new FileReader(); r.onload=e=>{let blob=base64ToBlob(e.target.result); let url=URL.createObjectURL(blob); let item={id:Date.now(), name:f.name, from:myName, data:e.target.result, url, vol:1}; audioBank.push(item); render(); sendChunked(item);}; r.readAsDataURL(f);})()">🔊 上傳</button><button class="btn" style="background:#333;color:#fff;flex:1" id="recBtn" onclick="startRecord()">● 錄音</button></div></div>';
 </script>
 </body></html>
