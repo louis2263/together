@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V40 可重錄滿意上傳版</title>
+<title>V41 聲音Base64上傳修復版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:10px;min-height:100vh}
 .verBadge{position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;text-align:center;padding:8px;font-weight:900;font-size:15px;z-index:9999}
 .verTag{position:fixed;top:44px;right:8px;background:#FFEB00;color:#000;padding:4px 12px;border-radius:99px;font-weight:900;font-size:12px;z-index:9999}
-.card{width:96%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:12px;margin-top:56px;box-sizing:border-box}
+.card{width:96%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:12px;margin-top:56px}
 .btn{padding:12px;border-radius:99px;border:0;font-weight:900;cursor:pointer}
 .btnY{background:#FFEB00;color:#000;width:100%;margin-top:8px}
 .btnG{background:#00FF88;color:#000;width:100%;margin-top:8px}
@@ -31,37 +31,35 @@ audio{width:100%;margin-top:6px}
 </style>
 </head>
 <body>
-<div class="verBadge">方包包包剪揼 V40 - 可重錄滿意上傳版</div>
-<div class="verTag">V40</div>
+<div class="verBadge">方包包包剪揼 V41 - Base64聲音修復版 [滿意上傳]</div>
+<div class="verTag">V41</div>
 
 <div class="card">
-  <b>🎤 錄音合唱區 [V40] - 錄完試聽可重錄</b>
-  <div id="micLog" class="log">[V40] 未開咪，按下面開咪</div>
+  <b>🎤 錄音合唱區 [V41] - 可重錄試聽滿意上傳</b>
+  <div id="micLog" class="log">[V41] 未開咪</div>
   <button id="micBtn" class="btn btnY" onclick="ensureMic()">🎤 開咪權限</button>
-  
   <div id="recArea" class="recBox" style="display:none">
-    <div id="recStatus" class="log">準備好錄音</div>
-    <button id="recBtn" class="btn btnRed" onclick="startRecord()">🔴 按此錄音 2.5秒 - 大聲嗌「包剪揼」</button>
-    
+    <div id="recStatus" class="log">準備好</div>
+    <button id="recBtn" class="btn btnRed" onclick="startRecord()">🔴 錄音 2.5秒 - 嗌 包剪揼</button>
     <div id="previewArea" style="display:none;margin-top:10px">
-      <div class="log">👇 你剛錄的，試聽唔滿意可再錄</div>
+      <div class="log">👇 試聽，不滿意可再錄</div>
       <div id="previewPlayer"></div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn btnDark" style="flex:1" onclick="startRecord()">🔄 不滿意，再錄一次</button>
-        <button class="btn btnG" style="flex:1" onclick="uploadAudio()">✅ 滿意，上傳等候開始</button>
+        <button class="btn btnDark" style="flex:1" onclick="startRecord()">🔄 再錄一次</button>
+        <button class="btn btnG" style="flex:1" onclick="uploadAudio()">✅ 滿意，上傳</button>
       </div>
     </div>
-
     <div id="uploadedArea" style="display:none;margin-top:10px">
       <div class="item ok"><span>你</span><span>✅ 已上傳等候</span></div>
       <div id="uploadedPlayer"></div>
-      <button class="btn btnDark" onclick="cancelUpload()">↩️ 反悔，想再錄</button>
+      <div id="uploadLog" class="log">正在上傳...</div>
+      <button class="btn btnDark" onclick="cancelUpload()">↩️ 反悔再錄</button>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <b>房間 [V40] <span id="conn" style="color:#888">● 未連線</span></b>
+  <b>房間 [V41] <span id="conn" style="color:#888">● 未連線</span></b>
   <div style="display:flex;gap:6px;margin-top:8px">
     <input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
     <button class="btn" style="background:#FFEB00;color:#000;flex:1" onclick="createRoom()">開房</button>
@@ -69,21 +67,21 @@ audio{width:100%;margin-top:6px}
     <button class="btn" style="background:#00FF88;color:#000;flex:1" onclick="joinRoom()">入房</button>
   </div>
   <div class="code" id="roomCode">----</div>
-  <div id="logRoom" class="log">[V40] 等待入房</div>
-  <div id="debug" class="debug">debug: 就緒</div>
+  <div id="logRoom" class="log">[V41] 等待入房</div>
+  <div id="debug" class="debug">debug: 就緒 - V41用Base64傳聲音</div>
   <div id="playerList"></div>
   <button id="startBtn" class="btn btnY" style="display:none">開始遊戲</button>
 </div>
 
 <div class="card" id="gameCard" style="display:none">
-  <b>🎮 V40 請出拳！合唱用你已上傳嘅錄音</b>
-  <div id="statusLog" class="log">[V40] 請出拳</div>
+  <b>🎮 V41 請出拳！用你已上傳錄音合唱</b>
+  <div id="statusLog" class="log">[V41] 請出拳</div>
   <div style="display:flex;gap:8px;margin-top:10px">
     <button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" width="70"><span>揼</span></button>
     <button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" width="70"><span>剪</span></button>
     <button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" width="70"><span>包</span></button>
   </div>
-  <div id="choiceLog" class="log">[V40] 你未揀</div>
+  <div id="choiceLog" class="log">[V41] 你未揀</div>
   <div id="whoChosen"></div>
   <div id="audioList"></div>
   <div class="countBig" id="countBig">3</div>
@@ -92,7 +90,7 @@ audio{width:100%;margin-top:6px}
 </div>
 
 <script>
-const VERSION='V40';
+const VERSION='V41';
 const IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
 let peer=null, conns={}, myName='', roomCode='', players=[], isHost=false, myChoice=null, remoteChoices={}, choiceDone=false, gameStarted=false, audioCtx=null, choiceSendInterval=null, reconnectInterval=null, countdownTimer=null;
 let myAudioBlob=null, myTempBlob=null, remoteAudios={}, mediaRecorder=null, micStream=null, isRecording=false, isUploaded=false;
@@ -102,18 +100,16 @@ function log(t){ document.getElementById('logRoom').textContent='['+VERSION+'] '
 function slog(t){ document.getElementById('statusLog').textContent='['+VERSION+'] '+t; }
 function micLog(t){ document.getElementById('micLog').textContent='['+VERSION+'] '+t; }
 function recStatus(t){ document.getElementById('recStatus').textContent='['+VERSION+'] '+t; }
-function sendAll(m){ for(let k in conns){ try{ if(conns[k]&&conns[k].open) conns[k].send(m);}catch{} } }
-function sendRetry(m){ for(let i=0;i<8;i++) setTimeout(()=>sendAll(m), i*150); }
-function clearChoiceInterval(){ if(choiceSendInterval){ clearInterval(choiceSendInterval); choiceSendInterval=null; } }
+function uploadLog(t){ document.getElementById('uploadLog').textContent='['+VERSION+'] '+t; }
+function sendAll(m){ for(let k in conns){ try{ if(conns[k]&&conns[k].open) conns[k].send(m);}catch(e){ dbg('發送失敗 '+e); } } }
+function sendRetry(m){ for(let i=0;i<10;i++) setTimeout(()=>sendAll(m), i*200); }
 
 async function ensureMic(){
  try{
    micStream = await navigator.mediaDevices.getUserMedia({audio:true});
-   micLog('✅ 咪已開！下面可以錄音'); document.getElementById('micBtn').style.display='none'; document.getElementById('recArea').style.display='block';
-   dbg('mic ok'); return true;
- }catch(e){ micLog('❌ 開咪失敗：'+e.message); alert('要開咪：https + Allow'); return false; }
+   micLog('✅ 咪已開'); document.getElementById('micBtn').style.display='none'; document.getElementById('recArea').style.display='block'; dbg('mic ok V41'); return true;
+ }catch(e){ micLog('❌ 開咪失敗：'+e.message); return false; }
 }
-
 async function startRecord(){
  if(isRecording) return; if(!micStream){ if(!(await ensureMic())) return; }
  isRecording=true; document.getElementById('previewArea').style.display='none'; document.getElementById('uploadedArea').style.display='none';
@@ -121,38 +117,36 @@ async function startRecord(){
  mediaRecorder.ondataavailable=e=>chunks.push(e.data);
  mediaRecorder.onstop=()=>{
    myTempBlob=new Blob(chunks,{type:'audio/webm'}); let url=URL.createObjectURL(myTempBlob);
-   document.getElementById('previewPlayer').innerHTML=`<audio controls autoplay src="${url}"></audio><div class="log">長度 ${Math.round(myTempBlob.size/1000)}KB</div>`;
-   document.getElementById('previewArea').style.display='block'; recStatus('錄好！試聽，不滿意可再錄，滿意按上傳');
-   isRecording=false; document.getElementById('recBtn').textContent='🔴 再錄一次 2.5秒';
+   document.getElementById('previewPlayer').innerHTML=`<audio controls autoplay src="${url}"></audio>`;
+   document.getElementById('previewArea').style.display='block'; recStatus('錄好！試聽後可再錄或上傳'); isRecording=false; document.getElementById('recBtn').textContent='🔴 再錄一次 2.5秒';
  };
- mediaRecorder.start(); recStatus('🎤 錄緊... 大聲嗌 包剪揼！2.5秒'); document.getElementById('recBtn').textContent='🔴 錄音中...';
+ mediaRecorder.start(); recStatus('🎤 錄緊...嗌 包剪揼！'); document.getElementById('recBtn').textContent='🔴 錄音中...';
  setTimeout(()=>{ if(mediaRecorder&&mediaRecorder.state==='recording') mediaRecorder.stop(); },2500);
 }
+function blobToBase64(blob){ return new Promise(res=>{ let r=new FileReader(); r.onloadend=()=>res(r.result); r.readAsDataURL(blob); }); }
+function base64ToBlob(b64){ let arr=b64.split(','), mime=arr[0].match(/:(.*?);/)[1], bstr=atob(arr[1]), n=bstr.length, u8=new Uint8Array(n); while(n--){ u8[n]=bstr.charCodeAt(n); } return new Blob([u8],{type:mime}); }
 
-function uploadAudio(){
- if(!myTempBlob) return alert('未錄音');
- myAudioBlob=myTempBlob; isUploaded=true;
- let url=URL.createObjectURL(myAudioBlob);
- document.getElementById('uploadedPlayer').innerHTML=`<audio controls src="${url}"></audio>`;
+async function uploadAudio(){
+ if(!myTempBlob) return; myAudioBlob=myTempBlob; isUploaded=true;
+ let url=URL.createObjectURL(myAudioBlob); document.getElementById('uploadedPlayer').innerHTML=`<audio controls src="${url}"></audio>`;
  document.getElementById('previewArea').style.display='none'; document.getElementById('uploadedArea').style.display='block';
- recStatus('✅ 已上傳！等候對面 + 等開始遊戲'); micLog('已上傳，等對面錄音');
- // 發送
- sendRetry({type:'audio',name:myName,blob:myAudioBlob,ver:VERSION});
+ uploadLog('轉換中...'); micLog('已上傳等候對面');
+ let b64=await blobToBase64(myAudioBlob);
+ uploadLog('已轉Base64 '+Math.round(b64.length/1024)+'KB，發送中會重發5次...');
+ // V41核心：發Base64
+ for(let i=0;i<5;i++){ setTimeout(()=>{ sendAll({type:'audio',name:myName,b64:b64,ver:VERSION}); uploadLog('發送第'+(i+1)+'次...'); }, i*600); }
+ setTimeout(()=>uploadLog('✅ 已發送5次，等對面確認'), 3500);
  renderWho(); checkReady();
 }
-
 function cancelUpload(){
  isUploaded=false; myAudioBlob=null; document.getElementById('uploadedArea').style.display='none'; document.getElementById('previewArea').style.display='block';
- recStatus('已取消上傳，你可以再錄'); micLog('已取消，可再錄'); 
- sendRetry({type:'audioCancel',name:myName,ver:VERSION});
- renderWho();
+ recStatus('已取消，可再錄'); micLog('已取消'); sendRetry({type:'audioCancel',name:myName,ver:VERSION}); renderWho();
 }
-
 function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; isHost=true;
  if(peer) peer.destroy(); peer=new Peer(VERSION+'-'+roomCode);
  peer.on('open',()=>{ document.getElementById('conn').style.color='#0f0'; document.getElementById('conn').textContent='● 已連線 (房主)'; document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode); });
- peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>c.send({type:'sync',players,roomCode,ver:VERSION})); c.on('data',onData); });
+ peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>{ c.send({type:'sync',players,roomCode,ver:VERSION}); if(isUploaded&&myAudioBlob){ blobToBase64(myAudioBlob).then(b64=>c.send({type:'audio',name:myName,b64:b64,ver:VERSION})); } }); c.on('data',onData); });
 }
 function joinRoom(){
  let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code) return; myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; isHost=false;
@@ -161,44 +155,38 @@ function joinRoom(){
 }
 function connectToHost(){
  let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn;
- conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); if(isUploaded&&myAudioBlob) conn.send({type:'audio',name:myName,blob:myAudioBlob,ver:VERSION}); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; });
+ conn.on('open',async()=>{ conn.send({type:'join',name:myName,ver:VERSION}); if(isUploaded&&myAudioBlob){ let b64=await blobToBase64(myAudioBlob); conn.send({type:'audio',name:myName,b64:b64,ver:VERSION}); } log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; });
  conn.on('data',onData);
 }
 function onData(d){
  if(!d||d.ver!==VERSION) return;
- if(d.type==='join'){ if(!players.includes(d.name)) players.push(d.name); updatePlayers(); sendRetry({type:'sync',players,roomCode,ver:VERSION}); }
+ if(d.type==='join'){ if(!players.includes(d.name)) players.push(d.name); updatePlayers(); sendRetry({type:'sync',players,roomCode,ver:VERSION}); if(isUploaded&&myAudioBlob){ blobToBase64(myAudioBlob).then(b64=>sendRetry({type:'audio',name:myName,b64:b64,ver:VERSION})); } }
  if(d.type==='sync'){ players=d.players||players; updatePlayers(); }
  if(d.type==='goGame'){ startRound(); }
  if(d.type==='choice'){ remoteChoices[d.name]=d.choice; log('收到 '+d.name+' 揀 '+d.choice); renderWho(); checkAll(); }
- if(d.type==='audio'){ remoteAudios[d.name]=d.blob; dbg('收到 '+d.name+' 錄音 '+d.blob.size+'bytes'); renderWho(); checkReady(); renderAudio(); }
- if(d.type==='audioCancel'){ delete remoteAudios[d.name]; renderWho(); }
+ if(d.type==='audio' && d.b64){ try{ let blob=base64ToBlob(d.b64); remoteAudios[d.name]=blob; log('✅ 收到 '+d.name+' 把聲！'); dbg('收到 '+d.name+' '+blob.size+'bytes Base64轉回成功'); renderWho(); checkReady(); renderAudio(); }catch(e){ dbg('轉換失敗 '+e); } }
+ if(d.type==='audioCancel'){ delete remoteAudios[d.name]; log(d.name+' 取消上傳'); renderWho(); }
  if(d.type==='preReveal'){ doCountdown(d.at); }
  if(d.type==='reveal'){ showResult(); }
  if(d.type==='restart'){ startRound(); }
 }
 function updatePlayers(){
- let h=''; for(let p of players){
-   let aud = (p===myName ? (isUploaded?'✅已上傳':'🎤未上傳') : (remoteAudios[p]?'✅已上傳':'🎤未上傳'));
-   h+=`<div class="item ${remoteAudios[p]|| (p===myName&&isUploaded) ? 'ok':'wait'}"><span>${p}${p===myName?' (你)':''} - ${aud}</span><span>✅ 已入房</span></div>`;
- }
+ let h=''; for(let p of players){ let aud=(p===myName?(isUploaded?'✅已上傳':'🎤未上傳'):(remoteAudios[p]?'✅已上傳':'🎤未上傳')); h+=`<div class="item ${ (p===myName?isUploaded:remoteAudios[p]) ? 'ok':'wait'}"><span>${p}${p===myName?' (你)':''} - ${aud}</span><span>✅ 已入房</span></div>`; }
  document.getElementById('playerList').innerHTML=h;
  let btn=document.getElementById('startBtn');
- if(players.length>=1){ btn.style.display='block'; btn.textContent = players.length>=2 ? '開始遊戲 [V40]' : '單人測試開始 [V40]'; btn.onclick=async()=>{ if(!isUploaded) { alert('請先錄音並按「滿意上傳」'); return; } if(await ensureMic()){ sendRetry({type:'goGame',ver:VERSION}); startRound(); } }; }
+ if(players.length>=1){ btn.style.display='block'; btn.textContent= players.length>=2 ? '開始遊戲 [V41]' : '單人測試開始 [V41]'; btn.onclick=async()=>{ if(!isUploaded){ alert('請先錄音並按滿意上傳'); return; } if(Object.keys(remoteAudios).length===0 && players.length>=2){ alert('對面未上傳聲音'); return; } sendRetry({type:'goGame',ver:VERSION}); startRound(); }; }
 }
 function checkReady(){ updatePlayers(); }
 function startRound(){
- gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={};
- // 保留已上傳錄音，唔清
- clearChoiceInterval(); if(countdownTimer) clearInterval(countdownTimer);
+ gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={}; clearChoiceInterval(); if(countdownTimer) clearInterval(countdownTimer);
  document.getElementById('gameCard').style.display='block'; document.getElementById('startBtn').style.display='none';
  document.querySelectorAll('.choiceBtn').forEach(b=>{ b.classList.remove('sel'); b.disabled=false; });
  document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀'; document.getElementById('result').style.display='none'; document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none'; document.getElementById('bar').style.width='0%'; document.getElementById('audioList').innerHTML='';
- slog('請出拳，會用你已上傳嘅錄音合唱'); renderWho(); renderAudio();
+ slog('請出拳，用已上傳錄音合唱'); renderWho(); renderAudio();
 }
 function choose(c){
- if(choiceDone) return; if(!isUploaded){ alert('請先喺上面錄音並按滿意上傳'); return; }
- myChoice=c;
- document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
+ if(choiceDone) return; if(!isUploaded){ alert('請先上傳錄音'); return; }
+ myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
  if(c==='揼') btnChui.classList.add('sel'); if(c==='剪') btnJian.classList.add('sel'); if(c==='包') btnBao.classList.add('sel');
  document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀 '+c; renderWho(); sendRetry({type:'choice',name:myName,choice:c,ver:VERSION}); checkAll();
  clearChoiceInterval(); choiceSendInterval=setInterval(()=>{ if(choiceDone){ clearChoiceInterval(); return; } sendAll({type:'choice',name:myName,choice:c,ver:VERSION}); },800);
@@ -230,7 +218,7 @@ function showResult(){
  let area=document.getElementById('result'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
  let h='<b>['+VERSION+'] 結果 + 合唱</b>'; for(let k in all){ h+=`<div class="item"><span>${k}</span><span><img src="${IMG[all[k]]||''}" width="20"> ${all[k]}</span></div>`; }
  let v=Object.values(all); let win=''; if(new Set(v).size===1||new Set(v).size===3){ win='平手！'; } else if(v.includes('包')&&v.includes('剪')){ win='剪刀勝！'; } else if(v.includes('包')&&v.includes('揼')){ win='包勝！'; } else { win='石頭勝！'; }
- h+=`<div class="log">🏆 ${win}</div><button class="btn btnDark" onclick="document.querySelectorAll('#audioList audio').forEach(a=>{a.currentTime=0;a.play()})">🔊 重播合唱</button><button class="btn btnY" onclick="restart()">🔄 再玩一次 (保留錄音)</button><button class="btn btnDark" onclick="location.reload()">離開</button>`; area.innerHTML=h;
+ h+=`<div class="log">🏆 ${win}</div><button class="btn btnDark" onclick="document.querySelectorAll('#audioList audio').forEach(a=>{a.currentTime=0;a.play()})">🔊 重播合唱</button><button class="btn btnY" onclick="restart()">🔄 再玩一次 (保留錄音)</button>`; area.innerHTML=h;
 }
 function restart(){ sendRetry({type:'restart',ver:VERSION}); startRound(); }
 window.addEventListener('load', ()=>{ setTimeout(()=>ensureMic(), 800); });
