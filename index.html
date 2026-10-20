@@ -1,154 +1,445 @@
-<!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V36 終極修復版</title>
+```html
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V37 修復版 - 剪刀石頭布連線遊戲</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:10px}
-.verBadge{position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#FFEB00,#00FF88);color:#000;text-align:center;padding:8px;font-weight:900;font-size:15px;z-index:9999}
-.verTag{position:fixed;top:44px;right:8px;background:#FFEB00;color:#000;padding:4px 12px;border-radius:99px;font-weight:900;font-size:12px;z-index:9999}
-.card{width:96%;max-width:500px;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:12px;margin-top:56px}
-.btn{padding:12px;border-radius:99px;border:0;font-weight:900;cursor:pointer}.btnY{background:#FFEB00;color:#000;width:100%;margin-top:8px}.btnDark{background:#222;color:#fff;width:100%;margin-top:8px;border:1px solid #444}
-.item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:6px;display:flex;justify-content:space-between}.item.ok{border-color:#00FF88;background:#0e2018}.item.wait{border-color:#FFEB00;background:#332e00}
-.log{font-size:13px;color:#FFEB00;background:#222;border-radius:8px;padding:10px;margin-top:8px;text-align:center}
-.debug{font-size:10px;color:#0f0;background:#000;border-radius:6px;padding:6px;margin-top:6px;word-break:break-all}
-.code{font-size:30px;font-weight:900;letter-spacing:5px;color:#00FF88;text-align:center}
-.choiceBtn{flex:1;padding:10px;border-radius:16px;border:3px solid #333;background:#fff;color:#000;font-weight:900;display:flex;flex-direction:column;align-items:center}.choiceBtn.sel{border-color:#FFEB00;box-shadow:0 0 14px #FFEB00}
-.countBig{font-size:64px;font-weight:900;color:#FFEB00;text-align:center;display:none;margin:8px 0}
-.progress{width:100%;height:16px;background:#333;border-radius:99px;margin-top:8px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
+body { margin:0; background:#0f0f0f; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; padding:10px; min-height:100vh; box-sizing:border-box; }
+.verBadge { position:fixed; top:0; left:0; right:0; background:linear-gradient(90deg,#FFEB00,#00FF88); color:#000; text-align:center; padding:8px; font-weight:900; font-size:15px; z-index:9999; }
+.verTag { position:fixed; top:44px; right:8px; background:#FFEB00; color:#000; padding:4px 12px; border-radius:99px; font-weight:900; font-size:12px; z-index:9999; }
+.card { width:96%; max-width:500px; background:#1a1a1a; border:1px solid #333; border-radius:18px; padding:12px; margin-top:56px; box-sizing:border-box; }
+.btn { padding:12px; border-radius:99px; border:0; font-weight:900; cursor:pointer; }
+.btnY { background:#FFEB00; color:#000; width:100%; margin-top:8px; }
+.btnDark { background:#222; color:#fff; width:100%; margin-top:8px; border:1px solid #444; }
+.item { padding:10px; background:#151515; border:2px solid #222; border-radius:12px; margin-top:6px; display:flex; justify-content:space-between; align-items:center; }
+.item.ok { border-color:#00FF88; background:#0e2018; }
+.item.wait { border-color:#FFEB00; background:#332e00; }
+.log { font-size:13px; color:#FFEB00; background:#222; border-radius:8px; padding:10px; margin-top:8px; text-align:center; }
+.debug { font-size:10px; color:#0f0; background:#000; border-radius:6px; padding:6px; margin-top:6px; word-break:break-all; }
+.code { font-size:30px; font-weight:900; letter-spacing:5px; color:#00FF88; text-align:center; margin:8px 0; }
+.choiceBtn { flex:1; padding:10px; border-radius:16px; border:3px solid #333; background:#fff; color:#000; font-weight:900; display:flex; flex-direction:column; align-items:center; cursor:pointer; transition:all 0.2s; }
+.choiceBtn.sel { border-color:#FFEB00; box-shadow:0 0 14px #FFEB00; transform:scale(1.03); }
+.choiceBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.countBig { font-size:64px; font-weight:900; color:#FFEB00; text-align:center; display:none; margin:8px 0; }
+.progress { width:100%; height:16px; background:#333; border-radius:99px; margin-top:8px; overflow:hidden; display:none; }
+.bar { height:100%; width:0%; background:linear-gradient(90deg,#FFEB00,#00FF88); transition:width 0.05s linear; }
 </style>
-</head><body>
-<div class="verBadge">方包包包剪揼 V36 - 終極修復版 [揀定即倒數]</div>
-<div class="verTag">V36</div>
+</head>
+<body>
+
+<div class="verBadge">方包包包剪揼 V37 - 重玩修復版</div>
+<div class="verTag">V37</div>
 
 <div class="card">
-<b>房間 [V36] <span id="conn" style="color:#0f0">● 已連線</span></b>
-<div style="display:flex;gap:6px;margin-top:8px">
-<input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
-<button class="btn" style="background:#FFEB00;color:#000;flex:1" onclick="createRoom()">開房</button>
-<input id="codeInput" placeholder="房號" style="width:80px;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
-<button class="btn" style="background:#00FF88;color:#000;flex:1" onclick="joinRoom()">入房</button>
-</div>
-<div class="code" id="roomCode">----</div>
-<div id="logRoom" class="log">[V36] 等待入房</div>
-<div id="debug" class="debug">debug: 空</div>
-<div id="playerList"></div>
-<button id="startBtn" class="btn btnY" style="display:none">開始遊戲</button>
+  <b>房間 [V37] <span id="conn" style="color:#888">● 未連線</span></b>
+  <div style="display:flex; gap:6px; margin-top:8px;">
+    <input id="nameInput" value="Louis" style="flex:1; padding:12px; border-radius:99px; border:2px solid #444; background:#000; color:#fff;" placeholder="名字">
+    <button class="btn" style="background:#FFEB00; color:#000; flex:1;" onclick="createRoom()">開房</button>
+    <input id="codeInput" placeholder="房號" style="width:80px; padding:12px; border-radius:99px; border:2px solid #444; background:#000; color:#fff;">
+    <button class="btn" style="background:#00FF88; color:#000; flex:1;" onclick="joinRoom()">入房</button>
+  </div>
+  <div class="code" id="roomCode">----</div>
+  <div id="logRoom" class="log">[V37] 等待入房</div>
+  <div id="debug" class="debug">debug: 就緒</div>
+  <div id="playerList"></div>
+  <button id="startBtn" class="btn btnY" style="display:none;">開始遊戲</button>
 </div>
 
-<div class="card" id="gameCard" style="display:none">
-<b>🎮 V36 請出拳！兩邊揀好即倒數</b>
-<div id="statusLog" class="log">[V36] 請出拳</div>
-<div style="display:flex;gap:8px;margin-top:10px">
-<button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" width="70"><span>揼</span></button>
-<button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" width="70"><span>剪</span></button>
-<button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" width="70"><span>包</span></button>
-</div>
-<div id="choiceLog" class="log">[V36] 你未揀</div>
-<div id="whoChosen"></div>
-<div class="countBig" id="countBig">3</div>
-<div class="progress" id="prog"><div class="bar" id="bar"></div></div>
-<div id="result" style="display:none;margin-top:10px"></div>
+<div class="card" id="gameCard" style="display:none;">
+  <b>🎮 V37 請出拳！兩邊揀好即倒數</b>
+  <div id="statusLog" class="log">[V37] 請出拳</div>
+  <div style="display:flex; gap:8px; margin-top:10px;">
+    <button class="choiceBtn" id="btnChui" onclick="choose('揼')">
+      <img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" width="70" alt="揼" onerror="this.onerror=null;this.src='https://placehold.co/70x70/222/fff?text=%E6%8F%BC'">
+      <span>揼</span>
+    </button>
+    <button class="choiceBtn" id="btnJian" onclick="choose('剪')">
+      <img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" width="70" alt="剪" onerror="this.onerror=null;this.src='https://placehold.co/70x70/222/fff?text=%E剪'">
+      <span>剪</span>
+    </button>
+    <button class="choiceBtn" id="btnBao" onclick="choose('包')">
+      <img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" width="70" alt="包" onerror="this.onerror=null;this.src='https://placehold.co/70x70/222/fff?text=%E包'">
+      <span>包</span>
+    </button>
+  </div>
+  <div id="choiceLog" class="log">[V37] 你未揀</div>
+  <div id="whoChosen"></div>
+  <div class="countBig" id="countBig">3</div>
+  <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
+  <div id="result" style="display:none; margin-top:10px;"></div>
 </div>
 
 <script>
-const VERSION='V36';
-let IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
-let peer=null, conns={}, myName='', roomCode='', players=[], isHost=false, myChoice=null, remoteChoices={}, choiceDone=false, gameStarted=false, audioCtx=null;
+const VERSION = 'V37';
+const IMG = { 
+  '揼': 'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg',
+  '剪': 'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg',
+  '包': 'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' 
+};
 
-function dbg(t){ document.getElementById('debug').textContent=t; }
-function log(t){ document.getElementById('logRoom').textContent='['+VERSION+'] '+t; }
-function slog(t){ document.getElementById('statusLog').textContent='['+VERSION+'] '+t; }
-function sendAll(m){ for(let k in conns){ try{ if(conns[k] && conns[k].open) conns[k].send(m); }catch{} } }
-function sendRetry(m){ for(let i=0;i<30;i++) setTimeout(()=>sendAll(m), i*200); }
+let peer = null;
+let conns = {};
+let myName = '';
+let roomCode = '';
+let players = [];
+let isHost = false;
+let myChoice = null;
+let remoteChoices = {};
+let choiceDone = false;
+let gameStarted = false;
+let audioCtx = null;
+let choiceSendInterval = null;
+let reconnectInterval = null;
+let countdownTimer = null;
 
-function createRoom(){
- myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; isHost=true;
- peer=new Peer(VERSION+'-'+roomCode);
- peer.on('open',()=>{ document.getElementById('roomCode').textContent=roomCode; players=[myName]; updatePlayers(); log('已開房 '+roomCode); dbg('host id='+VERSION+'-'+roomCode); });
- peer.on('connection',c=>{ conns[c.peer]=c; c.on('open',()=>c.send({type:'sync',players,roomCode,ver:VERSION})); c.on('data',onData); });
+function dbg(t) { document.getElementById('debug').textContent = t; }
+function log(t) { document.getElementById('logRoom').textContent = '[' + VERSION + '] ' + t; }
+function slog(t) { document.getElementById('statusLog').textContent = '[' + VERSION + '] ' + t; }
+
+function sendAll(m) {
+  for (let k in conns) {
+    try {
+      if (conns[k] && conns[k].open) {
+        conns[k].send(m);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
 }
-function joinRoom(){
- let code=document.getElementById('codeInput').value.trim().toUpperCase(); if(!code) return; myName=document.getElementById('nameInput').value.trim()||'Fai'; roomCode=code; isHost=false;
- peer=new Peer();
- peer.on('open',()=>{ 
-   let conn=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=conn; 
-   conn.on('open',()=>{ conn.send({type:'join',name:myName,ver:VERSION}); log('已入房 '+roomCode); document.getElementById('roomCode').textContent=roomCode; });
-   conn.on('data',onData);
-   // V36: 每秒重連確保打通
-   setInterval(()=>{ if(!conns['host'] || !conns['host'].open){ let c=peer.connect(VERSION+'-'+roomCode,{reliable:true}); conns['host']=c; c.on('open',()=>c.send({type:'join',name:myName,ver:VERSION})); c.on('data',onData); } }, 2500);
- });
+
+function sendRetry(m) {
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => sendAll(m), i * 150);
+  }
 }
-function onData(d){
- if(!d || !d.ver) return;
- if(d.ver!==VERSION) return;
- if(d.type==='join'){ if(!players.includes(d.name)) players.push(d.name); updatePlayers(); sendRetry({type:'sync',players,roomCode,ver:VERSION}); }
- if(d.type==='sync'){ players=d.players||players; updatePlayers(); }
- if(d.type==='goGame'){ startRound(); }
- if(d.type==='choice'){ 
-   // V36 核心：無條件寫入，唔理players順序
-   remoteChoices[d.name]=d.choice; 
-   log('收到 '+d.name+' 揀 '+d.choice); 
-   dbg('my='+myChoice+' remote='+JSON.stringify(remoteChoices)+' players='+JSON.stringify(players));
-   renderWho(); checkAll();
- }
- if(d.type==='preReveal'){ doCountdown(d.at); }
- if(d.type==='reveal'){ showResult(); }
- if(d.type==='restart'){ startRound(); }
+
+function clearChoiceInterval() {
+  if (choiceSendInterval) {
+    clearInterval(choiceSendInterval);
+    choiceSendInterval = null;
+  }
 }
-function updatePlayers(){
- let h=''; for(let p of players){ h+=`<div class="item ok"><span>${p}${p===myName?' (你)':''}</span><span>✅ 已入房</span></div>`; }
- document.getElementById('playerList').innerHTML=h;
- if(players.length>=2 && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=()=>{ sendRetry({type:'goGame',ver:VERSION}); startRound(); }; }
+
+function createRoom() {
+  myName = document.getElementById('nameInput').value.trim() || 'Louis';
+  roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+  document.getElementById('codeInput').value = roomCode;
+  isHost = true;
+  
+  if (peer) peer.destroy();
+  peer = new Peer(VERSION + '-' + roomCode);
+
+  peer.on('open', () => {
+    document.getElementById('conn').style.color = '#0f0';
+    document.getElementById('conn').textContent = '● 已連線 (房主)';
+    document.getElementById('roomCode').textContent = roomCode;
+    players = [myName];
+    updatePlayers();
+    log('已開房 ' + roomCode);
+    dbg('host id=' + VERSION + '-' + roomCode);
+  });
+
+  peer.on('connection', c => {
+    conns[c.peer] = c;
+    c.on('open', () => {
+      c.send({ type: 'sync', players, roomCode, ver: VERSION });
+    });
+    c.on('data', onData);
+    c.on('close', () => { delete conns[c.peer]; });
+  });
+
+  peer.on('error', (err) => {
+    log('連線錯誤: ' + err.type);
+  });
 }
-function startRound(){
- gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={};
- document.getElementById('gameCard').style.display='block'; document.getElementById('startBtn').style.display='none';
- document.querySelectorAll('.choiceBtn').forEach(b=>{b.classList.remove('sel'); b.disabled=false;});
- document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀'; document.getElementById('result').style.display='none'; document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none'; document.getElementById('bar').style.width='0%';
- slog('請出拳，兩邊揀好即倒數'); renderWho(); dbg('新一局開始 my=null remote={}');
+
+function joinRoom() {
+  let code = document.getElementById('codeInput').value.trim().toUpperCase();
+  if (!code) return;
+  
+  myName = document.getElementById('nameInput').value.trim() || 'Fai';
+  roomCode = code;
+  isHost = false;
+
+  if (reconnectInterval) clearInterval(reconnectInterval);
+  if (peer) peer.destroy();
+  
+  peer = new Peer();
+  peer.on('open', () => {
+    document.getElementById('conn').style.color = '#0f0';
+    document.getElementById('conn').textContent = '● 已連線';
+    
+    connectToHost();
+    
+    // 定期檢查與 Host 的連線狀況
+    reconnectInterval = setInterval(() => {
+      if (!conns['host'] || !conns['host'].open) {
+        connectToHost();
+      }
+    }, 3000);
+  });
+
+  peer.on('error', (err) => {
+    log('加入失敗: ' + err.type);
+  });
 }
-function choose(c){
- myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
- if(c==='揼') btnChui.classList.add('sel'); if(c==='剪') btnJian.classList.add('sel'); if(c==='包') btnBao.classList.add('sel');
- document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀 '+c+'，發送中...';
- renderWho(); sendRetry({type:'choice',name:myName,choice:c,ver:VERSION}); checkAll();
- // V36：不停重發直到對面收到
- let iv=setInterval(()=>{ if(choiceDone){ clearInterval(iv); return; } sendAll({type:'choice',name:myName,choice:c,ver:VERSION}); }, 600);
+
+function connectToHost() {
+  let conn = peer.connect(VERSION + '-' + roomCode, { reliable: true });
+  conns['host'] = conn;
+  
+  conn.on('open', () => {
+    conn.send({ type: 'join', name: myName, ver: VERSION });
+    log('已入房 ' + roomCode);
+    document.getElementById('roomCode').textContent = roomCode;
+  });
+  conn.on('data', onData);
+  conn.on('close', () => { delete conns['host']; });
 }
-function renderWho(){
- // V36：直接用myChoice同remoteChoices顯示，唔再依賴players順序
- let h=''; 
- h+=`<div class="item ${myChoice?'ok':'wait'}"><span>${myName} (你)</span><span>${myChoice?'✅ 已揀好 '+myChoice:'⏳ 未揀'}</span></div>`;
- for(let name in remoteChoices){ if(name!==myName){ h+=`<div class="item ok"><span>${name}</span><span>✅ 已揀好 ${remoteChoices[name]}</span></div>`; } }
- // 如果對面未揀，顯示佢個名
- for(let p of players){ if(p!==myName && !remoteChoices[p]){ h+=`<div class="item wait"><span>${p}</span><span>⏳ 未揀</span></div>`; } }
- document.getElementById('whoChosen').innerHTML=h;
+
+function onData(d) {
+  if (!d || d.ver !== VERSION) return;
+
+  if (d.type === 'join') {
+    if (!players.includes(d.name)) players.push(d.name);
+    updatePlayers();
+    sendRetry({ type: 'sync', players, roomCode, ver: VERSION });
+  }
+  
+  if (d.type === 'sync') {
+    players = d.players || players;
+    updatePlayers();
+  }
+  
+  if (d.type === 'goGame') {
+    startRound();
+  }
+  
+  if (d.type === 'choice') {
+    remoteChoices[d.name] = d.choice;
+    log('收到 ' + d.name + ' 揀 ' + d.choice);
+    dbg('my=' + myChoice + ' remote=' + JSON.stringify(remoteChoices));
+    renderWho();
+    checkAll();
+  }
+  
+  if (d.type === 'preReveal') {
+    doCountdown(d.at);
+  }
+  
+  if (d.type === 'reveal') {
+    showResult();
+  }
+  
+  if (d.type === 'restart') {
+    startRound();
+  }
 }
-function checkAll(){
- // 只要有一個遠端選擇就算齊（2人房）
- let hasRemote = Object.keys(remoteChoices).length>0;
- let all = myChoice!==null && hasRemote;
- dbg('checkAll my='+myChoice+' remoteKeys='+Object.keys(remoteChoices)+' all='+all);
- if(all && !choiceDone){ 
-   choiceDone=true; slog('兩邊都揀好！3-2-1'); document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true);
-   if(isHost){ let at=Date.now()+800; sendRetry({type:'preReveal',at,ver:VERSION}); doCountdown(at); }
- }
+
+function updatePlayers() {
+  let h = '';
+  for (let p of players) {
+    h += `<div class="item ok"><span>${p}${p === myName ? ' (你)' : ''}</span><span>✅ 已入房</span></div>`;
+  }
+  document.getElementById('playerList').innerHTML = h;
+
+  if (players.length >= 2 && !gameStarted) {
+    let btn = document.getElementById('startBtn');
+    btn.style.display = 'block';
+    btn.onclick = () => {
+      sendRetry({ type: 'goGame', ver: VERSION });
+      startRound();
+    };
+  }
 }
-async function doCountdown(at){
- if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume();
- let big=document.getElementById('countBig'), prog=document.getElementById('prog'), bar=document.getElementById('bar');
- big.style.display='block'; prog.style.display='block'; bar.style.width='0%';
- let delay=Math.max(0,(at-Date.now())/1000), when=audioCtx.currentTime+delay;
- for(let i=0;i<3;i++){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=700; g.gain.setValueAtTime(0.5,when+i*0.7); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.7+0.2); o.connect(g).connect(audioCtx.destination); o.start(when+i*0.7); o.stop(when+i*0.7+0.2); }
- let st=Date.now()+delay*1000, dur=2100;
- let iv=setInterval(()=>{ let e=Date.now()-st; big.textContent=e<700?'3':e<1400?'2':'1'; bar.style.width=Math.min(e/dur*100,100)+'%'; if(e>=dur){ clearInterval(iv); big.textContent='揭曉！'; setTimeout(()=>{ sendRetry({type:'reveal',ver:VERSION}); showResult(); },400); } },50);
+
+function startRound() {
+  gameStarted = true;
+  choiceDone = false;
+  myChoice = null;
+  remoteChoices = {};
+  
+  // 清理上一局殘留的發訊任務及動畫
+  clearChoiceInterval();
+  if (countdownTimer) clearInterval(countdownTimer);
+
+  document.getElementById('gameCard').style.display = 'block';
+  document.getElementById('startBtn').style.display = 'none';
+  
+  document.querySelectorAll('.choiceBtn').forEach(b => {
+    b.classList.remove('sel');
+    b.disabled = false;
+  });
+
+  document.getElementById('choiceLog').textContent = '[' + VERSION + '] 你未揀';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('countBig').style.display = 'none';
+  document.getElementById('prog').style.display = 'none';
+  document.getElementById('bar').style.width = '0%';
+  
+  slog('請出拳，兩邊揀好即倒數');
+  renderWho();
+  dbg('新一局開始');
 }
-function showResult(){
- let area=document.getElementById('result'); area.style.display='block'; let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
- let h='<b>['+VERSION+'] 結果</b>'; for(let k in all){ h+=`<div class="item"><span>${k}</span><span><img src="${IMG[all[k]]||''}" width="20"> ${all[k]}</span></div>`; }
- let v=Object.values(all); let win=(new Set(v).size===1||new Set(v).size===3)?'平手！':v.includes('包')&&v.includes('剪')?'剪贏包':v.includes('包')&&v.includes('揼')?'包贏揼':'揼贏剪';
- h+=`<div class="log">🏆 ${win} [${VERSION}]</div><button class="btn btnY" onclick="restart()">🔄 再玩一次 [${VERSION}]</button><button class="btn btnDark" onclick="location.reload()">離開</button>`;
- area.innerHTML=h;
+
+function choose(c) {
+  if (choiceDone) return;
+  
+  myChoice = c;
+  document.querySelectorAll('.choiceBtn').forEach(b => b.classList.remove('sel'));
+  
+  if (c === '揼') document.getElementById('btnChui').classList.add('sel');
+  if (c === '剪') document.getElementById('btnJian').classList.add('sel');
+  if (c === '包') document.getElementById('btnBao').classList.add('sel');
+
+  document.getElementById('choiceLog').textContent = '[' + VERSION + '] 你已揀 ' + c;
+  renderWho();
+
+  // 傳送選擇給對方
+  sendRetry({ type: 'choice', name: myName, choice: c, ver: VERSION });
+  checkAll();
+
+  // 定時發送直至倒數開始
+  clearChoiceInterval();
+  choiceSendInterval = setInterval(() => {
+    if (choiceDone) {
+      clearChoiceInterval();
+      return;
+    }
+    sendAll({ type: 'choice', name: myName, choice: c, ver: VERSION });
+  }, 800);
 }
-function restart(){ sendRetry({type:'restart',ver:VERSION}); startRound(); }
+
+function renderWho() {
+  let h = '';
+  h += `<div class="item ${myChoice ? 'ok' : 'wait'}"><span>${myName} (你)</span><span>${myChoice ? '✅ 已揀好 ' + myChoice : '⏳ 未揀'}</span></div>`;
+
+  for (let name in remoteChoices) {
+    if (name !== myName) {
+      h += `<div class="item ok"><span>${name}</span><span>✅ 已揀好 ${remoteChoices[name]}</span></div>`;
+    }
+  }
+
+  for (let p of players) {
+    if (p !== myName && !remoteChoices[p]) {
+      h += `<div class="item wait"><span>${p}</span><span>⏳ 未揀</span></div>`;
+    }
+  }
+  document.getElementById('whoChosen').innerHTML = h;
+}
+
+function checkAll() {
+  let hasRemote = Object.keys(remoteChoices).length > 0;
+  let all = (myChoice !== null) && hasRemote;
+  
+  dbg('checkAll my=' + myChoice + ' remote=' + Object.keys(remoteChoices).length + ' all=' + all);
+  
+  if (all && !choiceDone) {
+    choiceDone = true;
+    clearChoiceInterval();
+    slog('兩邊都揀好！3-2-1');
+    document.querySelectorAll('.choiceBtn').forEach(b => b.disabled = true);
+    
+    if (isHost) {
+      let at = Date.now() + 800;
+      sendRetry({ type: 'preReveal', at, ver: VERSION });
+      doCountdown(at);
+    }
+  }
+}
+
+async function doCountdown(at) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+  } catch(e){}
+
+  let big = document.getElementById('countBig');
+  let prog = document.getElementById('prog');
+  let bar = document.getElementById('bar');
+  
+  big.style.display = 'block';
+  prog.style.display = 'block';
+  bar.style.width = '0%';
+
+  let delay = Math.max(0, (at - Date.now()) / 1000);
+  
+  if (audioCtx) {
+    let when = audioCtx.currentTime + delay;
+    for (let i = 0; i < 3; i++) {
+      let o = audioCtx.createOscillator();
+      let g = audioCtx.createGain();
+      o.frequency.value = 700;
+      g.gain.setValueAtTime(0.3, when + i * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.01, when + i * 0.7 + 0.2);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(when + i * 0.7);
+      o.stop(when + i * 0.7 + 0.2);
+    }
+  }
+
+  let st = Date.now() + delay * 1000;
+  let dur = 2100;
+  
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    let e = Date.now() - st;
+    big.textContent = e < 700 ? '3' : e < 1400 ? '2' : '1';
+    bar.style.width = Math.min((e / dur) * 100, 100) + '%';
+    
+    if (e >= dur) {
+      clearInterval(countdownTimer);
+      big.textContent = '揭曉！';
+      setTimeout(() => {
+        if (isHost) sendRetry({ type: 'reveal', ver: VERSION });
+        showResult();
+      }, 400);
+    }
+  }, 50);
+}
+
+function showResult() {
+  let area = document.getElementById('result');
+  area.style.display = 'block';
+  
+  let all = {};
+  all[myName] = myChoice;
+  Object.assign(all, remoteChoices);
+
+  let h = '<b>[' + VERSION + '] 結果</b>';
+  for (let k in all) {
+    let choiceName = all[k] || '未揀';
+    let imgSrc = IMG[choiceName] || '';
+    h += `<div class="item"><span>${k}</span><span><img src="${imgSrc}" width="20" style="vertical-align:middle;margin-right:4px;"> ${choiceName}</span></div>`;
+  }
+
+  let v = Object.values(all);
+  let win = '';
+  if (new Set(v).size === 1 || new Set(v).size === 3) {
+    win = '平手！';
+  } else if (v.includes('包') && v.includes('剪')) {
+    win = '剪刀勝！';
+  } else if (v.includes('包') && v.includes('揼')) {
+    win = '包勝！';
+  } else {
+    win = '石頭勝！';
+  }
+
+  h += `<div class="log">🏆 ${win} [${VERSION}]</div>
+        <button class="btn btnY" onclick="restart()">🔄 再玩一次 [${VERSION}]</button>
+        <button class="btn btnDark" onclick="location.reload()">離開</button>`;
+  area.innerHTML = h;
+}
+
+function restart() {
+  sendRetry({ type: 'restart', ver: VERSION });
+  startRound();
+}
 </script>
-</body></html>
+</body>
+</html>
+```
