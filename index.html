@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>V31 揀定先揭曉版</title>
+<title>V32 無限再玩版</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:10px}
@@ -10,17 +10,17 @@ body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;
 .item{padding:10px;background:#151515;border:2px solid #222;border-radius:12px;margin-top:6px;display:flex;justify-content:space-between}.item.ok{border-color:#00FF88;background:#0e2018}.item.wait{border-color:#FFEB00;background:#332e00}
 .log{font-size:13px;color:#FFEB00;background:#222;border-radius:8px;padding:10px;margin-top:8px;text-align:center}
 .code{font-size:32px;font-weight:900;letter-spacing:6px;color:#00FF88;text-align:center}
-.choiceBtn{flex:1;padding:10px;border-radius:16px;border:3px solid #333;background:#fff;color:#000;font-weight:900;display:flex;flex-direction:column;align-items:center;transition:.15s}.choiceBtn img{width:72px;height:72px}.choiceBtn.sel{border-color:#FFEB00;transform:scale(1.08);box-shadow:0 0 12px #FFEB00}.choiceBtn:disabled{opacity:0.5}
-.progress{width:100%;height:16px;background:#333;border-radius:99px;margin-top:8px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
+.choiceBtn{flex:1;padding:10px;border-radius:16px;border:3px solid #333;background:#fff;color:#000;font-weight:900;display:flex;flex-direction:column;align-items:center}.choiceBtn img{width:72px;height:72px}.choiceBtn.sel{border-color:#FFEB00;transform:scale(1.08);box-shadow:0 0 12px #FFEB00}
 .countBig{font-size:56px;font-weight:900;color:#FFEB00;text-align:center;margin:10px 0;display:none}
+.progress{width:100%;height:16px;background:#333;border-radius:99px;margin-top:8px;overflow:hidden;display:none}.bar{height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)}
 .footerVer{margin-top:18px;color:#555;font-size:10px;text-align:center}
 </style>
 </head><body>
-<div class="verBadge">方包包包剪揼 V31 - 揀定先倒數揭曉版</div>
-<div class="verTag">V31</div>
+<div class="verBadge">方包包包剪揼 V32 - 無限再玩版</div>
+<div class="verTag">V32</div>
 
 <div class="card">
-<b>1. 登入房間 [V31]</b>
+<b>登入房間 [V32]</b>
 <div style="display:flex;gap:6px;margin-top:8px">
 <input id="nameInput" value="Louis" style="flex:1;padding:12px;border-radius:99px;border:2px solid #444;background:#000;color:#fff">
 <button class="btn" style="background:#FFEB00;color:#000;flex:1" onclick="createRoom()">開房</button>
@@ -28,30 +28,30 @@ body{margin:0;background:#0f0f0f;color:#fff;font-family:sans-serif;display:flex;
 <button class="btn" style="background:#00FF88;color:#000;flex:1" onclick="joinRoom()">入房</button>
 </div>
 <div class="code" id="roomCode">----</div>
-<div id="logRoom" class="log">[V31] 未入房</div>
+<div id="logRoom" class="log">[V32] 未入房</div>
 <div id="playerList"></div>
 <button id="startBtn" class="btn btnY" style="display:none">🎤 房主按：開始揀拳</button>
 </div>
 
 <div class="card" id="gameCard" style="display:none">
-<b>🎮 V31 請出拳！揀好等對面</b>
-<div id="statusLog" class="log">[V31] 等待出拳...</div>
+<b>🎮 V32 請出拳！揀定先倒數</b>
+<div id="statusLog" class="log">[V32] 請出拳...</div>
 <div style="display:flex;gap:8px;margin-top:10px">
 <button class="choiceBtn" id="btnChui" onclick="choose('揼')"><img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg"><span>揼</span></button>
 <button class="choiceBtn" id="btnJian" onclick="choose('剪')"><img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg"><span>剪</span></button>
 <button class="choiceBtn" id="btnBao" onclick="choose('包')"><img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg"><span>包</span></button>
 </div>
-<div id="choiceLog" class="log">[V31] 你未揀</div>
+<div id="choiceLog" class="log">[V32] 你未揀</div>
 <div id="whoChosen"></div>
 <div class="countBig" id="countBig">3</div>
 <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
 <div id="result" style="display:none;margin-top:10px"></div>
 </div>
 
-<div class="footerVer">V31 | 揀定先倒數 | PeerID: <span id="peerId">-</span></div>
+<div class="footerVer">V32 | 無限再玩 | PeerID: <span id="peerId">-</span></div>
 
 <script>
-const VERSION='V31';
+const VERSION='V32';
 let IMG={ '揼':'https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg','剪':'https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg','包':'https://raw.githubusercontent.com/louis2263/together/main/paper.jpg' };
 let peer=null, conns={}, myName='', roomCode='', players=[], readyMap={}, isHost=false, myChoice=null, audioCtx=null, gameStarted=false;
 let remoteChoices={}, choiceDone=false;
@@ -59,7 +59,7 @@ let remoteChoices={}, choiceDone=false;
 function log(t){document.getElementById('logRoom').textContent='['+VERSION+'] '+t}
 function slog(t){document.getElementById('statusLog').textContent='['+VERSION+'] '+t}
 function sendAll(m){ Object.values(conns).forEach(c=>{ try{if(c.open) c.send(m)}catch{} }); }
-function sendAllRetry(m){ for(let i=0;i<12;i++) setTimeout(()=>sendAll(m), i*180); }
+function sendAllRetry(m){ for(let i=0;i<15;i++) setTimeout(()=>sendAll(m), i*180); }
 
 function createRoom(){
  myName=document.getElementById('nameInput').value.trim()||'Louis'; roomCode=Math.random().toString(36).substring(2,6).toUpperCase(); document.getElementById('codeInput').value=roomCode; isHost=true;
@@ -75,34 +75,30 @@ function onData(d){
  if(d.type==='sync'){ players=d.players||players; readyMap=d.readyMap||readyMap; if(d.roomCode) document.getElementById('roomCode').textContent=d.roomCode; updatePlayers(); }
  if(d.type==='goGame'){ doStartGame(); }
  if(d.type==='choice'){ remoteChoices[d.name]=d.choice; renderWhoChosen(); checkAllChosen(); }
- if(d.type==='choiceUpdate'){ remoteChoices[d.name]=d.choice; renderWhoChosen(); checkAllChosen(); }
  if(d.type==='preReveal'){ startRevealCountdown(d.at); }
  if(d.type==='reveal'){ showResult(); }
- if(d.type==='restart'){ resetForNewRound(); }
+ if(d.type==='restart'){ doStartGame(); } // V32 核心：再玩直接開新局，唔返大廳
 }
 function updatePlayers(){
  let h='', cnt=players.length; for(let p of players){ let r=readyMap[p]; h+=`<div class="item ${r?'ok':''}"><span>${p}${p===myName?' (你)':''}</span><span>${r?'✅ 已入房':'⏳'}</span></div>`; }
  document.getElementById('playerList').innerHTML=h;
- if(cnt>=2 && isHost && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=hostGoGame; log(cnt+'人已入房，房主按開始揀拳'); }
+ if(cnt>=2 && isHost && !gameStarted){ document.getElementById('startBtn').style.display='block'; document.getElementById('startBtn').onclick=hostGoGame; log(cnt+'人已入房，房主按開始'); }
 }
-function hostGoGame(){
- sendAllRetry({type:'goGame',ver:VERSION}); doStartGame();
-}
+function hostGoGame(){ sendAllRetry({type:'goGame',ver:VERSION}); doStartGame(); }
 function doStartGame(){
- if(gameStarted) return; gameStarted=true;
+ gameStarted=true; choiceDone=false; myChoice=null; remoteChoices={};
  document.getElementById('gameCard').style.display='block'; document.getElementById('startBtn').style.display='none';
- myChoice=null; remoteChoices={}; choiceDone=false;
  document.querySelectorAll('.choiceBtn').forEach(b=>{b.classList.remove('sel'); b.disabled=false;});
  document.getElementById('choiceLog').textContent='['+VERSION+'] 你未揀，請出拳！';
  document.getElementById('whoChosen').innerHTML=''; document.getElementById('result').style.display='none';
  document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none';
- slog('請出拳！揀好後等對面');
+ document.getElementById('bar').style.width='0%';
+ slog('請出拳！揀好等對面');
+ renderWhoChosen();
 }
 function choose(c){
  myChoice=c; document.querySelectorAll('.choiceBtn').forEach(b=>b.classList.remove('sel'));
- if(c==='揼') document.getElementById('btnChui').classList.add('sel');
- if(c==='剪') document.getElementById('btnJian').classList.add('sel');
- if(c==='包') document.getElementById('btnBao').classList.add('sel');
+ if(c==='揼') btnChui.classList.add('sel'); if(c==='剪') btnJian.classList.add('sel'); if(c==='包') btnBao.classList.add('sel');
  document.getElementById('choiceLog').textContent='['+VERSION+'] 你已揀：'+c+'，等緊對面...';
  renderWhoChosen();
  sendAllRetry({type:'choice',name:myName,choice:c,ver:VERSION});
@@ -110,21 +106,21 @@ function choose(c){
 }
 function renderWhoChosen(){
  let h=''; for(let p of players){
-   let chosen = (p===myName? myChoice : remoteChoices[p]) ? '✅ 已揀好' : '⏳ 未揀';
-   let cls = (p===myName? myChoice : remoteChoices[p]) ? 'ok' : 'wait';
-   h+=`<div class="item ${cls}"><span>${p}</span><span>${chosen}</span></div>`;
+   let has = (p===myName? myChoice : remoteChoices[p]);
+   let txt = has ? '✅ 已揀好' : '⏳ 未揀';
+   let cls = has ? 'ok' : 'wait';
+   h+=`<div class="item ${cls}"><span>${p}</span><span>${txt}</span></div>`;
  }
  document.getElementById('whoChosen').innerHTML=h;
 }
 function checkAllChosen(){
- let allChosen = myChoice!==null && players.every(p=> p===myName ? true : remoteChoices[p]);
+ let allChosen = myChoice!==null && players.every(p=> p===myName ? true : !!remoteChoices[p]);
  if(allChosen && !choiceDone){
    choiceDone=true;
-   slog('全部揀好晒，準備倒數！');
+   slog('全部揀好晒，準備倒數揭曉！');
    document.querySelectorAll('.choiceBtn').forEach(b=>b.disabled=true);
-   // 只有房主發起倒數，保證兩邊同步
    if(isHost){
-     let at=Date.now()+1200;
+     let at=Date.now()+800;
      sendAllRetry({type:'preReveal', at, ver:VERSION});
      startRevealCountdown(at);
    }
@@ -135,42 +131,31 @@ async function startRevealCountdown(at){
  let big=document.getElementById('countBig'); let prog=document.getElementById('prog'); let bar=document.getElementById('bar');
  big.style.display='block'; prog.style.display='block'; bar.style.width='0%';
  let delay=Math.max(0,(at-Date.now())/1000); let when=audioCtx.currentTime+delay;
- // 3 2 1 音效
- for(let i=0;i<3;i++){
-   let osc=audioCtx.createOscillator(), g=audioCtx.createGain();
-   osc.frequency.value= 600; g.gain.setValueAtTime(0.6, when+i*0.9); g.gain.exponentialRampToValueAtTime(0.01, when+i*0.9+0.3);
-   osc.connect(g).connect(audioCtx.destination); osc.start(when+i*0.9); osc.stop(when+i*0.9+0.3);
- }
- let start=Date.now()+delay*1000; let dur=2700;
+ for(let i=0;i<3;i++){ let osc=audioCtx.createOscillator(), g=audioCtx.createGain(); osc.frequency.value=600; g.gain.setValueAtTime(0.6,when+i*0.8); g.gain.exponentialRampToValueAtTime(0.01,when+i*0.8+0.3); osc.connect(g).connect(audioCtx.destination); osc.start(when+i*0.8); osc.stop(when+i*0.8+0.3); }
+ let start=Date.now()+delay*1000; let dur=2400;
  let iv=setInterval(()=>{
-   let e=Date.now()-start; let sec = 3 - Math.floor(e/900); if(sec<1) sec=1;
-   big.textContent= sec===3?'3':sec===2?'2':'1';
-   if(e<900) big.textContent='3'; else if(e<1800) big.textContent='2'; else big.textContent='1';
-   bar.style.width=Math.min(e/dur*100,100)+'%';
-   if(e>=dur){ clearInterval(iv); big.textContent='揭曉！'; // 最後一下高音
-     let osc=audioCtx.createOscillator(), g=audioCtx.createGain(); osc.frequency.value=1200; g.gain.setValueAtTime(0.8, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.6); osc.connect(g).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.6);
-     setTimeout(()=>{ sendAllRetry({type:'reveal',ver:VERSION}); showResult(); },600);
+   let e=Date.now()-start; let show='3'; if(e>800) show='2'; if(e>1600) show='1';
+   big.textContent=show; bar.style.width=Math.min(e/dur*100,100)+'%';
+   if(e>=dur){ clearInterval(iv); big.textContent='揭曉！';
+     let osc=audioCtx.createOscillator(), g=audioCtx.createGain(); osc.frequency.value=1200; g.gain.setValueAtTime(0.8,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.5); osc.connect(g).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.5);
+     setTimeout(()=>{ sendAllRetry({type:'reveal',ver:VERSION}); showResult(); },500);
    }
- },80);
+ },60);
 }
 function showResult(){
  let area=document.getElementById('result'); area.style.display='block';
  let all={}; all[myName]=myChoice; Object.assign(all,remoteChoices);
- let h='<b>['+VERSION+'] 結果</b>'; for(let p of players){ let ch=all[p]||'未收到'; h+=`<div class="item"><span>${p}</span><span><img src="${IMG[ch]||''}" style="width:24px"> ${ch}</span></div>`; }
- let v=Object.values(all); let win=v.length<players.length?'等緊...': (new Set(v).size===1||new Set(v).size===3)?'平手！': v.includes('包')&&v.includes('剪')?'剪贏包 ✌️':v.includes('包')&&v.includes('揼')?'包贏揼 ✋':'揼贏剪 👊';
+ let h='<b>['+VERSION+'] 結果</b>'; for(let p of players){ let ch=all[p]||'?'; h+=`<div class="item"><span>${p}</span><span><img src="${IMG[ch]||''}" style="width:24px"> ${ch}</span></div>`; }
+ let v=Object.values(all); let win=(new Set(v).size===1||new Set(v).size===3)?'平手！': v.includes('包')&&v.includes('剪')?'剪贏包 ✌️':v.includes('包')&&v.includes('揼')?'包贏揼 ✋':'揼贏剪 👊';
  h+=`<div class="log">🏆 ${win} [${VERSION}]</div>
- <button class="btn btnY" onclick="restartRound()">🔄 再玩一次（同房再戰） [${VERSION}]</button>
+ <button class="btn btnY" onclick="restartRound()">🔄 再玩一次 [${VERSION}] - 即刻再開</button>
  <button class="btn btnDark" onclick="location.reload()">🚪 離開房間</button>`;
  area.innerHTML=h;
 }
-function restartRound(){ sendAllRetry({type:'restart',ver:VERSION}); resetForNewRound(); }
-function resetForNewRound(){
- document.getElementById('result').style.display='none'; document.getElementById('gameCard').style.display='none';
- document.getElementById('countBig').style.display='none'; document.getElementById('prog').style.display='none';
- myChoice=null; remoteChoices={}; choiceDone=false; gameStarted=false; 
- log('已重置，房主可以再開');
- if(isHost) document.getElementById('startBtn').style.display='block';
- updatePlayers();
+function restartRound(){
+ // V32：直接開新局，兩邊同步清狀態
+ sendAllRetry({type:'restart',ver:VERSION});
+ doStartGame();
 }
 </script>
 </body></html>
