@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼合唱對決 V51</title>
+<title>包剪揼合唱對決 V52</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 * { box-sizing: border-box; }
@@ -36,7 +36,7 @@ audio { width:100%; margin-top:8px; height:36px; }
 </style>
 </head>
 <body>
-<div class="verBadge">包剪揼合唱對決 V51 - 修復音訊同步版</div>
+<div class="verBadge">包剪揼合唱對決 V52 - 修正 PeerID 版</div>
 
 <!-- 步驟 1-2：名字 & 房間 -->
 <div class="card" id="cardLogin">
@@ -51,7 +51,7 @@ audio { width:100%; margin-top:8px; height:36px; }
   </div>
   <div class="code" id="roomCodeDisplay" style="display:none">----</div>
   <div id="statusConn" class="log" style="color:#aaa">● 請輸入名字後開房或入房</div>
-  <div id="debugLog">系統就緒 V51</div>
+  <div id="debugLog">系統就緒 V52</div>
 </div>
 
 <!-- 步驟 3 & 6：房間等候區 & 模式選擇 -->
@@ -140,7 +140,7 @@ audio { width:100%; margin-top:8px; height:36px; }
 </div>
 
 <script>
-const VERSION = 'V51';
+const VERSION = 'V52';
 let peer = null, conns = {};
 let myName = '', roomCode = '', isHost = false;
 let players = []; 
@@ -168,8 +168,8 @@ function setConnStatus(txt, color='#FFEB00'){
 
 function getName(){
   let val = document.getElementById('nameInput').value.trim();
-  if(val){ try{ localStorage.setItem('v51_name', val); }catch(e){} return val; }
-  try{ let saved = localStorage.getItem('v51_name'); if(saved) return saved; }catch(e){}
+  if(val){ try{ localStorage.setItem('v52_name', val); }catch(e){} return val; }
+  try{ let saved = localStorage.getItem('v52_name'); if(saved) return saved; }catch(e){}
   return '玩家' + Math.floor(Math.random()*8999+1000);
 }
 
@@ -183,6 +183,10 @@ function sendReliable(msg){
   sendAll(msg);
   setTimeout(() => sendAll(msg), 300);
   setTimeout(() => sendAll(msg), 800);
+}
+
+function getSanitizedPeerId(code){
+  return 'RPS' + code.toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 // ---- PeerJS 網路連線 ----
@@ -203,7 +207,7 @@ function createRoom(){
     showLobby();
 
     if(peer) try{ peer.destroy(); }catch(e){}
-    let peerId = VERSION + '-' + roomCode;
+    let peerId = getSanitizedPeerId(roomCode);
     peer = new Peer(peerId);
 
     peer.on('open', (id) => {
@@ -214,7 +218,7 @@ function createRoom(){
 
     peer.on('error', (err) => {
       dbg('Peer錯: ' + err.type);
-      setConnStatus('● 連線伺服器異常，房號仍可用: ' + roomCode, '#FF4444');
+      setConnStatus('● 建立房間失敗 (' + err.type + ')，請再試一次', '#FF4444');
     });
 
     peer.on('connection', (c) => {
@@ -261,7 +265,7 @@ function joinRoom(){
 }
 
 function connectToHost(){
-  let targetId = VERSION + '-' + roomCode;
+  let targetId = getSanitizedPeerId(roomCode);
   let conn = peer.connect(targetId, {reliable:true});
   conns['host'] = conn;
 
@@ -307,7 +311,6 @@ function onData(d){
     }
     renderPlayers();
     sendReliable({type:'sync', players, roomCode, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
-    // 同時把自己的音訊發給新加入的人
     for(let k in conns) syncMyAudiosTo(conns[k]);
   }
 
@@ -535,6 +538,4 @@ function renderGameWho(){
       html += `<div class="item elim"><span>${p}</span><span class="badge badgeElim">💀 已淘汰 (觀戰中)</span></div>`;
     } else {
       html += `<div class="item ${chosen?'ok':'wait'}">
-        <span>${p} ${p===myName?'(你)':''}</span>
-        <span>${chosen ? '✅ 已出拳' : '⏳ 思考中...'}</span>
-      </div>`;
+        <span>${p} ${p=
