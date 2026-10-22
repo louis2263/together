@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼合唱對決 V50</title>
+<title>包剪揼合唱對決 V51</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 * { box-sizing: border-box; }
@@ -26,7 +26,6 @@ body { margin:0; background:#0f0f0f; color:#fff; font-family: -apple-system, Bli
 .badge { padding:4px 10px; border-radius:99px; font-size:12px; font-weight:bold; }
 .badgeOk { background:#00FF88; color:#000; }
 .badgeWait { background:#FFEB00; color:#000; }
-.badgeElim { background:#555; color:#fff; }
 .log { font-size:13px; color:#FFEB00; background:#222; border-radius:8px; padding:10px; margin-top:10px; text-align:center; line-height:1.4; }
 .code { font-size:36px; font-weight:900; letter-spacing:6px; color:#00FF88; text-align:center; margin:10px 0; background:#000; padding:10px; border-radius:12px; border:1px dashed #00FF88; }
 .recBox { background:#0a0a0a; border:2px dashed #444; border-radius:12px; padding:12px; margin-top:12px; }
@@ -37,7 +36,7 @@ audio { width:100%; margin-top:8px; height:36px; }
 </style>
 </head>
 <body>
-<div class="verBadge">包剪揼合唱對決 V50</div>
+<div class="verBadge">包剪揼合唱對決 V51 - 修復音訊同步版</div>
 
 <!-- 步驟 1-2：名字 & 房間 -->
 <div class="card" id="cardLogin">
@@ -52,7 +51,7 @@ audio { width:100%; margin-top:8px; height:36px; }
   </div>
   <div class="code" id="roomCodeDisplay" style="display:none">----</div>
   <div id="statusConn" class="log" style="color:#aaa">● 請輸入名字後開房或入房</div>
-  <div id="debugLog">系統就緒 V50</div>
+  <div id="debugLog">系統就緒 V51</div>
 </div>
 
 <!-- 步驟 3 & 6：房間等候區 & 模式選擇 -->
@@ -108,6 +107,7 @@ audio { width:100%; margin-top:8px; height:36px; }
     </div>
   </div>
 
+  <button id="btnForceReady" class="btn btnDark" style="background:#444;color:#FFEB00;font-size:14px;margin-top:12px">🔄 重新同步音訊狀態 (若卡住請按此)</button>
   <button id="btnStartGame" class="btn btnY" style="display:none;font-size:18px">7️⃣ 按此開始遊戲</button>
 </div>
 
@@ -140,17 +140,17 @@ audio { width:100%; margin-top:8px; height:36px; }
 </div>
 
 <script>
-const VERSION = 'V50';
+const VERSION = 'V51';
 let peer = null, conns = {};
 let myName = '', roomCode = '', isHost = false;
-let players = []; // 所有人
-let alivePlayers = []; // 尚存活玩家
+let players = []; 
+let alivePlayers = []; 
 let playerScores = {}, playerStreaks = {};
 let gameMode = 'one', currentRound = 1;
 
 let myAudios = {1:null, 2:null};
 let myTempBlobs = {1:null, 2:null};
-let remoteAudios = {}; // { playername: {1: Blob, 2: Blob} }
+let remoteAudios = {}; 
 
 let mediaRecorder = null, micStream = null, isRecording = false;
 let myChoice = null, remoteChoices = {}, choiceDone = false, countdownTimer = null;
@@ -168,8 +168,8 @@ function setConnStatus(txt, color='#FFEB00'){
 
 function getName(){
   let val = document.getElementById('nameInput').value.trim();
-  if(val){ try{ localStorage.setItem('v50_name', val); }catch(e){} return val; }
-  try{ let saved = localStorage.getItem('v50_name'); if(saved) return saved; }catch(e){}
+  if(val){ try{ localStorage.setItem('v51_name', val); }catch(e){} return val; }
+  try{ let saved = localStorage.getItem('v51_name'); if(saved) return saved; }catch(e){}
   return '玩家' + Math.floor(Math.random()*8999+1000);
 }
 
@@ -179,10 +179,10 @@ function sendAll(msg){
   }
 }
 
-function sendRetry(msg){
-  for(let i=0; i<5; i++){
-    setTimeout(() => sendAll(msg), i*200);
-  }
+function sendReliable(msg){
+  sendAll(msg);
+  setTimeout(() => sendAll(msg), 300);
+  setTimeout(() => sendAll(msg), 800);
 }
 
 // ---- PeerJS 網路連線 ----
@@ -268,8 +268,7 @@ function connectToHost(){
   conn.on('open', async () => {
     setConnStatus('● 已成功進房！ 玩家:' + myName + ' | 房號:' + roomCode, '#00FF88');
     conn.send({type:'join', name:myName, ver:VERSION});
-    if(myAudios[1]){ let b64 = await blobToBase64(myAudios[1]); conn.send({type:'audio', name:myName, idx:1, b64, ver:VERSION}); }
-    if(myAudios[2]){ let b64 = await blobToBase64(myAudios[2]); conn.send({type:'audio', name:myName, idx:2, b64, ver:VERSION}); }
+    syncMyAudiosTo(conn);
   });
 
   conn.on('data', onData);
@@ -278,9 +277,15 @@ function connectToHost(){
   });
 }
 
-function syncMyAudiosTo(c){
-  if(myAudios[1]) blobToBase64(myAudios[1]).then(b64 => c.send({type:'audio', name:myName, idx:1, b64, ver:VERSION}));
-  if(myAudios[2]) blobToBase64(myAudios[2]).then(b64 => c.send({type:'audio', name:myName, idx:2, b64, ver:VERSION}));
+async function syncMyAudiosTo(targetConn){
+  if(myAudios[1]){
+    let b64 = await blobToBase64(myAudios[1]);
+    try { targetConn.send({type:'audio', name:myName, idx:1, b64, ver:VERSION}); }catch(e){}
+  }
+  if(myAudios[2]){
+    let b64 = await blobToBase64(myAudios[2]);
+    try { targetConn.send({type:'audio', name:myName, idx:2, b64, ver:VERSION}); }catch(e){}
+  }
 }
 
 function showLobby(){
@@ -301,7 +306,9 @@ function onData(d){
       playerStreaks[d.name] = 0;
     }
     renderPlayers();
-    sendRetry({type:'sync', players, roomCode, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
+    sendReliable({type:'sync', players, roomCode, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
+    // 同時把自己的音訊發給新加入的人
+    for(let k in conns) syncMyAudiosTo(conns[k]);
   }
 
   if(d.type === 'sync'){
@@ -316,6 +323,7 @@ function onData(d){
   if(d.type === 'audio' && d.b64){
     if(!remoteAudios[d.name]) remoteAudios[d.name] = {};
     remoteAudios[d.name][d.idx] = base64ToBlob(d.b64);
+    dbg('收到 ' + d.name + ' 的音訊 ' + d.idx);
     renderPlayers();
   }
 
@@ -327,8 +335,8 @@ function onData(d){
   if(d.type === 'goGame'){
     gameMode = d.mode;
     alivePlayers = d.alive || players;
-    playerScores = d.scores || playerScores;
-    playerStreaks = d.streaks || playerStreaks;
+    playerScores = d.scores;
+    playerStreaks = d.streaks;
     currentRound = d.round || 1;
     startRound();
   }
@@ -398,7 +406,7 @@ async function uploadAudio(n){
   document.getElementById('boxRec'+n).classList.add('done');
 
   let b64 = await blobToBase64(myAudios[n]);
-  sendRetry({type:'audio', name:myName, idx:n, b64, ver:VERSION});
+  sendReliable({type:'audio', name:myName, idx:n, b64, ver:VERSION});
   renderPlayers();
 }
 
@@ -407,7 +415,7 @@ function cancelAudio(n){
   document.getElementById('upArea'+n).style.display = 'none';
   document.getElementById('prevArea'+n).style.display = 'block';
   document.getElementById('boxRec'+n).classList.remove('done');
-  sendRetry({type:'audioCancel', name:myName, idx:n, ver:VERSION});
+  sendReliable({type:'audioCancel', name:myName, idx:n, ver:VERSION});
   renderPlayers();
 }
 
@@ -417,17 +425,16 @@ function isPlayerReady(pName){
   return (r[1] && r[2]);
 }
 
-// ---- 渲染玩家與狀態 (需求 3 & 5) ----
+// ---- 渲染玩家與狀態 ----
 function renderPlayers(){
   let html = '';
   for(let p of players){
     let ready = isPlayerReady(p);
     let isMe = (p === myName);
     
-    // 需求 3: 進房間顯示 "已進房間" / 需求 5: 上傳音訊後顯示 "準備好"
     let statusBadge = ready ? 
       `<span class="badge badgeOk">✅ 準備好</span>` : 
-      `<span class="badge badgeWait">🟡 已進房間</span>`;
+      `<span class="badge badgeWait">🟡 已進房間 (未齊音訊)</span>`;
 
     html += `
       <div class="item ${ready?'ok':'wait'}">
@@ -439,7 +446,6 @@ function renderPlayers(){
 
   document.getElementById('playerListWait').innerHTML = html;
 
-  // 判斷開始遊戲按鈕顯示狀態
   let allReady = (players.length >= 2) && players.every(isPlayerReady);
   let btn = document.getElementById('btnStartGame');
 
@@ -453,19 +459,19 @@ function renderPlayers(){
     } else {
       btn.style.background = '#444';
       btn.style.color = '#888';
-      btn.textContent = players.length < 2 ? '⏳ 等待更多玩家加入...' : '⏳ 等待所有玩家完成錄音...';
+      btn.textContent = players.length < 2 ? '⏳ 等待更多玩家加入...' : '⏳ 等待對手音訊同步完成...';
       btn.disabled = true;
     }
   } else {
     btn.style.display = 'block';
     btn.style.background = '#222';
     btn.style.color = '#FFEB00';
-    btn.textContent = allReady ? '✅ 全員準備好，等待房主開始遊戲...' : '⏳ 請先完成錄音上傳...';
+    btn.textContent = allReady ? '✅ 全員準備好，等待房主開始遊戲...' : '⏳ 等待音訊同步完成...';
     btn.disabled = true;
   }
 }
 
-// ---- 遊戲對決流程 (需求 6, 7, 8) ----
+// ---- 遊戲對決流程 ----
 function startRound(){
   myChoice = null;
   remoteChoices = {};
@@ -476,7 +482,6 @@ function startRound(){
   document.getElementById('gameStatusLog').textContent = `第 ${currentRound} 輪 | 玩法: ${getModeName(gameMode)} | 存活玩家: ${alivePlayers.join(', ')}`;
   document.getElementById('myChoiceInfo').textContent = alivePlayers.includes(myName) ? '請出拳！' : '你已在先前輪次被淘汰，目前在旁觀戰';
   
-  // 按鈕啟用/禁用 (淘汰者不可點)
   let btns = document.querySelectorAll('.btnHand');
   btns.forEach(b => {
     b.classList.remove('active');
@@ -492,8 +497,6 @@ function startRound(){
   document.getElementById('btnNextRound').style.display = 'none';
 
   renderGameWho();
-
-  // 自動捲動至遊戲區
   window.scrollTo({top: document.getElementById('cardGame').offsetTop - 20, behavior: 'smooth'});
 }
 
@@ -518,7 +521,7 @@ function chooseHand(choice){
   document.getElementById('myChoiceInfo').textContent = '你已選擇：' + choice + '！等待其他玩家...';
   renderGameWho();
 
-  sendRetry({type:'choice', name:myName, choice, ver:VERSION});
+  sendReliable({type:'choice', name:myName, choice, ver:VERSION});
   checkAllChosen();
 }
 
@@ -535,275 +538,3 @@ function renderGameWho(){
         <span>${p} ${p===myName?'(你)':''}</span>
         <span>${chosen ? '✅ 已出拳' : '⏳ 思考中...'}</span>
       </div>`;
-    }
-  }
-  document.getElementById('playerChoiceList').innerHTML = html;
-}
-
-function checkAllChosen(){
-  let aliveCount = alivePlayers.length;
-  let chosenCount = 0;
-
-  if(alivePlayers.includes(myName) && myChoice) chosenCount++;
-  for(let p of alivePlayers){
-    if(p !== myName && remoteChoices[p]) chosenCount++;
-  }
-
-  if(chosenCount >= aliveCount && !choiceDone){
-    choiceDone = true;
-    if(isHost){
-      let startAt = Date.now() + 1000;
-      sendRetry({type:'preReveal', at:startAt, ver:VERSION});
-      doCountdownAndChorus(startAt);
-    }
-  }
-}
-
-// 需求 8：三秒倒數、大合唱同時播放
-async function doCountdownAndChorus(startAt){
-  let big = document.getElementById('countBig');
-  let progBar = document.getElementById('progBar');
-  let progInner = document.getElementById('progInner');
-  
-  big.style.display = 'block';
-  progBar.style.display = 'block';
-
-  // 準備大合唱音訊元素 (包含所有存活玩家的音訊①)
-  let container = document.getElementById('audioChorusContainer');
-  container.innerHTML = '';
-  
-  let audioElements = [];
-  for(let p of alivePlayers){
-    let blob = (p === myName) ? myAudios[1] : (remoteAudios[p] ? remoteAudios[p][1] : null);
-    if(blob){
-      let audio = document.createElement('audio');
-      audio.src = URL.createObjectURL(blob);
-      container.appendChild(audio);
-      audioElements.push(audio);
-    }
-  }
-
-  let delay = Math.max(0, startAt - Date.now());
-  
-  setTimeout(() => {
-    // 同步播放所有人音訊① (包剪揼口號合唱)
-    audioElements.forEach(a => {
-      a.currentTime = 0;
-      a.play().catch(e=>console.log(e));
-    });
-  }, delay);
-
-  let startTime = Date.now() + delay;
-  let totalDur = 2500; // 合唱播放時間
-
-  if(countdownTimer) clearInterval(countdownTimer);
-  countdownTimer = setInterval(() => {
-    let elapsed = Date.now() - startTime;
-    if(elapsed < 800) big.textContent = '3';
-    else if(elapsed < 1600) big.textContent = '2';
-    else if(elapsed < 2400) big.textContent = '1';
-    else big.textContent = '包剪揼！';
-
-    progInner.style.width = Math.min((elapsed / totalDur) * 100, 100) + '%';
-
-    if(elapsed >= totalDur){
-      clearInterval(countdownTimer);
-      big.textContent = '合唱完畢！';
-      
-      if(isHost){
-        let result = calculateResult();
-        sendRetry({type:'reveal', result, ver:VERSION});
-        showResult(result);
-      }
-    }
-  }, 50);
-}
-
-// 需求 6：淘汰演算法與勝負判斷
-function calculateResult(){
-  let choices = {};
-  if(myChoice) choices[myName] = myChoice;
-  Object.assign(choices, remoteChoices);
-
-  let activeChoices = {};
-  for(let p of alivePlayers){
-    if(choices[p]) activeChoices[p] = choices[p];
-  }
-
-  let uniqueHands = [...new Set(Object.values(activeChoices))];
-  let winners = [], losers = [], isTie = false;
-
-  // 勝負判定邏輯
-  if(uniqueHands.length === 1 || uniqueHands.length === 3){
-    isTie = true; // 全出一樣或三種手勢都有 -> 平手
-  } else if(uniqueHands.length === 2){
-    let winHand = '';
-    if(uniqueHands.includes('剪') && uniqueHands.includes('包')) winHand = '剪';
-    else if(uniqueHands.includes('包') && uniqueHands.includes('揼')) winHand = '包';
-    else if(uniqueHands.includes('揼') && uniqueHands.includes('剪')) winHand = '揼';
-
-    for(let p in activeChoices){
-      if(activeChoices[p] === winHand) winners.push(p);
-      else losers.push(p);
-    }
-  }
-
-  // 更新分數與連勝數
-  if(!isTie && winners.length > 0){
-    for(let w of winners){
-      playerScores[w] = (playerScores[w] || 0) + 1;
-      playerStreaks[w] = (playerStreaks[w] || 0) + 1;
-    }
-    for(let l of losers){
-      playerStreaks[l] = 0;
-    }
-  }
-
-  // 判斷是否有最終大勝者 (Final Winner)
-  let finalWinner = null;
-  if(gameMode === 'one'){
-    if(!isTie && winners.length === 1 && (alivePlayers.length === 2 || losers.length > 0)){
-      // 剩餘存活玩家淘汰至剩 1 人
-      if(alivePlayers.length - losers.length === 1) finalWinner = winners[0];
-    }
-  } else if(gameMode === 'two'){
-    for(let p of players){ if(playerScores[p] >= 2) finalWinner = p; }
-  } else if(gameMode === 'three'){
-    for(let p of players){ if(playerScores[p] >= 3) finalWinner = p; }
-  } else if(gameMode === 'streak2'){
-    for(let p of players){ if(playerStreaks[p] >= 2) finalWinner = p; }
-  }
-
-  // 計算下一輪存活玩家 (淘汰制模式下失敗者被淘汰)
-  let nextAlive = [];
-  if(finalWinner){
-    nextAlive = [finalWinner];
-  } else if(isTie){
-    nextAlive = [...alivePlayers];
-  } else if(gameMode === 'one'){
-    nextAlive = [...winners]; // 淘汰 losers
-  } else {
-    nextAlive = [...players]; // 非單鋪淘汰制則保留所有人
-  }
-
-  return {
-    choices: activeChoices,
-    winners,
-    losers,
-    isTie,
-    finalWinner,
-    nextAlive,
-    scores: {...playerScores},
-    streaks: {...playerStreaks}
-  };
-}
-
-// 需求 8：結果顯示與播放勝利音訊
-function showResult(r){
-  if(!r) return;
-  
-  // 更新本地狀態
-  alivePlayers = r.nextAlive;
-  playerScores = r.scores;
-  playerStreaks = r.streaks;
-
-  let box = document.getElementById('resultBox');
-  box.style.display = 'block';
-
-  let html = `<div style="font-size:18px;font-weight:bold;color:#FFEB00;margin-bottom:8px">第 ${currentRound} 輪比賽結果：</div>`;
-  
-  for(let p in r.choices){
-    let hand = r.choices[p];
-    let isWin = r.winners.includes(p);
-    let isLose = r.losers.includes(p);
-    let tag = isWin ? '👑 勝出' : (isLose ? '❌ 淘汰/落敗' : '🤝 平手');
-    html += `<div class="item ${isWin?'ok':''}"><span><b>${p}</b> 出：<b>${hand}</b></span><span>${tag}</span></div>`;
-  }
-
-  if(r.finalWinner){
-    html += `
-      <div class="log" style="background:#000;border:2px solid #00FF88;color:#00FF88;font-size:20px;font-weight:bold;margin-top:12px;padding:16px">
-        🏆 恭喜 ${r.finalWinner} 獲得最終大勝利！！
-      </div>
-    `;
-
-    // 需求 8: 播放最終勝利者的音訊② (勝利宣言)
-    playWinnerAudio(r.finalWinner);
-
-  } else if(r.isTie){
-    html += `<div class="log" style="margin-top:10px">本輪平手！所有人繼續進入下一輪！</div>`;
-  } else {
-    html += `<div class="log" style="margin-top:10px">本輪獲勝者：${r.winners.join(', ')}</div>`;
-  }
-
-  box.innerHTML = html;
-
-  // 房主控制下一輪按鈕
-  if(isHost && !r.finalWinner){
-    let btnNext = document.getElementById('btnNextRound');
-    btnNext.style.display = 'block';
-    btnNext.textContent = '➡️ 進入第 ' + (currentRound + 1) + ' 輪';
-  }
-}
-
-function playWinnerAudio(winnerName){
-  let blob = (winnerName === myName) ? myAudios[2] : (remoteAudios[winnerName] ? remoteAudios[winnerName][2] : null);
-  if(blob){
-    let audio = new Audio(URL.createObjectURL(blob));
-    audio.play().catch(e=>console.log('勝利音訊播放失敗:', e));
-  }
-}
-
-// ---- 初始化與事件綁定 ----
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('btnCreate').addEventListener('click', createRoom);
-  document.getElementById('btnJoin').addEventListener('click', joinRoom);
-
-  // 錄音①
-  document.getElementById('btnRec1').addEventListener('click', () => startRecord(1));
-  document.getElementById('btnReRec1').addEventListener('click', () => startRecord(1));
-  document.getElementById('btnUp1').addEventListener('click', () => uploadAudio(1));
-  document.getElementById('btnCancel1').addEventListener('click', () => cancelAudio(1));
-
-  // 錄音②
-  document.getElementById('btnRec2').addEventListener('click', () => startRecord(2));
-  document.getElementById('btnReRec2').addEventListener('click', () => startRecord(2));
-  document.getElementById('btnUp2').addEventListener('click', () => uploadAudio(2));
-  document.getElementById('btnCancel2').addEventListener('click', () => cancelAudio(2));
-
-  // 遊戲模式選擇
-  document.getElementById('modeSelect').addEventListener('change', (e) => {
-    gameMode = e.target.value;
-    sendRetry({type:'sync', players, roomCode, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
-  });
-
-  // 開始遊戲
-  document.getElementById('btnStartGame').addEventListener('click', () => {
-    if(!isHost) return;
-    currentRound = 1;
-    alivePlayers = [...players];
-    for(let p of players){ playerScores[p]=0; playerStreaks[p]=0; }
-
-    sendRetry({type:'goGame', mode:gameMode, alive:alivePlayers, scores:playerScores, streaks:playerStreaks, round:currentRound});
-    startRound();
-  });
-
-  // 下一輪
-  document.getElementById('btnNextRound').addEventListener('click', () => {
-    if(!isHost) return;
-    currentRound++;
-    sendRetry({type:'goGame', mode:gameMode, alive:alivePlayers, scores:playerScores, streaks:playerStreaks, round:currentRound});
-    startRound();
-  });
-
-  // 出拳按鈕
-  document.querySelectorAll('.btnHand').forEach(btn => {
-    btn.addEventListener('click', () => {
-      let choice = btn.getAttribute('data-choice');
-      chooseHand(choice);
-    });
-  });
-});
-</script>
-</body>
-</html>
