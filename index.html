@@ -94,7 +94,7 @@ audio{width:100%;margin-top:4px}
 // V47 強制版 - 所有按鈕用addEventListener，唔用onclick
 const VERSION='V47';
 let peer=null, conns={}, myName='', roomCode='', players=[], isHost=false, myAudios={1:null,2:null}, myTemp={1:null,2:null}, remoteAudios={}, mediaRecorder=null, micStream=null, isRecording=false;
-let gameMode='one', alivePlayers=[], playerScores={}, playerStreaks={}, currentRound=1, myChoice=null, remoteChoices={}, choiceDone=false, countdownTimer=null;
+let gameMode='one', alivePlayers=[], playerScores={}, playerStreaks={}, currentRound=1, myChoice=null, remoteChoices={}, choiceDone=false, countdownTimer=null, gameStarted=false;
 
 function dbg(t){ let el=document.getElementById('debug'); el.textContent='debug: '+t; el.style.display='block'; console.log(t); }
 function log(t){ document.getElementById('logRoom').textContent='['+VERSION+'] '+t; }
@@ -238,7 +238,7 @@ function choose(c){
 }
 function renderAudio(){
   let div=document.getElementById('audioList'); let h='';
-  if(myAudios[1]){ let url=URL.createObjectURL(myAudios[1]); h+=`<div class="item ok"><span>${myName}(你) 合唱</span><audio controls src="${url}"></audio></div>`; }
+  if(myAudios[1]){ let url=URL.createObjectURL(myAudios[1]); h+=`<div class="item ok"><span>${myName}(全體) 合唱</span><audio controls src="${url}"></audio></div>`; }
   for(let name in remoteAudios){ if(remoteAudios[name][1]){ let url=URL.createObjectURL(remoteAudios[name][1]); h+=`<div class="item ok"><span>${name} 合唱</span><audio controls src="${url}"></audio></div>`; } }
   div.innerHTML=h;
 }
@@ -281,4 +281,4 @@ function calcResult(){
 function showResult(payload){
   let area=document.getElementById('result'); area.style.display='block'; let r=payload.result; if(!r) return;
   let h=`<b>[V47] 第${currentRound}輪結果</b>`;
-  for(let k in r.choices){ h+=`<div class="item
+  for(let k in r.choices){ 
