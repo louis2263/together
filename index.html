@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼合唱對決 V52</title>
+<title>包剪揼合唱對決 V53-FIX</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 * { box-sizing: border-box; }
@@ -28,7 +28,7 @@ body { margin:0; background:#0f0f0f; color:#fff; font-family: -apple-system, Bli
 .badgeWait { background:#FFEB00; color:#000; }
 .badgeElim { background:#666; color:#fff; }
 .log { font-size:13px; color:#FFEB00; background:#222; border-radius:8px; padding:10px; margin-top:10px; text-align:center; line-height:1.4; }
-.code { font-size:36px; font-weight:900; letter-spacing:6px; color:#00FF88; text-align:center; margin:10px 0; background:#000; padding:10px; border-radius:12px; border:1px dashed #00FF88; }
+.code { font-size:28px; font-weight:900; letter-spacing:4px; color:#00FF88; text-align:center; margin:10px 0; background:#000; padding:10px; border-radius:12px; border:1px dashed #00FF88; word-break:break-all; }
 .recBox { background:#0a0a0a; border:2px dashed #444; border-radius:12px; padding:12px; margin-top:12px; }
 .recBox.done { border-color:#00FF88; border-style:solid; }
 select { width:100%; padding:14px; border-radius:99px; background:#000; color:#fff; border:2px solid #444; font-weight:900; font-size:15px; margin-top:8px; }
@@ -37,21 +37,21 @@ audio { width:100%; margin-top:8px; height:36px; }
 </style>
 </head>
 <body>
-<div class="verBadge">包剪揼合唱對決 V52 - 完整版本</div>
+<div class="verBadge">包剪揼合唱對決 V53-FIX【修復連線】</div>
 <!-- 步驟 1-2：名字 & 房間 -->
 <div class="card" id="cardLogin">
   <div class="title">1‑2 輸入名字與創房/入房</div>
-  <input id="nameInput" placeholder="輸入你個名 (例: 阿Fai)" style="width:100%;padding:14px;border-radius:99px;border:2px solid #444;background:#000;color:#fff;font-size:16px;margin-bottom:10px;">
+  <input id="nameInput" placeholder="輸入你個名 (例: Louis)" style="width:100%;padding:14px;border-radius:99px;border:2px solid #444;background:#000;color:#fff;font-size:16px;margin-bottom:10px;">
   <div style="display:flex;gap:8px">
     <button id="btnCreate" class="btn btnY" style="flex:1;margin:0">開新房間</button>
   </div>
   <div style="display:flex;gap:8px;margin-top:10px">
-    <input id="codeInput" placeholder="輸入4位房號" style="flex:1;padding:14px;border-radius:99px;border:2px solid #444;background:#000;color:#fff;font-size:16px;text-transform:uppercase;">
+    <input id="codeInput" placeholder="貼房主房號PeerID" style="flex:1;padding:14px;border-radius:99px;border:2px solid #444;background:#000;color:#fff;font-size:16px;">
     <button id="btnJoin" class="btn btnG" style="width:120px;margin:0">進入房間</button>
   </div>
   <div class="code" id="roomCodeDisplay" style="display:none">----</div>
   <div id="statusConn" class="log" style="color:#aaa">● 請輸入名字後開房或入房</div>
-  <div id="debugLog">系統就緒 V52</div>
+  <div id="debugLog">系統就緒 V53-FIX</div>
 </div>
 <!-- 步驟 3 & 6：房間等候區 & 模式選擇 -->
 <div class="card" id="cardRoom" style="display:none">
@@ -73,7 +73,7 @@ audio { width:100%; margin-top:8px; height:36px; }
   
   <div class="recBox" id="boxRec1">
     <div style="font-weight:bold;color:#FFEB00">① 包剪揼口號</div>
-    <div style="font-size:12px;color:#aaa;margin-top:2px">請講：「包剪揼！」或「Rock Paper Scissors Shoot!」</div>
+    <div style="font-size:12px;color:#aaa;margin-top:2px">請講：「包剪揼！」</div>
     <button id="btnRec1" class="btn btnRed">🔴 開始錄音 (2.5秒)</button>
     <div id="prevArea1" style="display:none">
       <div id="audioPrev1"></div>
@@ -89,7 +89,7 @@ audio { width:100%; margin-top:8px; height:36px; }
   </div>
   <div class="recBox" id="boxRec2" style="margin-top:10px">
     <div style="font-weight:bold;color:#FFEB00">② 勝利宣言</div>
-    <div style="font-size:12px;color:#aaa;margin-top:2px">請講：「當你贏咗你會講咩」(例: 我贏咗啦哈哈！)</div>
+    <div style="font-size:12px;color:#aaa;margin-top:2px">請講：「當你贏咗你會講咩」</div>
     <button id="btnRec2" class="btn btnRed">🔴 開始錄音 (3秒)</button>
     <div id="prevArea2" style="display:none">
       <div id="audioPrev2"></div>
@@ -103,7 +103,7 @@ audio { width:100%; margin-top:8px; height:36px; }
       <button id="btnCancel2" class="btn btnDark" style="margin-top:6px">↩️ 重錄音訊②</button>
     </div>
   </div>
-  <button id="btnForceReady" class="btn btnDark" style="background:#444;color:#FFEB00;font-size:14px;margin-top:12px">🔄 重新同步音訊狀態 (若卡住請按此)</button>
+  <button id="btnForceReady" class="btn btnDark" style="background:#444;color:#FFEB00;font-size:14px;margin-top:12px">🔄 重新同步音訊狀態</button>
   <button id="btnStartGame" class="btn btnY" style="display:none;font-size:18px">7️⃣ 按此開始遊戲</button>
 </div>
 <!-- 步驟 7‑8：遊戲對決區 -->
@@ -118,22 +118,19 @@ audio { width:100%; margin-top:8px; height:36px; }
   </div>
   <div id="myChoiceInfo" class="log" style="margin-top:10px;background:#111">你尚未揀選</div>
   <div id="playerChoiceList" style="margin-top:10px"></div>
-  <!-- 合唱播放區 -->
   <div id="audioChorusContainer" style="display:none"></div>
-  <!-- 倒數與進度條 -->
   <div id="countBig" style="font-size:56px;font-weight:900;color:#FFEB00;text-align:center;display:none;margin-top:10px">3</div>
   <div id="progBar" style="width:100%;height:14px;background:#222;border-radius:99px;display:none;overflow:hidden;margin-top:8px">
     <div id="progInner" style="height:100%;width:0%;background:linear-gradient(90deg,#FFEB00,#00FF88)"></div>
   </div>
-  <!-- 比賽結果 -->
   <div id="resultBox" style="display:none;margin-top:14px"></div>
   <button id="btnNextRound" class="btn btnG" style="display:none">➡️ 進入下一輪比賽</button>
 </div>
 
 <script>
-const VERSION = 'V52';
+const VERSION = 'V53-FIX';
 let peer = null, conns = {};
-let myName = '', roomCode = '', isHost = false;
+let myName = '', hostPeerId = '', isHost = false;
 let players = [];
 let alivePlayers = [];
 let playerScores = {}, playerStreaks = {};
@@ -155,8 +152,8 @@ function setConnStatus(txt, color='#FFEB00'){
 }
 function getName(){
   let val = document.getElementById('nameInput').value.trim();
-  if(val){ try{ localStorage.setItem('v52_name', val); }catch(e){} return val; }
-  try{ let saved = localStorage.getItem('v52_name'); if(saved) return saved; }catch(e){}
+  if(val){ try{ localStorage.setItem('v53_name', val); }catch(e){} return val; }
+  try{ let saved = localStorage.getItem('v53_name'); if(saved) return saved; }catch(e){}
   return '玩家' + Math.floor(Math.random()*8999+1000);
 }
 function sendAll(msg){
@@ -168,9 +165,6 @@ function sendReliable(msg){
   sendAll(msg);
   setTimeout(() => sendAll(msg), 300);
   setTimeout(() => sendAll(msg), 800);
-}
-function getSanitizedPeerId(code){
-  return 'RPS' + code.toUpperCase().replace(/[^A‑Z0‑9]/g, '');
 }
 
 // Base64 <-> Blob
@@ -191,38 +185,37 @@ function base64ToBlob(b64) {
   return new Blob([u8arr], {type:mime});
 }
 
-// ---- PeerJS 網路連線 ----
+// ---- PeerJS 網路連線【修復：唔手動造PeerID】----
 function createRoom(){
   try{
     myName = getName();
-    roomCode = Math.random().toString(36).substring(2,6).toUpperCase();
-    document.getElementById('roomCodeDisplay').textContent = roomCode;
-    document.getElementById('roomCodeDisplay').style.display = 'block';
-
     isHost = true;
     players = [myName];
     alivePlayers = [myName];
     playerScores[myName] = 0;
     playerStreaks[myName] = 0;
-    setConnStatus('● 開房中... 房號:' + roomCode, '#FFEB00');
+    setConnStatus('● 開房中...', '#FFEB00');
     showLobby();
     if(peer) try{ peer.destroy(); }catch(e){}
-    let peerId = getSanitizedPeerId(roomCode);
-    peer = new Peer(peerId);
+    // 唔寫ID，俾PeerJS自動分配穩定ID
+    peer = new Peer();
     peer.on('open', (id) => {
-      setConnStatus('● 已建立房間 (房主) ' + myName + ' | 房號: ' + roomCode, '#00FF88');
+      hostPeerId = id;
+      document.getElementById('roomCodeDisplay').textContent = hostPeerId;
+      document.getElementById('roomCodeDisplay').style.display = 'block';
+      setConnStatus('✅ 房開好啦！將下面呢串號碼發俾隊友：', '#00FF88');
       dbg('房主Peer就緒 ID=' + id);
       ensureMic();
     });
     peer.on('error', (err) => {
       dbg('Peer錯: ' + err.type);
-      setConnStatus('● 建立房間失敗 (' + err.type + ')，請再試一次', '#FF4444');
+      setConnStatus('❌ 建立房間失敗 (' + err.type + ')，轉Chrome再試', '#FF4444');
     });
     peer.on('connection', (c) => {
       dbg('玩家連入: ' + c.peer);
       conns[c.peer] = c;
       c.on('open', () => {
-        c.send({type:'sync', players, roomCode, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
+        c.send({type:'sync', players, hostPeerId, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
         syncMyAudiosTo(c);
       });
       c.on('data', onData);
@@ -233,14 +226,12 @@ function createRoom(){
 }
 function joinRoom(){
   try{
-    let code = document.getElementById('codeInput').value.trim().toUpperCase();
-    if(!code){ alert('請輸入房號！'); return; }
+    let targetId = document.getElementById('codeInput').value.trim();
+    if(!targetId){ alert('請貼房主嘅PeerID！'); return; }
     myName = getName();
-    roomCode = code;
+    hostPeerId = targetId;
     isHost = false;
-    document.getElementById('roomCodeDisplay').textContent = roomCode;
-    document.getElementById('roomCodeDisplay').style.display = 'block';
-    setConnStatus('● 正在加入房間 ' + roomCode + '...', '#FFEB00');
+    setConnStatus('● 正在加入房間 ' + hostPeerId + '...', '#FFEB00');
     showLobby();
     if(peer) try{ peer.destroy(); }catch(e){}
     peer = new Peer();
@@ -249,24 +240,23 @@ function joinRoom(){
     });
     peer.on('error', (err) => {
       dbg('入房Peer錯: ' + err.type);
-      setConnStatus('● 連線房主失敗，請檢查房號', '#FF4444');
+      setConnStatus('❌ 連線房主失敗，檢查ID或者轉網絡', '#FF4444');
     });
   }catch(e){
     alert('入房失敗: ' + e.message);
   }
 }
 function connectToHost(){
-  let targetId = getSanitizedPeerId(roomCode);
-  let conn = peer.connect(targetId, {reliable:true});
+  let conn = peer.connect(hostPeerId, {reliable:true});
   conns['host'] = conn;
   conn.on('open', async () => {
-    setConnStatus('● 已成功進房！ 玩家:' + myName + ' | 房號:' + roomCode, '#00FF88');
+    setConnStatus('✅ 已成功進房！ 玩家:' + myName, '#00FF88');
     conn.send({type:'join', name:myName, ver:VERSION});
     syncMyAudiosTo(conn);
   });
   conn.on('data', onData);
   conn.on('error', (err) => {
-    setConnStatus('● 無法連接到房主', '#FF4444');
+    setConnStatus('❌ 無法連接到房主，網絡穿牆失敗', '#FF4444');
   });
 }
 async function syncMyAudiosTo(targetConn){
@@ -297,7 +287,7 @@ function onData(d){
       playerStreaks[d.name] = 0;
     }
     renderPlayers();
-    sendReliable({type:'sync', players, roomCode, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
+    sendReliable({type:'sync', players, hostPeerId, ver:VERSION, mode:gameMode, scores:playerScores, streaks:playerStreaks});
     for(let k in conns) syncMyAudiosTo(conns[k]);
   }
   if(d.type === 'sync'){
@@ -447,12 +437,10 @@ function getModeName(m){
   return m;
 }
 
-// 房主按開始遊戲
 function hostStartGame(){
   gameMode = document.getElementById('modeSelect').value;
   alivePlayers = players.slice();
   currentRound = 1;
-  // 重置分數連勝
   for(let p of players){
     playerScores[p] = 0;
     playerStreaks[p] = 0;
@@ -491,4 +479,17 @@ function startRound(){
   document.getElementById('resultBox').style.display = 'none';
   document.getElementById('btnNextRound').style.display = 'none';
   renderGameWho();
-  window.scrollTo({top: document.getE
+  window.scrollTo({top: document.getElementById('cardGame').offsetTop - 20, behavior: 'smooth'});
+}
+
+function chooseHand(choice){
+  if(!alivePlayers.includes(myName)) return;
+  if(choiceDone) return;
+  myChoice = choice;
+  document.querySelectorAll('.btnHand').forEach(b => {
+    if(b.getAttribute('data-choice') === choice) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  document.getElementById('myChoiceInfo').textContent = '你已選擇：' + choice + '！等待其他玩家...';
+  renderGameWho();
+  sendReliable(
