@@ -244,7 +244,7 @@ function renderAudio(){
 }
 function renderWho(){
   let h=''; for(let p of alivePlayers){
-    if(p===myName){ h+=`<div class="item ${myChoice?'ok':'wait'}"><span>${p} (你)</span><span>${myChoice?'✅ 已揀':'⏳ 未揀'}</span></div>`; }
+    if(p===myName){ h+=`<div class="item ${myChoice?'ok':'wait'}"><span>${p} (院)</span><span>${myChoice?'✅ 已揀':'⏳ 未揀'}</span></div>`; }
     else { h+=`<div class="item ${remoteChoices[p]?'ok':'wait'}"><span>${p}</span><span>${remoteChoices[p]?'✅ 已揀':'⏳ 未揀'}</span></div>`; }
   }
   document.getElementById('whoChosen').innerHTML=h;
@@ -281,4 +281,45 @@ function calcResult(){
 function showResult(payload){
   let area=document.getElementById('result'); area.style.display='block'; let r=payload.result; if(!r) return;
   let h=`<b>[V47] 第${currentRound}輪結果</b>`;
-  for(let k in r.choices){ 
+  for(let k in r.choices){ h+=`<div class="item"><span>${k}</span><span>${r.choices[k]}</span></div>`; }
+  if(r.finalWinner){
+    h+=`<div class="log" style="color:#00FF88;font-size:18px;margin-top:10px">🏆 最終勝者：${r.finalWinner}！</div>`;
+  } else if(r.tie){
+    h+=`<div class="log" style="margin-top:10px">平手！下一輪繼續。</div>`;
+  } else {
+    h+=`<div class="log" style="margin-top:10px">勝者：${r.winners.join(', ')}</div>`;
+  }
+  area.innerHTML=h;
+}
+
+// 綁定所有按鈕監聽事件
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('btnCreate').addEventListener('click', createRoomImpl);
+  document.getElementById('btnJoin').addEventListener('click', joinRoomImpl);
+  document.getElementById('recBtn1').addEventListener('click', ()=>startRecordImpl(1));
+  document.getElementById('reRec1').addEventListener('click', ()=>startRecordImpl(1));
+  document.getElementById('up1').addEventListener('click', ()=>uploadAudioImpl(1));
+  document.getElementById('cancel1').addEventListener('click', ()=>cancelUploadImpl(1));
+  document.getElementById('recBtn2').addEventListener('click', ()=>startRecordImpl(2));
+  document.getElementById('reRec2').addEventListener('click', ()=>startRecordImpl(2));
+  document.getElementById('up2').addEventListener('click', ()=>uploadAudioImpl(2));
+  document.getElementById('cancel2').addEventListener('click', ()=>cancelUploadImpl(2));
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    if(isHost){
+      initScore();
+      gameMode=document.getElementById('modeSelect').value;
+      sendRetry({type:'goGame',mode:gameMode,alive:alivePlayers,scores:playerScores,streaks:playerStreaks,round:1});
+      startRound();
+    }
+  });
+  document.getElementById('btnChui').addEventListener('click', ()=>choose('揼'));
+  document.getElementById('btnJian').addEventListener('click', ()=>choose('剪'));
+  document.getElementById('btnBao').addEventListener('click', ()=>choose('包'));
+  document.getElementById('modeSelect').addEventListener('change', (e)=>{
+    gameMode=e.target.value;
+    renderPlayers();
+  });
+});
+</script>
+</body>
+</html>
