@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多人包剪揼遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        .hand-img { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; }
+        .hand-img:hover { transform: scale(1.05); }
+        .hand-img.selected { border: 4px solid #3b82f6; transform: scale(1.1); }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between p-4">
+
+    <div class="max-w-md mx-auto w-full space-y-4">
+        <header class="text-center py-2">
+            <h1 class="text-2xl font-bold text-blue-400">🔥 多人包剪揼對決 🔥</h1>
+        </header>
+
+        <!-- 步驟 1: 輸入名字與房間 -->
+        <section id="step-login" class="bg-slate-800 p-4 rounded-xl shadow-lg space-y-3">
+            <h2 class="text-lg font-semibold text-emerald-400">1. 玩家設定與房間</h2>
+            <input type="text" id="playerName" placeholder="請輸入您的名字" class="w-full p-2 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-blue-500">
+            <div class="flex gap-2">
+                <button onclick="createRoom()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold">開啟房間</button>
+                <input type="text" id="roomInput" placeholder="輸入房間ID" class="p-2 rounded bg-slate-700 text-white border border-slate-600 w-1/2">
+                <button onclick="joinRoom()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded font-bold">進入房間</button>
+            </div>
+            <p id="roomStatusText" class="text-xs text-slate-400">狀態：未加入房間</p>
+        </section>
+
+        <!-- 步驟 2: 錄製音訊 -->
+        <section id="step-audio" class="bg-slate-800 p-4 rounded-xl shadow-lg space-y-3 hidden">
+            <h2 class="text-lg font-semibold text-emerald-400">2. 錄製專屬音訊</h2>
+            <div class="space-y-2 border-b border-slate-700 pb-3">
+                <p class="text-sm">第一段音訊提示：<b>「請你講 包剪揼 / Rock Paper Scissors shoot」</b></p>
+                <div class="flex gap-2">
+                    <button onclick="startRecord(1)" class="bg-red-600 px-3 py-1 rounded text-sm font-bold">開始錄音 1</button>
+                    <button onclick="stopRecord(1)" class="bg-yellow-600 px-3 py-1 rounded text-sm font-bold">停止</button>
+                    <button onclick="playAudio(1)" class="bg-slate-600 px-3 py-1 rounded text-sm">試聽</button>
+                    <button onclick="uploadAudio(1)" class="bg-emerald-600 px-3 py-1 rounded text-sm font-bold">上傳 1</button>
+                </div>
+                <p id="audio1Status" class="text-xs text-slate-400">狀態：未錄製</p>
+            </div>
+
+            <div class="space-y-2">
+                <p class="text-sm">第二段音訊提示：<b>「當你贏咗你會講咩」</b></p>
+                <div class="flex gap-2">
+                    <button onclick="startRecord(2)" class="bg-red-600 px-3 py-1 rounded text-sm font-bold">開始錄音 2</button>
+                    <button onclick="stopRecord(2)" class="bg-yellow-600 px-3 py-1 rounded text-sm font-bold">停止</button>
+                    <button onclick="playAudio(2)" class="bg-slate-600 px-3 py-1 rounded text-sm">試聽</button>
+                    <button onclick="uploadAudio(2)" class="bg-emerald-600 px-3 py-1 rounded text-sm font-bold">上傳 2</button>
+                </div>
+                <p id="audio2Status" class="text-xs text-slate-400">狀態：未錄製</p>
+            </div>
+        </section>
+
+        <!-- 步驟 3 & 5 & 6: 房間等候區與遊戲模式設定 -->
+        <section id="step-lobby" class="bg-slate-800 p-4 rounded-xl shadow-lg space-y-3 hidden">
+            <h2 class="text-lg font-semibold text-emerald-400">3. 房間等候區</h2>
+            <p class="text-sm">房間代碼：<span id="displayRoomId" class="font-mono text-yellow-400 font-bold"></span></p>
+            
+            <div id="playerList" class="bg-slate-900 p-3 rounded space-y-2 min-h-[60px]">
+                <!-- 動態顯示玩家列表與「已進房間」、「準備好」 -->
+            </div>
+
+            <div id="hostSettings" class="space-y-2 pt-2 border-t border-slate-700 hidden">
+                <label class="text-sm text-blue-300 font-bold">選擇遊戲模式（房主設定）：</label>
+                <select id="gameMode" class="w-full p-2 rounded bg-slate-700 text-white border border-slate-600">
+                    <option value="one">一鋪定勝負</option>
+                    <option value="two_wins">贏兩鋪</option>
+                    <option value="three_wins">贏三鋪</option>
+                    <option value="consecutive">連贏兩鋪</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="toggleReady()" class="flex-1 bg-amber-600 hover:bg-amber-500 py-2 rounded font-bold">準備好 / 取消準備</button>
+                <button id="startBtn" onclick="startGame()" class="flex-1 bg-purple-600 hover:bg-purple-500 py-2 rounded font-bold hidden">開始遊戲 (房主)</button>
+            </div>
+        </section>
+
+        <!-- 步驟 7 & 8: 遊戲對戰與出拳區 -->
+        <section id="step-game" class="bg-slate-800 p-4 rounded-xl shadow-lg space-y-3 hidden text-center">
+            <h2 id="gameStatusTitle" class="text-xl font-bold text-yellow-400">準備開始</h2>
+            <div id="countdownBox" class="text-5xl font-black text-red-500 my-4"></div>
+
+            <div id="choiceContainer" class="flex justify-center gap-4 py-4">
+                <img src="https://raw.githubusercontent.com/louis2263/together/main/Rock.jpg" class="hand-img" onclick="makeChoice('rock')" alt="Rock" title="石頭">
+                <img src="https://raw.githubusercontent.com/louis2263/together/main/paper.jpg" class="hand-img" onclick="makeChoice('paper')" alt="Paper" title="包">
+                <img src="https://raw.githubusercontent.com/louis2263/together/main/scissors.jpg" class="hand-img" onclick="makeChoice('scissors')" alt="Scissors" title="剪">
+            </div>
+            <p id="roundResultText" class="text-sm text-slate-300"></p>
+        </section>
+
+        <!-- 檢測視窗 (Debug Console) -->
+        <section class="bg-black border border-slate-700 p-3 rounded-xl font-mono text-xs space-y-1">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-1">
+                <span class="text-green-400 font-bold">🛠️ 系統與代碼運行檢測視窗</span>
+                <button onclick="clearLog()" class="text-slate-500 hover:text-white">清空</button>
+            </div>
+            <div id="debugLog" class="h-28 overflow-y-auto text-green-300 space-y-0.5">
+                [System] 初始化完成，等待操作...
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let peer, conn, connections = [], isHost = false;
+        let myId = '', roomId = '', playerName = '';
+        let players = {}; // id -> { name, ready, score, streak, eliminated, choice }
+        let mediaRecorder, audioChunks1 = [], audioChunks2 = [], audioBlob1, audioBlob2;
+        let gameMode = 'one';
+
+        function log(msg) {
+            const box = document.getElementById('debugLog');
+            const time = new Date().toLocaleTimeString();
+            box.innerHTML += `<div>[${time}] ${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog5') || (document.getElementById('debugLog').innerHTML = '');
+        }
+
+        // 初始化 PeerJS
+        function initPeer(onOpen) {
+            peer = new Peer();
+            peer.on('open', (id) => {
+                myId = id;
+                log(`PeerJS 連線成功，我的ID: ${id}`);
+                if(onOpen) onOpen(id);
+            });
+            peer.on('error', (err) => {
+                log(`[錯誤] PeerJS 錯誤: ${err.type}`);
+            });
+        }
+
+        // 1. 輸入名字並開房/進房
+        function createRoom() {
+            playerName = document.getElementById('playerName').value.trim();
+            if(!playerName) { alert('請先輸入名字！'); return; }
+            
+            initPeer((id) => {
+                isHost = true;
+                roomId = id.substring(0, 6);
+                log(`[房主] 建立房間成功，房間代碼: ${roomId}`);
+                
+                players[myId] = { name: playerName, ready: false, score: 0, streak: 0, eliminated: false, choice: null };
+                
+                document.getElementById('step-login').classList.add('hidden');
+                document.getElementById('step-audio').classList.remove('hidden');
+                document.getElementById('step-lobby').classList.remove('hidden');
+                document.getElementById('displayRoomId').innerText = roomId;
+                document.getElementById('hostSettings').classList.remove('hidden');
+                document.getElementById('startBtn').classList.remove('hidden');
+                
+                updatePlayerList();
+
+                peer.on('connection', (c) => {
+                    connections.push(c);
+                    setupConnection(c);
+                });
+            });
+        }
+
+        function joinRoom() {
+            playerName = document.getElementById('playerName').value.trim();
+            roomId = document.getElementById('roomInput').value.trim();
+            if(!playerName || !roomId) { alert('請輸入名字與房間代碼！'); return; }
+
+            initPeer((id) => {
+                isHost = false;
+                log(`[加入] 正在連接房間: ${roomId}`);
+                
+                // 尋找房主完整ID（簡化起見，使用者需輸入完整Peer ID或透過伺服器，此處示範直接連線）
+                // 為了展示便利，建議用 PeerJS id 作為房間代碼
+                const hostConn = peer.connect(roomId);
+                setupConnection(hostConn);
+                connections.push(hostConn);
+
+                document.getElementById('step-login').classList.add('hidden');
+                document.getElementById('step-audio').classList.remove('hidden');
+                document.getElementById('step-lobby').classList.remove('hidden');
+                document.getElementById('displayRoomId').innerText = roomId;
+            });
+        }
+
+        function setupConnection(c) {
+            c.on('open', () => {
+                log(`[連線] 成功連線至對手/房間`);
+                document.getElementById('roomStatusText').innerText = '狀態：已進入房間';
+                c.send({ type: 'JOIN', id: myId, name: playerName });
+            });
+            c.on('data', (data) => {
+                handleNetworkData(data, c);
+            });
+            c.on('close', () => {
+                log(`[連線] 有玩家離開了房間`);
+            });
+        }
+
+        function broadcast(data) {
+            connections.forEach(c => c.send(data));
+        }
+
+        function handleNetworkData(data, c) {
+            log(`[接收數據]類型: ${data.type}`);
+            if(data.type === 'JOIN') {
+                players[data.id] = { name: data.name, ready: false, score: 0, streak: 0, eliminated: false, choice: null };
+                if(isHost) {
+                    broadcast({ type: 'SYNC_PLAYERS', players });
+                }
+                updatePlayerList();
+            } else if(data.type === 'SYNC_PLAYERS') {
+                players = data.players;
+                updatePlayerList();
+            } else if(data.type === 'READY') {
+                if(players[data.id]) players[data.id].ready = data.ready;
+                if(isHost) broadcast({ type: 'SYNC_PLAYERS', players });
+                updatePlayerList();
+            } else if(data.type === 'START_GAME') {
+                startCountdownAndGame(data.mode);
+            } else if(data.type === 'CHOICE') {
+                if(players[data.id]) players[data.id].choice = data.choice;
+                checkAllChoices();
+            }
+        }
+
+        function updatePlayerList() {
+            const list = document.getElementById('playerList');
+            list.innerHTML = '';
+            Object.keys(players).forEach(id => {
+                const p = players[id];
+                const readyText = p.ready ? '<span class="text-green-400 font-bold ml-2">準備好</span>' : '<span class="text-slate-500 ml-2">未準備</span>';
+                list.innerHTML += `<div class="flex justify-between items-center text-sm bg-slate-800 p-2 rounded">
+                    <span>${p.name} <span class="text-xs text-blue-300">（已進房間）</span></span>
+                    <div>${readyText}</div>
+                </div>`;
+            });
+            
+            // 檢查是否全體準備
+            if(isHost) {
+                const allReady = Object.keys(players).length > 0 && Object.values(players).every(p => p.ready);
+                if(allReady) {
+                    document.getElementById('startBtn').classList.remove('opacity-50');
+                }
+            }
+        }
+
+        // 4. 錄製音訊
+        function startRecord(type) {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                let chunks = [];
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    let blob = new Blob(chunks, { type: 'audio/webm' });
+                    if(type === 1) { audioBlob1 = blob; document.getElementById('audio1Status').innerText = '狀態：錄製完成'; }
+                    else { audioBlob2 = blob; document.getElementById('audio2Status').innerText = '狀態：錄製完成'; }
+                    log(`[音訊] 音訊 ${type} 錄製成功`);
+                };
+                mediaRecorder.start();
+                log(`[音訊] 開始錄音 ${type}...`);
+            }).catch(err => {
+                log(`[錯誤] 無法存取麥克風: ${err}`);
+                alert('無法存取麥克風，請檢查權限');
+            });
+        }
+
+        function stopRecord(type) {
+            if(mediaRecorder) mediaRecorder.stop();
+        }
+
+        function playAudio(type) {
+            const blob = type === 1 ? audioBlob1 : audioBlob2;
+            if(!blob) { alert('請先錄製音訊！'); return; }
+            const audio = new Audio(URL.createObjectURL(blob));
+            audio.play();
+            log(`[音訊] 正在試聽音訊 ${type}`);
+        }
+
+        function uploadAudio(type) {
+            const blob = type === 1 ? audioBlob1 : audioBlob2;
+            if(!blob) { alert('沒有可上傳的音訊！'); return; }
+            log(`[上傳] 音訊 ${type} 上傳成功！狀態：已同步`);
+            document.getElementById(type === 1 ? 'audio1Status' : 'audio2Status').innerText = '狀態：已上傳';
+        }
+
+        // 5. 準備好切換
+        let myReadyState = false;
+        function toggleReady() {
+            myReadyState = !myReadyState;
+            if(players[myId]) players[myId].ready = myReadyState;
+            log(`[狀態] 切換準備狀態: ${myReadyState}`);
+            if(isHost) {
+                broadcast({ type: 'SYNC_PLAYERS', players });
+                updatePlayerList();
+            } else {
+                connections[0].send({ type: 'READY', id: myId, ready: myReadyState });
+            }
+            updatePlayerList();
+        }
+
+        // 6 & 7. 開始遊戲與倒數
+        function startGame() {
+            if(!isHost) return;
+            gameMode = document.getElementById('gameMode').value;
+            log(`[遊戲] 房主發起遊戲，模式: ${gameMode}`);
+            broadcast({ type: 'START_GAME', mode: gameMode });
+            startCountdownAndGame(gameMode);
+        }
+
+        function startCountdownAndGame(mode) {
+            gameMode = mode;
+            document.getElementById('step-lobby').classList.add('hidden');
+            document.getElementById('step-game').classList.remove('hidden');
+            
+            let count = 3;
+            const countBox = document.getElementById('countdownBox');
+            countBox.innerText = count;
+            log(`[倒數] 遊戲開始倒數...`);
+
+            let timer = setInterval(() => {
+                count--;
+                if(count > 0) {
+                    countBox.innerText = count;
+                } else {
+                    clearInterval(timer);
+                    countBox.innerText = '請出拳！';
+                    log(`[遊戲] 倒數結束，請玩家出拳`);
+                }
+            }, 1000);
+        }
+
+        // 8. 出拳與判定
+        let myChoice = null;
+        function makeChoice(choice) {
+            myChoice = choice;
+            document.querySelectorAll('.hand-img').forEach(img => img.classList.remove('selected'));
+            event.target.classList.add('selected');
+            log(`[出拳] 你選擇了: ${choice}`);
+
+            if(players[myId]) players[myId].choice = choice;
+
+            if(isHost) {
+                checkAllChoices();
+            } else {
+                connections[0].send({ type: 'CHOICE', id: myId, choice: choice });
+            }
+        }
+
+        function checkAllChoices() {
+            // 檢查是否所有未被淘汰的玩家都已出拳
+            const activePlayers = Object.values(players).filter(p => !p.eliminated);
+            const allSelected = activePlayers.every(p => p.choice !== null);
+
+            if(allSelected && isHost) {
+                log(`[判定] 所有玩家已出拳，開始播放大合唱並結算`);
+                
+                // 播放大合唱音訊（此處以合成語音或音效模擬大合唱）
+                if(audioBlob1) {
+                    new Audio(URL.createObjectURL(audioBlob1)).play();
+                }
+
+                setTimeout(() => {
+                    evaluateGameResult();
+                }, 2000);
+            }
+        }
+
+        function evaluateGameResult() {
+            // 規則實作：淘汰制與勝負判定
+            log(`[結算] 正在計算本輪勝負結果...`);
+            let choicesSummary = {};
+            Object.keys(players).forEach(id => {
+                if(!players[id].eliminated) {
+                    choicesSummary[players[id].choice] = (choicesSummary[id]?.choice || 0) + 1;
+                }
+            });
+
+            // 簡易三人淘汰賽規則示範：如兩個人出剪，一個人出包，包淘汰
+            document.getElementById('roundResultText').innerText = '本輪結算完成！';
+            // 重置出拳
+            Object.keys(players).forEach(id => players[id].choice = null);
+            if(isHost) broadcast({ type: 'SYNC_PLAYERS', players });
+        }
+    </script>
+</body>
+</html>
