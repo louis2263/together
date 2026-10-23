@@ -15,7 +15,25 @@
             margin: 0;
             padding: 15px;
         }
-        h2 { color: #4ade80; }
+        h2 { color: #4ade80; display: inline-block; margin: 0; }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            background-color: #1e293b;
+            padding: 12px 15px;
+            border-radius: 8px;
+        }
+        .version-tag {
+            background-color: #334155;
+            color: #38bdf8;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            font-family: monospace;
+        }
         .section {
             background-color: #1e293b;
             border-radius: 8px;
@@ -53,7 +71,11 @@
 </head>
 <body>
 
-    <h2 style="text-align: center;">🎮 多人包剪探遊戲</h2>
+    <!-- 頂部標題與版本號碼 -->
+    <div class="header-container">
+        <h2>🎮 多人包剪探遊戲</h2>
+        <span class="version-tag">v1.1.0</span>
+    </div>
 
     <!-- 房間與等候區 -->
     <div class="section">
@@ -98,11 +120,13 @@
             document.getElementById('log-window').innerHTML = '';
         }
 
-        // === 1. 請替換為您自己的 Firebase 設定 ===
+        logToWindow('[系統] 正在載入版本 v1.1.0...');
+
+        // === 1. 請替換為您真實的 Firebase 設定 ===
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
+            databaseURL: "YOUR_DATABASE_URL", // 務必換成您的真實網址，例如 https://xxx-default-rtdb.firebaseio.com
             projectId: "YOUR_PROJECT_ID",
             storageBucket: "YOUR_STORAGE_BUCKET",
             messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
