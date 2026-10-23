@@ -50,7 +50,7 @@
         .active {
             display: block;
         }
-    -style>
+    </style>
 </head>
 <body>
 
@@ -106,7 +106,7 @@
         // 取得網址列的房間代碼 (例如: index.html?room=53477b)
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room') || '53477b'; // 預設測試房號
-        let myId = 'user_' + Math.random().toString(36.substring(2, 7));
+        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
         let isHost = false;
         let isReadyState = false;
 
@@ -145,7 +145,7 @@
                 logToWindow(`[狀態] 您已成功加入房間 (${roomId})`);
             }
             
-            // 啟動全局房間監聽（核心：確保第二台機器能同步監聽房主動作）
+            // 啟動全局房間監聽
             listenToRoomState();
         });
 
@@ -163,24 +163,21 @@
             if (!isHost) return;
             logToWindow('[遊戲] 房主發起遊戲，模式: one');
             
-            // 更新資料庫的 gameStarted 為 true，這會同步觸發所有人的監聽事件
             roomRef.update({
                 gameStarted: true,
                 mode: 'one'
             });
         }
 
-        // === 5. 核心：所有玩家即時監聽房間狀態變更（解決第二台沒進遊戲的問題） ===
+        // === 5. 核心：所有玩家即時監聽房間狀態變更 ===
         function listenToRoomState() {
             roomRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
 
-                // 檢查伺服器端標記遊戲是否已經開始
                 if (data.gameStarted === true) {
                     logToWindow('[遊戲] 收到遊戲開始通知，正在切換畫面...');
                     
-                    // 隱藏等候區，顯示遊戲出拳區
                     document.getElementById('waiting-area').classList.remove('active');
                     document.getElementById('waiting-area').style.display = 'none';
                     
@@ -194,7 +191,6 @@
 
         function makeChoice(choice) {
             logToWindow(`[遊戲] 您選擇了出拳: ${choice}`);
-            // 可在此處將玩家的出拳記錄寫入資料庫
         }
     </script>
 </body>
