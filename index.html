@@ -30,7 +30,6 @@
             cursor: pointer;
             margin: 5px 2px;
         }
-        .btn-red { background-color: #ef4444; color: white; }
         .btn-yellow { background-color: #f59e0b; color: white; }
         .btn-green { background-color: #10b981; color: white; }
         .log-window {
@@ -64,11 +63,10 @@
         <!-- 等候區畫面 -->
         <div id="waiting-area" class="active">
             <button id="ready-btn" class="btn-yellow" onclick="toggleReady()">準備好 / 取消準備</button>
-            <!-- 只有房主才會看到的開始按鈕 -->
             <button id="host-start-btn" class="btn-green" style="display:none;" onclick="hostStartGame()">準備開始</button>
         </div>
 
-        <!-- 遊戲出拳區畫面 (當房主開始後，所有人同步切換到這裡) -->
+        <!-- 遊戲出拳區畫面 -->
         <div id="game-area" class="game-area" style="text-align: center;">
             <h1 style="color: #ef4444;">請出拳！</h1>
             <div style="font-size: 40px; margin: 20px 0;">
@@ -89,29 +87,6 @@
     </div>
 
     <script>
-        // === 1. 請替換為您自己的 Firebase 設定 ===
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // 取得網址列的房間代碼 (例如: index.html?room=53477b)
-        const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get('room') || '53477b'; // 預設測試房號
-        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
-        let isHost = false;
-        let isReadyState = false;
-
-        document.getElementById('room-code-display').innerText = roomId;
-
         function logToWindow(message) {
             const logWin = document.getElementById('log-window');
             const timeStr = new Date().toLocaleTimeString();
@@ -123,73 +98,88 @@
             document.getElementById('log-window').innerHTML = '';
         }
 
-        // === 2. 初始化房間與角色判定 ===
-        const roomRef = db.ref('rooms/' + roomId);
-        
-        roomRef.once('value', (snapshot) => {
-            const roomData = snapshot.val();
-            if (!roomData) {
-                // 如果房間不存在，當前連入者成為房主
-                isHost = true;
-                roomRef.set({
-                    host: myId,
-                    gameStarted: false,
-                    status: 'waiting'
-                });
-                document.getElementById('host-start-btn').style.display = 'inline-block';
-                logToWindow(`[狀態] 您是此房間的房主 (${roomId})`);
-            } else {
-                // 房間已存在，當前連入者為加入者
-                isHost = false;
-                document.getElementById('host-start-btn').style.display = 'none';
-                logToWindow(`[狀態] 您已成功加入房間 (${roomId})`);
-            }
-            
-            // 啟動全局房間監聽
-            listenToRoomState();
-        });
+        // === 1. 請替換為您自己的 Firebase 設定 ===
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        // === 3. 準備按鈕邏輯 ===
-        function toggleReady() {
-            isReadyState = !isReadyState;
-            logToWindow(`[狀態] 切換準備狀態: ${isReadyState}`);
-            roomRef.child('players/' + myId).set({
-                ready: isReadyState
-            });
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            logToWindow('[系統] Firebase 連線初始化成功');
+        } catch (e) {
+            logToWindow('[錯誤] Firebase 初始化失敗: ' + e.message);
         }
 
-        // === 4. 房主發起遊戲 ===
-        function hostStartGame() {
-            if (!isHost) return;
-            logToWindow('[遊戲] 房主發起遊戲，模式: one');
+        const urlParams = new URLSearchParams(window.location.search);
+        let roomId = urlParams.get('room') || '53477b';
+        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
+        let isHost = false;
+        let isReadyState = false;
+
+        document.getElementById('room-code-display').innerText = roomId;
+
+        if (db) {
+            const roomRef = db.ref('rooms/' + roomId);
             
-            roomRef.update({
-                gameStarted: true,
-                mode: 'one'
-            });
-        }
-
-        // === 5. 核心：所有玩家即時監聽房間狀態變更 ===
-        function listenToRoomState() {
-            roomRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (!data) return;
-
-                if (data.gameStarted === true) {
-                    logToWindow('[遊戲] 收到遊戲開始通知，正在切換畫面...');
-                    
-                    document.getElementById('waiting-area').classList.remove('active');
-                    document.getElementById('waiting-area').style.display = 'none';
-                    
-                    document.getElementById('game-area').classList.add('active');
-                    document.getElementById('game-area').style.display = 'block';
-                    
-                    logToWindow('[遊戲] 倒數結束，請玩家出拳');
+            roomRef.once('value', (snapshot) => {
+                const roomData = snapshot.val();
+                if (!roomData) {
+                    isHost = true;
+                    roomRef.set({
+                        host: myId,
+                        gameStarted: false,
+                        status: 'waiting'
+                    });
+                    document.getElementById('host-start-btn').style.display = 'inline-block';
+                    logToWindow(`[狀態] 您是此房間的房主 (${roomId})`);
+                } else {
+                    isHost = false;
+                    document.getElementById('host-start-btn').style.display = 'none';
+                    logToWindow(`[狀態] 您已成功加入房間 (${roomId})`);
                 }
+                listenToRoomState(roomRef);
+            }, (error) => {
+                logToWindow('[錯誤] 讀取房間資料失敗: ' + error.message);
             });
+
+            window.toggleReady = function() {
+                isReadyState = !isReadyState;
+                logToWindow(`[狀態] 切換準備狀態: ${isReadyState}`);
+                roomRef.child('players/' + myId).set({ ready: isReadyState });
+            }
+
+            window.hostStartGame = function() {
+                if (!isHost) return;
+                logToWindow('[遊戲] 房主發起遊戲，模式: one');
+                roomRef.update({
+                    gameStarted: true,
+                    mode: 'one'
+                });
+            }
+
+            function listenToRoomState(ref) {
+                ref.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) return;
+
+                    if (data.gameStarted === true) {
+                        logToWindow('[遊戲] 收到遊戲開始通知，正在切換畫面...');
+                        document.getElementById('waiting-area').style.display = 'none';
+                        document.getElementById('game-area').style.display = 'block';
+                    }
+                });
+            }
         }
 
-        function makeChoice(choice) {
+        window.makeChoice = function(choice) {
             logToWindow(`[遊戲] 您選擇了出拳: ${choice}`);
         }
     </script>
