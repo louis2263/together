@@ -8,13 +8,16 @@
         *{box-sizing:border-box;font-family:system-ui,sans-serif;}
         body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7;}
         .box{background:white;padding:16px;border-radius:12px;margin-bottom:12px;box-shadow:0 1px 3px #0002;}
-        button{padding:10px 14px;border:none;border-radius:8px;background:#2277dd;color:white;font-size:16px;margin:4px;}
-        button:disabled{background:#aaa;}
+        button{padding:12px 16px;border:none;border-radius:8px;background:#2277dd;color:white;font-size:17px;margin:6px 4px;}
+        button:disabled{background:#aaaaaa;}
+        .btn-rec-stop{background:#dd2222;}
         input, select{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:8px;font-size:16px;}
         .ready-tag{color:green;font-weight:bold}
         .inroom-tag{color:#2277dd}
         .player-item{padding:8px;border-bottom:1px solid #eee}
         .version{text-align:right;color:#666;margin-bottom:8px}
+        .tip-rec{color:#dd2222;font-weight:bold;margin:8px 0;}
+        .tip-perm{color:#c22;margin:12px 0;padding:10px;background:#ffe;border-radius:8px}
         #debugLog{
             background:#111;
             color:#0f0;
@@ -28,7 +31,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.1.0｜單機模擬（無Firebase）</div>
+    <div class="version">版本 v1.1.2｜增加麥克風權限提示</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -50,12 +53,19 @@
 
     <div class="box">
         <h3>4. 錄製音訊</h3>
+        <div id="permWarning" class="tip-perm" style="display:none;">
+            ⚠️ 麥克風被封鎖！按網址左邊🔒鎖頭，開啟麥克風權限，刷新頁面
+        </div>
         <p>第一段：提示「請你講 包剪揼/Rock Paper Scissors shoot」</p>
-        <button onclick="recordAudio(1)">錄音 1</button>
-        <button onclick="playAudio(1)">試聽1</button>
+        <div id="recTip1"></div>
+        <button id="btnRec1" onclick="toggleRecord(1)">錄音 1</button>
+        <button id="btnPlay1" onclick="playAudio(1)">試聽1</button>
+
         <p>第二段：提示「當你贏咗你會講咩」</p>
-        <button onclick="recordAudio(2)">錄音 2</button>
-        <button onclick="playAudio(2)">試聽2</button>
+        <div id="recTip2"></div>
+        <button id="btnRec2" onclick="toggleRecord(2)">錄音 2</button>
+        <button id="btnPlay2" onclick="playAudio(2)">試聽2</button>
+
         <audio id="audio1">
         <audio id="audio2">
     </div>
@@ -101,14 +111,14 @@ function log(msg){
 let roomId = null;
 let myName = "";
 let playerList = [];
-let mediaRecorder;
+let mediaRecorder = null;
+let activeRecNum = null; // 緊而家邊一段錄音緊
 let audioChunks = [];
 let audioBuffers = [null,null];
 let isReady = false;
 
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.1.0｜單機模擬模式");
-    log("ℹ️ 而家唔需要Firebase，全部功能本地模擬");
+    log("🚀 網頁載入完成，版本 v1.1.2｜麥克風權限檢查");
 }
 
 // 開房 / 入房
@@ -161,12 +171,35 @@ function setReady(){
     log("✅ 你同模擬玩家都標記【準備好】");
 }
 
-// 錄音
-async function recordAudio(num){
-    log(`👉 開始錄音 ${num}`);
+// 切換錄音 / 停止錄音
+async function toggleRecord(num){
+    if(mediaRecorder && activeRecNum === num){
+        // 停止錄音
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track=>track.stop());
+        mediaRecorder = null;
+        log(`🛑 手動停止錄音 ${num}`);
+        // 重置按鈕同提示
+        document.getElementById(`btnRec${num}`).innerText = "錄音 "+num;
+        document.getElementById(`btnRec${num}`).classList.remove("btn-rec-stop");
+        document.getElementById(`recTip${num}`).innerText = "";
+        activeRecNum = null;
+        // 解鎖另一個錄音按鈕
+        const other = num===1?2:1;
+        document.getElementById(`btnRec${other}`).disabled = false;
+        return;
+    }
+
+    if(mediaRecorder){
+        log(`⚠️ 而家正在錄緊另一個音軌，請先停止`);
+        return;
+    }
+
+    // 開始錄音
     try{
         const stream = await navigator.mediaDevices.getUserMedia({audio:true});
         mediaRecorder = new MediaRecorder(stream);
+        activeRecNum = num;
         audioChunks = [];
         mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
         mediaRecorder.onstop = ()=>{
@@ -175,18 +208,28 @@ async function recordAudio(num){
             log(`✅ 錄音${num}完成，可以試聽`);
         }
         mediaRecorder.start();
-        setTimeout(()=>mediaRecorder.stop(),3000);
+        log(`🎙️ 開始錄音 ${num}`);
+        // 改變按鈕樣式同提示
+        document.getElementById(`btnRec${num}`).innerText = "停止錄音";
+        document.getElementById(`btnRec${num}`).classList.add("btn-rec-stop");
+        document.getElementById(`recTip${num}`).innerHTML = `<span class="tip-rec">🔴 錄音進行中，講完之後請按「停止錄音」</span>`;
+        document.getElementById("permWarning").style.display="none";
+        // 鎖死另一個錄音按鈕
+        const other = num===1?2:1;
+        document.getElementById(`btnRec${other}`).disabled = true;
     }catch(e){
         log(`❌ 錄音${num}失敗：${e.message}，請允許麥克風權限`);
+        document.getElementById("permWarning").style.display="block";
     }
 }
+
 function playAudio(num){
     log(`👉 試聽錄音 ${num}`);
     if(!audioBuffers[num-1]){
         log(`⚠️ 錄音${num}尚未錄製`);
         return alert("尚未錄音");
     }
-    const aud = document.getElementById("audio"+num);
+    const aud = document.getElementById(`audio${num}`);
     aud.src = audioBuffers[num-1];
     aud.play();
 }
