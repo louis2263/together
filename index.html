@@ -18,6 +18,8 @@
         .version{text-align:right;color:#666;margin-bottom:8px}
         .tip-rec{color:#dd2222;font-weight:bold;margin:8px 0;}
         .tip-perm{color:#c22;margin:12px 0;padding:10px;background:#ffe;border-radius:8px}
+        .score{font-size:20px;font-weight:bold;margin:10px 0;}
+        .result-text{font-size:22px;font-weight:bold;color:#2277dd;margin:12px 0;}
         #debugLog{
             background:#111;
             color:#0f0;
@@ -31,7 +33,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.1.2｜增加麥克風權限提示</div>
+    <div class="version">版本 v1.2｜加入對手、判輸贏、計分、播放錄音</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -83,6 +85,8 @@
 
     <div class="box">
         <h3>遊戲區</h3>
+        <div class="score" id="scoreBox">分數：你 0 ｜ 對手 0</div>
+        <div id="gameResult" class="result-text"></div>
         <div id="gameArea"></div>
         <div>
             <button onclick="play('rock')">石頭</button>
@@ -112,13 +116,26 @@ let roomId = null;
 let myName = "";
 let playerList = [];
 let mediaRecorder = null;
-let activeRecNum = null; // 緊而家邊一段錄音緊
+let activeRecNum = null;
 let audioChunks = [];
 let audioBuffers = [null,null];
 let isReady = false;
 
+// 遊戲變數
+let gameStarted = false;
+let scorePlayer = 0;
+let scoreOpp = 0;
+let winStreak = 0;
+let gameMode = "one";
+
+const nameMap = {
+    rock:"石頭",
+    paper:"布",
+    scissors:"剪刀"
+};
+
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.1.2｜麥克風權限檢查");
+    log("🚀 網頁載入完成，版本 v1.2｜加入對手、判輸贏、計分、播放錄音");
 }
 
 // 開房 / 入房
@@ -135,7 +152,6 @@ function createOrJoinRoom(){
     document.getElementById("roomInfo").innerText = "房號："+roomId;
     log("✅ 房號設定為：" + roomId);
 
-    // 模擬兩位玩家
     playerList = [
         {name:myName, inRoom:true, ready:false},
         {name:"模擬玩家", inRoom:true, ready:false}
@@ -165,7 +181,6 @@ function setReady(){
     }
     isReady = true;
     playerList[0].ready = true;
-    // 模擬第二位玩家一齊準備
     playerList[1].ready = true;
     renderWaitArea();
     log("✅ 你同模擬玩家都標記【準備好】");
@@ -174,17 +189,14 @@ function setReady(){
 // 切換錄音 / 停止錄音
 async function toggleRecord(num){
     if(mediaRecorder && activeRecNum === num){
-        // 停止錄音
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(track=>track.stop());
         mediaRecorder = null;
         log(`🛑 手動停止錄音 ${num}`);
-        // 重置按鈕同提示
         document.getElementById(`btnRec${num}`).innerText = "錄音 "+num;
         document.getElementById(`btnRec${num}`).classList.remove("btn-rec-stop");
         document.getElementById(`recTip${num}`).innerText = "";
         activeRecNum = null;
-        // 解鎖另一個錄音按鈕
         const other = num===1?2:1;
         document.getElementById(`btnRec${other}`).disabled = false;
         return;
@@ -195,7 +207,6 @@ async function toggleRecord(num){
         return;
     }
 
-    // 開始錄音
     try{
         const stream = await navigator.mediaDevices.getUserMedia({audio:true});
         mediaRecorder = new MediaRecorder(stream);
@@ -209,12 +220,10 @@ async function toggleRecord(num){
         }
         mediaRecorder.start();
         log(`🎙️ 開始錄音 ${num}`);
-        // 改變按鈕樣式同提示
         document.getElementById(`btnRec${num}`).innerText = "停止錄音";
         document.getElementById(`btnRec${num}`).classList.add("btn-rec-stop");
         document.getElementById(`recTip${num}`).innerHTML = `<span class="tip-rec">🔴 錄音進行中，講完之後請按「停止錄音」</span>`;
         document.getElementById("permWarning").style.display="none";
-        // 鎖死另一個錄音按鈕
         const other = num===1?2:1;
         document.getElementById(`btnRec${other}`).disabled = true;
     }catch(e){
@@ -241,19 +250,98 @@ function startGame(){
         log("⚠️ 未進入房間，無法開始");
         return;
     }
-    const mode = document.getElementById("gameMode").value;
-    log(`✅ 遊戲啟動，模式:${mode}`);
-    document.getElementById("gameArea").innerText = "遊戲開始！可以揀石頭、布、剪刀";
+    gameMode = document.getElementById("gameMode").value;
+    gameStarted = true;
+    scorePlayer = 0;
+    scoreOpp = 0;
+    winStreak = 0;
+    updateScore();
+    document.getElementById("gameResult").innerText = "";
+    log(`✅ 遊戲啟動，模式:${gameMode}`);
+
+    // 播放開局錄音1
+    if(audioBuffers[0]){
+        const aud = document.getElementById("audio1");
+        aud.src = audioBuffers[0];
+        aud.play();
+        log("🔊 播放開局語音");
+    }
 }
-// 出拳
+
+function updateScore(){
+    document.getElementById("scoreBox").innerText = `分數：你 ${scorePlayer} ｜ 對手 ${scoreOpp}`;
+}
+
+// 判輸贏
+function getResult(player, opp){
+    if(player === opp) return "draw";
+    if(
+        (player==="rock" && opp==="scissors") ||
+        (player==="paper" && opp==="rock") ||
+        (player==="scissors" && opp==="paper")
+    ) return "win";
+    return "lose";
+}
+
+// 玩家出拳
 function play(sel){
     log(`👉 玩家揀咗：${sel}`);
     if(!roomId){
         log("⚠️ 未入房，不能出拳");
         return;
     }
-    document.getElementById("gameArea").innerText = `你揀咗：${sel}`;
-    log(`✅ 出拳成功：${sel}`);
+    if(!gameStarted){
+        log("⚠️ 請先按「開始遊戲」");
+        return;
+    }
+    const oppList = ["rock","paper","scissors"];
+    const oppSel = oppList[Math.floor(Math.random()*3)];
+    log(`🤖 對手揀咗：${oppSel}`);
+
+    const res = getResult(sel, oppSel);
+    let showText = `你：${nameMap[sel]}｜對手：${nameMap[oppSel]}\n`;
+
+    if(res === "win"){
+        scorePlayer++;
+        winStreak++;
+        showText += "🎉 你贏咗！";
+        // 播放勝利錄音2
+        if(audioBuffers[1]){
+            const aud = document.getElementById("audio2");
+            aud.src = audioBuffers[1];
+            aud.play();
+        }
+    }else if(res === "lose"){
+        scoreOpp++;
+        winStreak = 0;
+        showText += "😞 你輸咗";
+    }else{
+        showText += "🤝 平手";
+    }
+
+    document.getElementById("gameArea").innerText = `你揀咗：${nameMap[sel]}`;
+    document.getElementById("gameResult").innerText = showText;
+    updateScore();
+    log(`✅ 本局結果：${res}`);
+
+    // 檢查遊戲完結條件
+    let gameEnd = false;
+    if(gameMode === "one"){
+        gameEnd = true;
+    }else if(gameMode === "best2"){
+        if(scorePlayer >=2 || scoreOpp >=2) gameEnd = true;
+    }else if(gameMode === "best3"){
+        if(scorePlayer >=3 || scoreOpp >=3) gameEnd = true;
+    }else if(gameMode === "streak2"){
+        if(winStreak >=2) gameEnd = true;
+    }
+
+    if(gameEnd){
+        gameStarted = false;
+        let finalMsg = scorePlayer>scoreOpp ? "🏆 恭喜你贏咗成局！" : "💔 今局輸咗，再試過！";
+        document.getElementById("gameResult").innerText += "\n" + finalMsg;
+        log(`🏁 遊戲完結，${finalMsg}`);
+    }
 }
 </script>
 </body>
