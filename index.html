@@ -17,9 +17,22 @@
         .ready-tag{color:green;font-weight:bold}
         .inroom-tag{color:#2277dd}
         .player-item{padding:8px;border-bottom:1px solid #eee}
+        .version{text-align:right;color:#666;margin-bottom:8px}
+        #debugLog{
+            background:#111;
+            color:#0f0;
+            padding:10px;
+            border-radius:8px;
+            height:180px;
+            overflow-y:auto;
+            white-space:pre-wrap;
+            font-size:12px;
+        }
     </style>
 </head>
 <body>
+    <div class="version">版本 v1.0.1</div>
+
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
         <input id="playerName" placeholder="輸入你個名">
@@ -71,8 +84,13 @@
         </div>
     </div>
 
+    <div class="box">
+        <h3>🔍 測試視窗 (Debug Log)</h3>
+        <div id="debugLog"></div>
+    </div>
+
 <script>
-// ========== 你最新嘅 Firebase Config ==========
+// ========== 你嘅 Firebase Config ==========
 const firebaseConfig = {
     apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
     authDomain: "game-ad81e.firebaseapp.com",
@@ -84,10 +102,28 @@ const firebaseConfig = {
     measurementId: "G-GSWSWK4WEL"
 };
 
-// 初始化Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// ===== 日誌輸出函數，寫入測試視窗 =====
+function log(msg){
+    const d = new Date();
+    const time = d.getHours()+":"+String(d.getMinutes()).padStart(2,'0')+":"+String(d.getSeconds()).padStart(2,'0');
+    const logDiv = document.getElementById("debugLog");
+    logDiv.innerText += `[${time}] ${msg}\n`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+    console.log(msg);
+}
 
+log("🚀 網頁載入完成，版本 v1.0.1");
+
+// 初始化Firebase
+try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    log("✅ Firebase 初始化成功");
+}catch(e){
+    log("❌ Firebase 初始化失敗:" + e.message);
+}
+
+const db = firebase.database();
 let roomId = null;
 let myName = "";
 let playerRef = null;
@@ -96,17 +132,33 @@ let audioChunks = [];
 let audioBuffers = [null,null];
 
 // 開房或者加入房間
-function createOrJoinRoom(){
+async function createOrJoinRoom(){
+    log("👉 點擊【開啟/進入房間】");
     myName = document.getElementById("playerName").value.trim();
-    if(!myName){alert("請輸入名稱");return;}
+    if(!myName){
+        log("⚠️ 錯誤：沒有輸入玩家名稱");
+        alert("請輸入名稱");
+        return;
+    }
     let inputRoom = document.getElementById("roomIdInput").value.trim();
     roomId = inputRoom || Math.random().toString(36).slice(2,8);
     document.getElementById("roomInfo").innerText = "房號："+roomId;
+    log("✅ 房號設定為：" + roomId);
+
     const roomRef = db.ref("rooms/"+roomId);
     playerRef = roomRef.child("players/"+myName);
-    playerRef.set({name:myName, inRoom:true, ready:false, choice:null, score:0});
+
+    try{
+        await playerRef.set({name:myName, inRoom:true, ready:false, choice:null, score:0});
+        log("✅ 玩家資料寫入Firebase成功，已進房");
+    }catch(err){
+        log("❌ 寫入房間失敗：" + err.message);
+        return;
+    }
+
     // 實時監聽房內所有玩家
     roomRef.child("players").on("value",snap=>{
+        log("📡 收到房間玩家更新");
         const players = snap.val()||{};
         let html="";
         for(let p in players){
@@ -117,44 +169,84 @@ function createOrJoinRoom(){
             </div>`;
         }
         document.getElementById("waitArea").innerHTML = html;
+    }, err=>{
+        log("❌ 監聽房間資料錯誤："+err.message);
     })
 }
 
 // 設定自己準備好
-function setReady(){
-    if(!playerRef)return;
-    playerRef.update({ready:true});
+async function setReady(){
+    log("👉 點擊【標記準備好】");
+    if(!playerRef){
+        log("⚠️ 尚未加入任何房間");
+        return;
+    }
+    try{
+        await playerRef.update({ready:true});
+        log("✅ 設定為【準備好】成功");
+    }catch(e){
+        log("❌ 更新準備狀態失敗："+e.message);
+    }
 }
 
 // 錄音功能
 async function recordAudio(num){
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-    mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
-    mediaRecorder.onstop = ()=>{
-        const blob = new Blob(audioChunks,{type:"audio/mpeg"});
-        audioBuffers[num-1] = URL.createObjectURL(blob);
+    log(`👉 開始錄音 ${num}`);
+    try{
+        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
+        mediaRecorder.onstop = ()=>{
+            const blob = new Blob(audioChunks,{type:"audio/mpeg"});
+            audioBuffers[num-1] = URL.createObjectURL(blob);
+            log(`✅ 錄音${num}完成，可以試聽`);
+        }
+        mediaRecorder.start();
+        setTimeout(()=>mediaRecorder.stop(),3000);
+    }catch(e){
+        log(`❌ 錄音${num}失敗：${e.message}，請允許麥克風權限`);
     }
-    mediaRecorder.start();
-    setTimeout(()=>mediaRecorder.stop(),3000);
 }
 function playAudio(num){
-    if(!audioBuffers[num-1])return alert("尚未錄音");
+    log(`👉 試聽錄音 ${num}`);
+    if(!audioBuffers[num-1]){
+        log(`⚠️ 錄音${num}尚未錄製`);
+        return alert("尚未錄音");
+    }
     const aud = document.getElementById("audio"+num);
     aud.src = audioBuffers[num-1];
     aud.play();
 }
 
 // 開始遊戲
-function startGame(){
+async function startGame(){
+    log("👉 點擊【開始遊戲】");
+    if(!roomId){
+        log("⚠️ 未進入房間，無法開始");
+        return;
+    }
     const mode = document.getElementById("gameMode").value;
-    db.ref("rooms/"+roomId+"/game").set({mode:mode,playing:true,round:0});
+    try{
+        await db.ref("rooms/"+roomId+"/game").set({mode:mode,playing:true,round:0});
+        log(`✅ 遊戲啟動，模式:${mode}`);
+    }catch(e){
+        log("❌ 開啟遊戲失敗："+e.message);
+    }
 }
 // 玩家出拳
-function play(sel){
-    if(!playerRef)return;
-    playerRef.update({choice:sel});
+async function play(sel){
+    log(`👉 玩家揀咗：${sel}`);
+    if(!playerRef){
+        log("⚠️ 未入房，不能出拳");
+        return;
+    }
+    try{
+        await playerRef.update({choice:sel});
+        log(`✅ 出拳成功：${sel}`);
+    }catch(e){
+        log("❌ 出拳失敗："+e.message);
+    }
 }
 </script>
 </body>
