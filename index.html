@@ -62,7 +62,6 @@
         .btn-green { background-color: #10b981; color: white; }
         .btn-red { background-color: #ef4444; color: white; }
         .btn-blue { background-color: #0284c7; color: white; }
-        .btn-gray { background-color: #64748b; color: white; }
         .player-item {
             background-color: #0f172a;
             padding: 8px 12px;
@@ -88,7 +87,7 @@
             padding: 10px;
             font-family: monospace;
             font-size: 12px;
-            height: 100px;
+            height: 120px;
             overflow-y: auto;
             color: #38bdf8;
         }
@@ -113,14 +112,14 @@
 
     <div class="header-container">
         <h2>🎮 多人包剪揼遊戲</h2>
-        <span class="version-tag">v2.0.0</span>
+        <span class="version-tag">v2.0.1</span>
     </div>
 
     <!-- 1. 玩家設定區 -->
     <div class="section" id="sec-user">
         <h3>1. 輸入名字與房間</h3>
-        <input type="text" id="player-name-input" placeholder="請輸入您的名字" value="Fai">
-        <input type="text" id="room-id-input" placeholder="房間代碼 (留空則隨機生成)">
+        <input type="text" id="player-name-input" placeholder="請輸入您的名字" value="Louis">
+        <input type="text" id="room-id-input" placeholder="房間代碼 (留空則預設 53477b)">
         <button class="btn-green" style="width: 100%;" onclick="joinRoom()">進入 / 創建房間</button>
     </div>
 
@@ -150,7 +149,7 @@
         <h3>3. 房間等候區</h3>
         <p>房間代碼：<span id="room-code-display" style="color: #facc15; font-weight: bold;">-</span></p>
 
-        <!-- 模式選擇 (房主控制，全員同步顯示) -->
+        <!-- 模式選擇 -->
         <div style="margin-bottom: 15px; background-color:#0f172a; padding:10px; border-radius:5px;">
             <label style="font-size:14px; font-weight:bold;">遊戲模式：</label>
             <select id="game-mode-select" onchange="onModeChange()" disabled>
@@ -182,7 +181,6 @@
             <span class="choice-btn" onclick="makeChoice('scissors')">✌️</span>
         </div>
 
-        <!-- 輪次結果提示 -->
         <div id="round-result-area" style="font-size: 16px; margin-top: 15px; color:#4ade80;"></div>
     </div>
 
@@ -219,9 +217,11 @@
             measurementId: "G-0QV70FEZMD"
         };
 
-        let db;
+        let db = null;
         try {
-            firebase.initializeApp(firebaseConfig);
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
             db = firebase.database();
             logToWindow('[系統] Firebase 連線成功');
         } catch (e) {
@@ -238,7 +238,6 @@
         let audioBase64_1 = '';
         let audioBase64_2 = '';
         
-        // 錄音相關
         let mediaRecorder = null;
         let audioChunks = [];
         let recordingStep = 0;
@@ -292,10 +291,12 @@
                 });
                 logToWindow('[錄音] 兩段語音成功同步至房間！');
                 alert('語音上傳成功！');
+            } else {
+                alert('請先加入房間後再上傳語音！');
             }
         }
 
-        // 加入房間
+        // 加入或創建房間
         function joinRoom() {
             myName = document.getElementById('player-name-input').value.trim();
             if (!myName) { alert('請輸入名字'); return; }
@@ -304,9 +305,16 @@
             const inputRoom = document.getElementById('room-id-input').value.trim();
             roomId = inputRoom || '53477b';
 
+            // 立即切換介面顯示等候區
             document.getElementById('room-code-display').innerText = roomId;
             document.getElementById('sec-user').style.display = 'none';
             document.getElementById('sec-room').style.display = 'block';
+
+            if (!db) {
+                logToWindow('[錯誤] Firebase 資料庫未就緒');
+                alert('Firebase 連線失敗，請重新整理頁面');
+                return;
+            }
 
             roomRef = db.ref('rooms/' + roomId);
 
@@ -322,10 +330,10 @@
                         status: 'waiting',
                         round: 1
                     });
-                    logToWindow(`[房間] 您已創建房間 ${roomId}（房主）`);
+                    logToWindow(`[房間] 成功創建房間 ${roomId}（您是房主）`);
                 } else {
                     isHost = false;
-                    logToWindow(`[房間] 已加入房間 ${roomId}`);
+                    logToWindow(`[房間] 成功加入房間 ${roomId}`);
                 }
 
                 roomRef.child('players/' + myId).set({
@@ -339,6 +347,8 @@
                 });
 
                 listenRoom();
+            }, error => {
+                logToWindow('[錯誤] 房間讀取失敗: ' + error.message);
             });
         }
 
@@ -358,12 +368,10 @@
                 const data = snapshot.val();
                 if (!data) return;
 
-                // 同步模式
                 if (data.mode) {
                     document.getElementById('game-mode-select').value = data.mode;
                 }
 
-                // 更新玩家列表
                 const playerListDiv = document.getElementById('player-list');
                 playerListDiv.innerHTML = '';
                 
@@ -387,12 +395,10 @@
                     playerListDiv.appendChild(item);
                 });
 
-                // 房主顯示開始按鈕條件
                 if (isHost) {
                     document.getElementById('host-start-btn').style.display = (allReady && playerCount >= 2) ? 'inline-block' : 'none';
                 }
 
-                // 遊戲狀態切換監聽
                 if (data.status === 'countdown' && currentStatus !== 'countdown') {
                     startCountdownSequence();
                 } else if (data.status === 'playing' && currentStatus !== 'playing') {
@@ -414,7 +420,6 @@
             roomRef.update({ status: 'countdown', round: 1 });
         }
 
-        // 3 秒倒數與遊戲切換
         function startCountdownSequence() {
             document.getElementById('sec-room').style.display = 'none';
             document.getElementById('sec-game').style.display = 'block';
@@ -453,7 +458,6 @@
                 document.getElementById('choice-area').style.pointerEvents = 'auto';
             }
 
-            // 房主檢查是否所有存活玩家已出拳
             if (isHost) {
                 let allChosen = true;
                 Object.values(data.players).forEach(p => {
@@ -472,15 +476,12 @@
             logToWindow(`[遊戲] 我選擇了: ${choice}`);
         }
 
-        // 合唱與勝負計算邏輯 (房主主導)
         async function evaluateRound(data) {
             isEvaluating = true;
             logToWindow('[遊戲] 所有玩家已出拳，播放大合唱錄音...');
 
-            // 同步播放合唱 (第一段錄音)
             await playChorus(data.players);
 
-            // 計算勝負
             const players = data.players;
             const activePlayers = Object.values(players).filter(p => p.alive !== false);
             
@@ -489,13 +490,10 @@
 
             let roundWinners = [];
             
-            // 裁決判定
             if (uniqueChoices.length === 1 || uniqueChoices.length === 3) {
-                // 平局，無人淘汰
                 logToWindow('[結果] 本輪平局，無人淘汰');
                 roundWinners = activePlayers;
             } else {
-                // 有勝負
                 let winChoice = '';
                 if (uniqueChoices.includes('rock') && uniqueChoices.includes('scissors')) winChoice = 'rock';
                 else if (uniqueChoices.includes('scissors') && uniqueChoices.includes('paper')) winChoice = 'scissors';
@@ -504,15 +502,13 @@
                 roundWinners = activePlayers.filter(p => p.choice === winChoice);
                 let losers = activePlayers.filter(p => p.choice !== winChoice);
 
-                // 淘汰輸家
                 losers.forEach(l => {
                     roomRef.child(`players/${l.id}`).update({ alive: false });
                 });
             }
 
-            // 更新分數與勝負規則判斷
             let mode = data.mode;
             let winnerId = null;
 
             if (mode === 'one') {
-             
+                if (roundWinners.length === 1) winnerId = roundWinners[0
