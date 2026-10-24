@@ -19,7 +19,7 @@
         .tip-rec{color:#dd2222;font-weight:bold;margin:8px 0;}
         .tip-perm{color:#c22;margin:12px 0;padding:10px;background:#ffe;border-radius:8px}
         .score{font-size:20px;font-weight:bold;margin:10px 0;}
-        .result-text{font-size:22px;font-weight:bold;color:#2277dd;margin:12px 0;}
+        .result-text{font-size:22px;font-weight:bold;color:#2277dd;margin:12px 0;white-space:pre-line;}
         #debugLog{
             background:#111;
             color:#0f0;
@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.3｜平手繼續，先揀拳、齊咗先播放開局錄音</div>
+    <div class="version">版本 v1.5｜修復連勝邏輯 + 修復文字重疊bug</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -140,7 +140,7 @@ const nameMap = {
 };
 
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.3｜平手繼續，先揀拳齊咗先播錄音");
+    log("🚀 網頁載入完成，版本 v1.5｜修復連勝+文字重疊bug");
 }
 
 // 開房 / 入房
@@ -337,12 +337,13 @@ function showRoundResult(){
     const sel = playerSelected;
     const oppSel = oppSelected;
     const res = getResult(sel, oppSel);
-    let showText = `你：${nameMap[sel]}｜對手：${nameMap[oppSel]}\n`;
+    let showText = `你：${nameMap[sel]}｜對手：${nameMap[oppSel]}`;
+    let finalMsg = "";
 
     if(res === "win"){
         scorePlayer++;
         winStreak++;
-        showText += "🎉 你贏咗！";
+        showText += "\n🎉 你贏咗！";
         // 播放勝利錄音2
         if(audioBuffers[1]){
             const aud = document.getElementById("audio2");
@@ -352,16 +353,14 @@ function showRoundResult(){
     }else if(res === "lose"){
         scoreOpp++;
         winStreak = 0;
-        showText += "😞 你輸咗";
+        showText += "\n😞 你輸咗";
     }else{
-        showText += "🤝 平手！繼續下一鋪";
+        // 平手：分數不變，重置連勝記錄
+        winStreak = 0;
+        showText += "\n🤝 平手！繼續下一鋪";
     }
 
-    document.getElementById("gameResult").innerText = showText;
-    updateScore();
-    log(`✅ 本局結果：${res}`);
-
-    // 平手唔會結局；只係分出勝負先檢查完局條件
+    // 檢查遊戲是否完結
     let gameEnd = false;
     if(res !== "draw"){
         if(gameMode === "one"){
@@ -377,11 +376,17 @@ function showRoundResult(){
 
     if(gameEnd){
         gameStarted = false;
-        let finalMsg = scorePlayer>scoreOpp ? "🏆 恭喜你贏咗成局！" : "💔 今局輸咗，再試過！";
-        document.getElementById("gameResult").innerText += "\n" + finalMsg;
+        finalMsg = scorePlayer>scoreOpp ? "\n🏆 恭喜你贏咗成局！" : "\n💔 今局輸咗，再試過！";
+    }
+
+    // 一次寫入，唔會文字重疊
+    document.getElementById("gameResult").innerText = showText + finalMsg;
+    updateScore();
+    log(`✅ 本局結果：${res}，當前連勝：${winStreak}`);
+
+    if(gameEnd){
         log(`🏁 遊戲完結，${finalMsg}`);
     }else{
-        // 無論平手 / 分出勝負但未達勝利條件 → 重置進入下一鋪
         setTimeout(()=>{
             resetRound();
         },2000);
