@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.0.1</div>
+    <div class="version">版本 v1.0.2</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -90,19 +90,7 @@
     </div>
 
 <script>
-// ========== 你嘅 Firebase Config ==========
-const firebaseConfig = {
-    apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
-    authDomain: "game-ad81e.firebaseapp.com",
-    databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "game-ad81e",
-    storageBucket: "game-ad81e.firebasestorage.app",
-    messagingSenderId: "524468263754",
-    appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
-    measurementId: "G-GSWSWK4WEL"
-};
-
-// ===== 日誌輸出函數，寫入測試視窗 =====
+// ========== 日誌輸出函數 ==========
 function log(msg){
     const d = new Date();
     const time = d.getHours()+":"+String(d.getMinutes()).padStart(2,'0')+":"+String(d.getSeconds()).padStart(2,'0');
@@ -112,18 +100,7 @@ function log(msg){
     console.log(msg);
 }
 
-log("🚀 網頁載入完成，版本 v1.0.1");
-
-// 初始化Firebase
-try{
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    log("✅ Firebase 初始化成功");
-}catch(e){
-    log("❌ Firebase 初始化失敗:" + e.message);
-}
-
-const db = firebase.database();
+let db = null;
 let roomId = null;
 let myName = "";
 let playerRef = null;
@@ -131,9 +108,35 @@ let mediaRecorder;
 let audioChunks = [];
 let audioBuffers = [null,null];
 
+// 等頁面全部載入完先初始化 Firebase
+window.onload = async function(){
+    log("🚀 網頁載入完成，版本 v1.0.2");
+    try{
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
+            authDomain: "game-ad81e.firebaseapp.com",
+            databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "game-ad81e",
+            storageBucket: "game-ad81e.firebasestorage.app",
+            messagingSenderId: "524468263754",
+            appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
+            measurementId: "G-GSWSWK4WEL"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        db = firebase.database(app);
+        log("✅ Firebase 初始化成功");
+    }catch(e){
+        log("❌ Firebase 初始化失敗:" + e.message);
+    }
+}
+
 // 開房或者加入房間
 async function createOrJoinRoom(){
     log("👉 點擊【開啟/進入房間】");
+    if(!db){
+        log("⚠️ Firebase 尚未準備好，請等一等再試");
+        return;
+    }
     myName = document.getElementById("playerName").value.trim();
     if(!myName){
         log("⚠️ 錯誤：沒有輸入玩家名稱");
