@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.2｜加入對手、判輸贏、計分、播放錄音</div>
+    <div class="version">版本 v1.3｜平手繼續，先揀拳、齊咗先播放開局錄音</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -87,11 +87,11 @@
         <h3>遊戲區</h3>
         <div class="score" id="scoreBox">分數：你 0 ｜ 對手 0</div>
         <div id="gameResult" class="result-text"></div>
-        <div id="gameArea"></div>
+        <div id="gameArea">等待出拳</div>
         <div>
-            <button onclick="play('rock')">石頭</button>
-            <button onclick="play('paper')">布</button>
-            <button onclick="play('scissors')">剪刀</button>
+            <button id="btnRock" onclick="selectHand('rock')">石頭</button>
+            <button id="btnPaper" onclick="selectHand('paper')">布</button>
+            <button id="btnScissors" onclick="selectHand('scissors')">剪刀</button>
         </div>
     </div>
 
@@ -128,6 +128,11 @@ let scoreOpp = 0;
 let winStreak = 0;
 let gameMode = "one";
 
+// 本輪選擇狀態
+let playerSelected = null;
+let oppSelected = null;
+let allHandChosen = false;
+
 const nameMap = {
     rock:"石頭",
     paper:"布",
@@ -135,7 +140,7 @@ const nameMap = {
 };
 
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.2｜加入對手、判輸贏、計分、播放錄音");
+    log("🚀 網頁載入完成，版本 v1.3｜平手繼續，先揀拳齊咗先播錄音");
 }
 
 // 開房 / 入房
@@ -257,15 +262,23 @@ function startGame(){
     winStreak = 0;
     updateScore();
     document.getElementById("gameResult").innerText = "";
+    resetRound();
     log(`✅ 遊戲啟動，模式:${gameMode}`);
+}
 
-    // 播放開局錄音1
-    if(audioBuffers[0]){
-        const aud = document.getElementById("audio1");
-        aud.src = audioBuffers[0];
-        aud.play();
-        log("🔊 播放開局語音");
-    }
+// 重置本輪
+function resetRound(){
+    playerSelected = null;
+    oppSelected = null;
+    allHandChosen = false;
+    document.getElementById("gameArea").innerText = "請揀石頭 / 布 / 剪刀";
+    enableHandButtons(true);
+}
+
+function enableHandButtons(enable){
+    document.getElementById("btnRock").disabled = !enable;
+    document.getElementById("btnPaper").disabled = !enable;
+    document.getElementById("btnScissors").disabled = !enable;
 }
 
 function updateScore(){
@@ -283,21 +296,46 @@ function getResult(player, opp){
     return "lose";
 }
 
-// 玩家出拳
-function play(sel){
-    log(`👉 玩家揀咗：${sel}`);
-    if(!roomId){
-        log("⚠️ 未入房，不能出拳");
-        return;
-    }
+// 玩家揀拳
+function selectHand(sel){
     if(!gameStarted){
         log("⚠️ 請先按「開始遊戲」");
         return;
     }
-    const oppList = ["rock","paper","scissors"];
-    const oppSel = oppList[Math.floor(Math.random()*3)];
-    log(`🤖 對手揀咗：${oppSel}`);
+    if(playerSelected){
+        log("⚠️ 你已經揀咗，等對手");
+        return;
+    }
+    playerSelected = sel;
+    log(`👉 玩家揀咗：${sel}`);
+    document.getElementById("gameArea").innerText = `你已經揀咗：${nameMap[sel]}，等待對手...`;
+    enableHandButtons(false);
 
+    // 模擬對手揀拳
+    const oppList = ["rock","paper","scissors"];
+    oppSelected = oppList[Math.floor(Math.random()*3)];
+    log(`🤖 對手揀咗：${oppSelected}`);
+
+    // 雙方都揀好
+    allHandChosen = true;
+    log("✅ 所有人都揀好，播放開局錄音");
+
+    // 播放第一段錄音（包剪揼 shoot）
+    if(audioBuffers[0]){
+        const aud = document.getElementById("audio1");
+        aud.src = audioBuffers[0];
+        aud.play();
+    }
+
+    // 延遲等錄音播完再顯示結果
+    setTimeout(()=>{
+        showRoundResult();
+    },1200);
+}
+
+function showRoundResult(){
+    const sel = playerSelected;
+    const oppSel = oppSelected;
     const res = getResult(sel, oppSel);
     let showText = `你：${nameMap[sel]}｜對手：${nameMap[oppSel]}\n`;
 
@@ -316,24 +354,25 @@ function play(sel){
         winStreak = 0;
         showText += "😞 你輸咗";
     }else{
-        showText += "🤝 平手";
+        showText += "🤝 平手！繼續下一鋪";
     }
 
-    document.getElementById("gameArea").innerText = `你揀咗：${nameMap[sel]}`;
     document.getElementById("gameResult").innerText = showText;
     updateScore();
     log(`✅ 本局結果：${res}`);
 
-    // 檢查遊戲完結條件
+    // 平手唔會結局；只係分出勝負先檢查完局條件
     let gameEnd = false;
-    if(gameMode === "one"){
-        gameEnd = true;
-    }else if(gameMode === "best2"){
-        if(scorePlayer >=2 || scoreOpp >=2) gameEnd = true;
-    }else if(gameMode === "best3"){
-        if(scorePlayer >=3 || scoreOpp >=3) gameEnd = true;
-    }else if(gameMode === "streak2"){
-        if(winStreak >=2) gameEnd = true;
+    if(res !== "draw"){
+        if(gameMode === "one"){
+            gameEnd = true;
+        }else if(gameMode === "best2"){
+            if(scorePlayer >=2 || scoreOpp >=2) gameEnd = true;
+        }else if(gameMode === "best3"){
+            if(scorePlayer >=3 || scoreOpp >=3) gameEnd = true;
+        }else if(gameMode === "streak2"){
+            if(winStreak >=2) gameEnd = true;
+        }
     }
 
     if(gameEnd){
@@ -341,6 +380,11 @@ function play(sel){
         let finalMsg = scorePlayer>scoreOpp ? "🏆 恭喜你贏咗成局！" : "💔 今局輸咗，再試過！";
         document.getElementById("gameResult").innerText += "\n" + finalMsg;
         log(`🏁 遊戲完結，${finalMsg}`);
+    }else{
+        // 無論平手 / 分出勝負但未達勝利條件 → 重置進入下一鋪
+        setTimeout(()=>{
+            resetRound();
+        },2000);
     }
 }
 </script>
