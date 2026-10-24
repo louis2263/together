@@ -28,7 +28,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.0.4</div>
+    <div class="version">版本 v1.0.5</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -105,7 +105,7 @@ let mediaRecorder;
 let audioChunks = [];
 let audioBuffers = [null,null];
 
-// 載入單一JS腳本
+// 載入SDK，用v9兼容版本，會自動建立全域 firebase
 function loadScript(src) {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -117,12 +117,11 @@ function loadScript(src) {
 }
 
 async function initFirebase(){
-    log("⏳ 開始載入 Firebase App 核心...");
+    log("⏳ 開始載入 Firebase SDK v9");
     try{
-        // 順序載：先app，等完成先載database，改用jsdelivr CDN
-        await loadScript("https://cdn.jsdelivr.net/npm/firebase@13.1.0/firebase-app.js");
+        await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
         log("✅ firebase-app 載入完畢");
-        await loadScript("https://cdn.jsdelivr.net/npm/firebase@13.1.0/firebase-database.js");
+        await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
         log("✅ firebase-database 載入完畢，準備初始化");
 
         const firebaseConfig = {
@@ -135,6 +134,7 @@ async function initFirebase(){
             appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
             measurementId: "G-GSWSWK4WEL"
         };
+        // 舊版v9支援全域firebase物件
         const app = firebase.initializeApp(firebaseConfig);
         db = firebase.database(app);
         log("🎉 Firebase 初始化成功！可以開房");
@@ -144,7 +144,7 @@ async function initFirebase(){
 }
 
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.0.4");
+    log("🚀 網頁載入完成，版本 v1.0.5");
     initFirebase();
 }
 
