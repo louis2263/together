@@ -40,6 +40,16 @@
             padding: 15px;
             margin-bottom: 15px;
         }
+        input[type="text"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: white;
+            width: calc(100% - 110px);
+            max-width: 250px;
+            margin-right: 5px;
+        }
         button {
             padding: 10px 15px;
             border: none;
@@ -50,6 +60,7 @@
         }
         .btn-yellow { background-color: #f59e0b; color: white; }
         .btn-green { background-color: #10b981; color: white; }
+        .btn-red { background-color: #ef4444; color: white; }
         .log-window {
             background-color: #0f172a;
             border: 1px solid #334155;
@@ -74,10 +85,26 @@
     <!-- 頂部標題與版本號碼 -->
     <div class="header-container">
         <h2>🎮 多人包剪探遊戲</h2>
-        <span class="version-tag">v1.1.0</span>
+        <span class="version-tag">v1.1.1</span>
     </div>
 
-    <!-- 房間與等候區 -->
+    <!-- 1. 玩家名稱設定區 -->
+    <div class="section">
+        <h3>1. 玩家設定</h3>
+        <div style="margin-top: 10px;">
+            <input type="text" id="player-name-input" placeholder="請輸入您的名字" value="玩家_">
+            <button class="btn-green" onclick="updatePlayerName()">確認名字</button>
+        </div>
+    </div>
+
+    <!-- 2. 語音錄音功能區 -->
+    <div class="section">
+        <h3>2. 語音錄音輸入</h3>
+        <button id="rec-btn" class="btn-yellow" onclick="toggleRecording()">🎤 開始錄音</button>
+        <audio id="audio-playback" controls style="display:none; margin-top:10px; width:100%;"></audio>
+    </div>
+
+    <!-- 3. 房間與等候區 -->
     <div class="section">
         <h3>3. 房間等候區</h3>
         <p>房間代碼：<span id="room-code-display" style="color: #facc15; font-weight: bold;">載入中...</span></p>
@@ -120,9 +147,67 @@
             document.getElementById('log-window').innerHTML = '';
         }
 
-        logToWindow('[系統] 正在載入版本 v1.1.0...');
+        logToWindow('[系統] 正在載入版本 v1.1.1...');
 
-        // === 已帶入您專案 (game-ad81e) 的真實設定 ===
+        // 預設隨機名稱
+        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
+        document.getElementById('player-name-input').value = myId;
+
+        function updatePlayerName() {
+            const inputVal = document.getElementById('player-name-input').value.trim();
+            if (inputVal) {
+                myId = inputVal;
+                logToWindow(`[狀態] 玩家名稱已更新為: ${myId}`);
+            } else {
+                alert('名字不能為空！');
+            }
+        }
+
+        // 語音錄音相關變數
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        window.toggleRecording = async function() {
+            const recBtn = document.getElementById('rec-btn');
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audioElem = document.getElementById('audio-playback');
+                        audioElem.src = audioUrl;
+                        audioElem.style.display = 'block';
+                        logToWindow('[錄音] 錄音完成，已生成本地語音預覽');
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recBtn.innerText = '⏹️ 停止錄音';
+                    recBtn.className = 'btn-red';
+                    logToWindow('[錄音] 正在收音...');
+                } catch (err) {
+                    logToWindow('[錯誤] 無法存取麥克風: ' + err.message);
+                    alert('無法存取麥克風，請檢查瀏覽器權限。');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                recBtn.innerText = '🎤 開始錄音';
+                recBtn.className = 'btn-yellow';
+                logToWindow('[錄音] 停止錄音');
+            }
+        }
+
+        // === Firebase 設定 ===
         const firebaseConfig = {
             apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
             authDomain: "game-ad81e.firebaseapp.com",
@@ -145,7 +230,6 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room') || '53477b';
-        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
         let isHost = false;
         let isReadyState = false;
 
@@ -177,7 +261,7 @@
 
             window.toggleReady = function() {
                 isReadyState = !isReadyState;
-                logToWindow(`[狀態] 切換準備狀態: ${isReadyState}`);
+                logToWindow(`[狀態] 玩家 [${myId}] 切換準備狀態: ${isReadyState}`);
                 roomRef.child('players/' + myId).set({ ready: isReadyState });
             }
 
@@ -205,7 +289,7 @@
         }
 
         window.makeChoice = function(choice) {
-            logToWindow(`[遊戲] 您選擇了出拳: ${choice}`);
+            logToWindow(`[遊戲] 玩家 [${myId}] 選擇了出拳: ${choice}`);
         }
     </script>
 </body>
