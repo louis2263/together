@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>包剪揼多人同步遊戲</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js"></script>
     <style>
         *{box-sizing:border-box;font-family:system-ui,sans-serif;}
         body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7;}
@@ -31,7 +28,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.0.2</div>
+    <div class="version">版本 v1.0.3</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -90,7 +87,7 @@
     </div>
 
 <script>
-// ========== 日誌輸出函數 ==========
+// 日誌函數
 function log(msg){
     const d = new Date();
     const time = d.getHours()+":"+String(d.getMinutes()).padStart(2,'0')+":"+String(d.getSeconds()).padStart(2,'0');
@@ -108,10 +105,24 @@ let mediaRecorder;
 let audioChunks = [];
 let audioBuffers = [null,null];
 
-// 等頁面全部載入完先初始化 Firebase
-window.onload = async function(){
-    log("🚀 網頁載入完成，版本 v1.0.2");
+// 動態載入Firebase SDK
+async function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+    });
+}
+
+async function initFirebase(){
+    log("⏳ 開始載入 Firebase SDK...");
     try{
+        await loadScript("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+        await loadScript("https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js");
+        log("✅ SDK載入完成，準備初始化Firebase");
+
         const firebaseConfig = {
             apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
             authDomain: "game-ad81e.firebaseapp.com",
@@ -124,17 +135,23 @@ window.onload = async function(){
         };
         const app = firebase.initializeApp(firebaseConfig);
         db = firebase.database(app);
-        log("✅ Firebase 初始化成功");
+        log("✅ Firebase 初始化成功，可以開房！");
     }catch(e){
-        log("❌ Firebase 初始化失敗:" + e.message);
+        log("❌ Firebase載入/初始化失敗:" + e.message);
     }
 }
 
-// 開房或者加入房間
+// 頁面載入完就開始載Firebase
+window.onload = function(){
+    log("🚀 網頁載入完成，版本 v1.0.3");
+    initFirebase();
+}
+
+// 開房 / 入房
 async function createOrJoinRoom(){
     log("👉 點擊【開啟/進入房間】");
     if(!db){
-        log("⚠️ Firebase 尚未準備好，請等一等再試");
+        log("⚠️ Firebase 仲載入緊，等陣再試");
         return;
     }
     myName = document.getElementById("playerName").value.trim();
@@ -159,7 +176,7 @@ async function createOrJoinRoom(){
         return;
     }
 
-    // 實時監聽房內所有玩家
+    // 監聽房間玩家更新
     roomRef.child("players").on("value",snap=>{
         log("📡 收到房間玩家更新");
         const players = snap.val()||{};
@@ -177,7 +194,7 @@ async function createOrJoinRoom(){
     })
 }
 
-// 設定自己準備好
+// 標記準備好
 async function setReady(){
     log("👉 點擊【標記準備好】");
     if(!playerRef){
@@ -192,7 +209,7 @@ async function setReady(){
     }
 }
 
-// 錄音功能
+// 錄音
 async function recordAudio(num){
     log(`👉 開始錄音 ${num}`);
     try{
@@ -237,7 +254,7 @@ async function startGame(){
         log("❌ 開啟遊戲失敗："+e.message);
     }
 }
-// 玩家出拳
+// 出拳
 async function play(sel){
     log(`👉 玩家揀咗：${sel}`);
     if(!playerRef){
