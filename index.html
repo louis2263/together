@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>包剪揼多人同步遊戲</title>
+    <title>包剪揼多人遊戲（單機模擬版）</title>
     <style>
         *{box-sizing:border-box;font-family:system-ui,sans-serif;}
         body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7;}
@@ -28,7 +28,7 @@
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.0.5</div>
+    <div class="version">版本 v1.1.0｜單機模擬（無Firebase）</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -36,7 +36,7 @@
     </div>
 
     <div class="box">
-        <h3>2. 開房 / 入房</h3>
+        <h3>2. 開房 / 進房</h3>
         <input id="roomIdInput" placeholder="輸入房號（留空就開新房間）">
         <button onclick="createOrJoinRoom()">開啟 / 進入房間</button>
         <div id="roomInfo"></div>
@@ -97,64 +97,23 @@ function log(msg){
     console.log(msg);
 }
 
-let db = null;
+// 模擬房間數據
 let roomId = null;
 let myName = "";
-let playerRef = null;
+let playerList = [];
 let mediaRecorder;
 let audioChunks = [];
 let audioBuffers = [null,null];
-
-// 載入SDK，用v9兼容版本，會自動建立全域 firebase
-function loadScript(src) {
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.body.appendChild(script);
-    });
-}
-
-async function initFirebase(){
-    log("⏳ 開始載入 Firebase SDK v9");
-    try{
-        await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
-        log("✅ firebase-app 載入完畢");
-        await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
-        log("✅ firebase-database 載入完畢，準備初始化");
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
-            authDomain: "game-ad81e.firebaseapp.com",
-            databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "game-ad81e",
-            storageBucket: "game-ad81e.firebasestorage.app",
-            messagingSenderId: "524468263754",
-            appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
-            measurementId: "G-GSWSWK4WEL"
-        };
-        // 舊版v9支援全域firebase物件
-        const app = firebase.initializeApp(firebaseConfig);
-        db = firebase.database(app);
-        log("🎉 Firebase 初始化成功！可以開房");
-    }catch(e){
-        log("❌ Firebase載入/初始化失敗:" + e.message);
-    }
-}
+let isReady = false;
 
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.0.5");
-    initFirebase();
+    log("🚀 網頁載入完成，版本 v1.1.0｜單機模擬模式");
+    log("ℹ️ 而家唔需要Firebase，全部功能本地模擬");
 }
 
 // 開房 / 入房
-async function createOrJoinRoom(){
+function createOrJoinRoom(){
     log("👉 點擊【開啟/進入房間】");
-    if(!db){
-        log("⚠️ Firebase 仲載入緊，等陣再試");
-        return;
-    }
     myName = document.getElementById("playerName").value.trim();
     if(!myName){
         log("⚠️ 錯誤：沒有輸入玩家名稱");
@@ -166,48 +125,40 @@ async function createOrJoinRoom(){
     document.getElementById("roomInfo").innerText = "房號："+roomId;
     log("✅ 房號設定為：" + roomId);
 
-    const roomRef = db.ref("rooms/"+roomId);
-    playerRef = roomRef.child("players/"+myName);
+    // 模擬兩位玩家
+    playerList = [
+        {name:myName, inRoom:true, ready:false},
+        {name:"模擬玩家", inRoom:true, ready:false}
+    ];
+    renderWaitArea();
+    log("✅ 已進房間，等候區載入成功（模擬玩家已加入）");
+}
 
-    try{
-        await playerRef.set({name:myName, inRoom:true, ready:false, choice:null, score:0});
-        log("✅ 玩家資料寫入Firebase成功，已進房");
-    }catch(err){
-        log("❌ 寫入房間失敗：" + err.message);
-        return;
+// 渲染等候區
+function renderWaitArea(){
+    let html="";
+    for(let p of playerList){
+        html += `<div class="player-item">${p.name}
+        <span class="inroom-tag">【已進房間】</span>
+        ${p.ready?'<span class="ready-tag">【準備好】</span>':''}
+        </div>`;
     }
-
-    // 實時監聽房間玩家
-    roomRef.child("players").on("value",snap=>{
-        log("📡 收到房間玩家更新");
-        const players = snap.val()||{};
-        let html="";
-        for(let p in players){
-            const d = players[p];
-            html += `<div class="player-item">${d.name}
-            <span class="inroom-tag">【已進房間】</span>
-            ${d.ready?'<span class="ready-tag">【準備好】</span>':''}
-            </div>`;
-        }
-        document.getElementById("waitArea").innerHTML = html;
-    }, err=>{
-        log("❌ 監聽房間資料錯誤："+err.message);
-    })
+    document.getElementById("waitArea").innerHTML = html;
 }
 
 // 標記準備好
-async function setReady(){
+function setReady(){
     log("👉 點擊【標記準備好】");
-    if(!playerRef){
+    if(!roomId){
         log("⚠️ 尚未加入任何房間");
         return;
     }
-    try{
-        await playerRef.update({ready:true});
-        log("✅ 設定為【準備好】成功");
-    }catch(e){
-        log("❌ 更新準備狀態失敗："+e.message);
-    }
+    isReady = true;
+    playerList[0].ready = true;
+    // 模擬第二位玩家一齊準備
+    playerList[1].ready = true;
+    renderWaitArea();
+    log("✅ 你同模擬玩家都標記【準備好】");
 }
 
 // 錄音
@@ -241,33 +192,25 @@ function playAudio(num){
 }
 
 // 開始遊戲
-async function startGame(){
+function startGame(){
     log("👉 點擊【開始遊戲】");
     if(!roomId){
         log("⚠️ 未進入房間，無法開始");
         return;
     }
     const mode = document.getElementById("gameMode").value;
-    try{
-        await db.ref("rooms/"+roomId+"/game").set({mode:mode,playing:true,round:0});
-        log(`✅ 遊戲啟動，模式:${mode}`);
-    }catch(e){
-        log("❌ 開啟遊戲失敗："+e.message);
-    }
+    log(`✅ 遊戲啟動，模式:${mode}`);
+    document.getElementById("gameArea").innerText = "遊戲開始！可以揀石頭、布、剪刀";
 }
 // 出拳
-async function play(sel){
+function play(sel){
     log(`👉 玩家揀咗：${sel}`);
-    if(!playerRef){
+    if(!roomId){
         log("⚠️ 未入房，不能出拳");
         return;
     }
-    try{
-        await playerRef.update({choice:sel});
-        log(`✅ 出拳成功：${sel}`);
-    }catch(e){
-        log("❌ 出拳失敗："+e.message);
-    }
+    document.getElementById("gameArea").innerText = `你揀咗：${sel}`;
+    log(`✅ 出拳成功：${sel}`);
 }
 </script>
 </body>
