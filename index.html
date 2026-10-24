@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -112,7 +113,7 @@
 
     <div class="header-container">
         <h2>🎮 多人包剪揼遊戲</h2>
-        <span class="version-tag">v2.0.4</span>
+        <span class="version-tag">v2.0.5</span>
     </div>
 
     <!-- 1. 玩家設定區 -->
@@ -215,7 +216,7 @@
 
         logToWindow('[系統] 遊戲腳本載入中...');
 
-        // Firebase v8 初始化
+        // Firebase 設定與初始化
         const firebaseConfig = {
             apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
             authDomain: "game-ad81e.firebaseapp.com",
@@ -322,7 +323,6 @@
             const inputRoom = document.getElementById('room-id-input').value.trim();
             roomId = inputRoom || '53477b';
 
-            // 切換介面顯示等候區
             document.getElementById('room-code-display').innerText = roomId;
             document.getElementById('sec-user').style.display = 'none';
             document.getElementById('sec-room').style.display = 'block';
@@ -335,7 +335,6 @@
 
             roomRef = db.ref('rooms/' + roomId);
 
-            // 實時數據寫入與讀取
             roomRef.child('players').transaction(players => {
                 if (players === null) {
                     return { [myId]: { id: myId, name: myName, ready: false, alive: true, score: 0, streak: 0, choice: '' } };
@@ -502,4 +501,4 @@
             const activePlayers = Object.values(players).filter(p => p.alive !== false);
             
             let choices = activePlayers.map(p => p.choice);
-  
+            let uniqueChoices = [...new Set(choices)
