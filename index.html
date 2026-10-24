@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多人包剪探遊戲</title>
-    <!-- 引入 Firebase SDK -->
+    <title>多人包剪揼遊戲</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <style>
@@ -15,7 +15,7 @@
             margin: 0;
             padding: 15px;
         }
-        h2 { color: #4ade80; display: inline-block; margin: 0; }
+        h2, h3 { color: #4ade80; margin-top: 0; }
         .header-container {
             display: flex;
             justify-content: space-between;
@@ -40,15 +40,15 @@
             padding: 15px;
             margin-bottom: 15px;
         }
-        input[type="text"] {
+        input[type="text"], select {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #334155;
             background-color: #0f172a;
             color: white;
-            width: calc(100% - 110px);
-            max-width: 250px;
-            margin-right: 5px;
+            width: calc(100% - 22px);
+            margin-bottom: 10px;
+            box-sizing: border-box;
         }
         button {
             padding: 10px 15px;
@@ -61,6 +61,26 @@
         .btn-yellow { background-color: #f59e0b; color: white; }
         .btn-green { background-color: #10b981; color: white; }
         .btn-red { background-color: #ef4444; color: white; }
+        .btn-blue { background-color: #0284c7; color: white; }
+        .btn-gray { background-color: #64748b; color: white; }
+        .player-item {
+            background-color: #0f172a;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .badge-joined { background-color: #3b82f6; }
+        .badge-ready { background-color: #10b981; }
+        .badge-notready { background-color: #f59e0b; }
+        .badge-out { background-color: #ef4444; }
         .log-window {
             background-color: #0f172a;
             border: 1px solid #334155;
@@ -68,68 +88,108 @@
             padding: 10px;
             font-family: monospace;
             font-size: 12px;
-            height: 120px;
+            height: 100px;
             overflow-y: auto;
             color: #38bdf8;
         }
-        .game-area, .waiting-area {
-            display: none;
+        .audio-box {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
         }
-        .active {
-            display: block;
+        .choice-btn {
+            font-size: 45px;
+            cursor: pointer;
+            margin: 0 15px;
+            user-select: none;
+            display: inline-block;
+            transition: transform 0.1s;
         }
+        .choice-btn:active { transform: scale(1.2); }
     </style>
 </head>
 <body>
 
-    <!-- 頂部標題與版本號碼 -->
     <div class="header-container">
-        <h2>🎮 多人包剪探遊戲</h2>
-        <span class="version-tag">v1.1.1</span>
+        <h2>🎮 多人包剪揼遊戲</h2>
+        <span class="version-tag">v2.0.0</span>
     </div>
 
-    <!-- 1. 玩家名稱設定區 -->
-    <div class="section">
-        <h3>1. 玩家設定</h3>
-        <div style="margin-top: 10px;">
-            <input type="text" id="player-name-input" placeholder="請輸入您的名字" value="玩家_">
-            <button class="btn-green" onclick="updatePlayerName()">確認名字</button>
-        </div>
+    <!-- 1. 玩家設定區 -->
+    <div class="section" id="sec-user">
+        <h3>1. 輸入名字與房間</h3>
+        <input type="text" id="player-name-input" placeholder="請輸入您的名字" value="Fai">
+        <input type="text" id="room-id-input" placeholder="房間代碼 (留空則隨機生成)">
+        <button class="btn-green" style="width: 100%;" onclick="joinRoom()">進入 / 創建房間</button>
     </div>
 
-    <!-- 2. 語音錄音功能區 -->
-    <div class="section">
+    <!-- 2. 語音錄製區 -->
+    <div class="section" id="sec-audio">
         <h3>2. 語音錄音輸入</h3>
-        <button id="rec-btn" class="btn-yellow" onclick="toggleRecording()">🎤 開始錄音</button>
-        <audio id="audio-playback" controls style="display:none; margin-top:10px; width:100%;"></audio>
-    </div>
-
-    <!-- 3. 房間與等候區 -->
-    <div class="section">
-        <h3>3. 房間等候區</h3>
-        <p>房間代碼：<span id="room-code-display" style="color: #facc15; font-weight: bold;">載入中...</span></p>
         
-        <!-- 等候區畫面 -->
-        <div id="waiting-area" class="active">
-            <button id="ready-btn" class="btn-yellow" onclick="toggleReady()">準備好 / 取消準備</button>
-            <button id="host-start-btn" class="btn-green" style="display:none;" onclick="hostStartGame()">準備開始</button>
+        <!-- 第一段音訊 -->
+        <div class="audio-box">
+            <p style="margin:0 0 5px 0; color:#facc15; font-size:14px;">提示 1：請你講 「包剪揼 / Rock Paper Scissors shoot」</p>
+            <button id="rec-btn-1" class="btn-yellow" onclick="toggleRecord(1)">🎤 開始錄製音訊 1</button>
+            <audio id="audio-preview-1" controls style="display:none; width:100%; margin-top:5px;"></audio>
         </div>
 
-        <!-- 遊戲出拳區畫面 -->
-        <div id="game-area" class="game-area" style="text-align: center;">
-            <h1 style="color: #ef4444;">請出拳！</h1>
-            <div style="font-size: 40px; margin: 20px 0;">
-                <span onclick="makeChoice('rock')" style="cursor:pointer; margin: 0 10px;">✊</span>
-                <span onclick="makeChoice('paper')" style="cursor:pointer; margin: 0 10px;">✋</span>
-                <span onclick="makeChoice('scissors')" style="cursor:pointer; margin: 0 10px;">✌️</span>
-            </div>
+        <!-- 第二段音訊 -->
+        <div class="audio-box">
+            <p style="margin:0 0 5px 0; color:#facc15; font-size:14px;">提示 2：「當你贏咗你會講咩」</p>
+            <button id="rec-btn-2" class="btn-yellow" onclick="toggleRecord(2)">🎤 開始錄製音訊 2</button>
+            <audio id="audio-preview-2" controls style="display:none; width:100%; margin-top:5px;"></audio>
         </div>
+
+        <button id="upload-audio-btn" class="btn-blue" style="width:100%; display:none;" onclick="uploadAudios()">確定上傳語音</button>
     </div>
 
-    <!-- 系統日誌視窗 -->
+    <!-- 3. 房間等候區 -->
+    <div class="section" id="sec-room" style="display:none;">
+        <h3>3. 房間等候區</h3>
+        <p>房間代碼：<span id="room-code-display" style="color: #facc15; font-weight: bold;">-</span></p>
+
+        <!-- 模式選擇 (房主控制，全員同步顯示) -->
+        <div style="margin-bottom: 15px; background-color:#0f172a; padding:10px; border-radius:5px;">
+            <label style="font-size:14px; font-weight:bold;">遊戲模式：</label>
+            <select id="game-mode-select" onchange="onModeChange()" disabled>
+                <option value="one">一鋪定勝負</option>
+                <option value="win2">贏兩鋪</option>
+                <option value="win3">贏三鋪</option>
+                <option value="streak2">連贏兩鋪</option>
+            </select>
+        </div>
+
+        <!-- 玩家列表 -->
+        <div id="player-list" style="margin-bottom: 15px;"></div>
+
+        <button id="ready-btn" class="btn-yellow" onclick="toggleReady()">準備好 / 取消準備</button>
+        <button id="host-start-btn" class="btn-green" style="display:none;" onclick="hostStartGame()">開始遊戲</button>
+    </div>
+
+    <!-- 4. 遊戲出拳與比賽區 -->
+    <div class="section" id="sec-game" style="display:none; text-align: center;">
+        <h3 id="game-round-title">第 1 輪比賽</h3>
+        <div id="countdown-display" style="font-size: 32px; color:#f59e0b; font-weight:bold; height:40px;"></div>
+        
+        <div id="game-status-msg" style="color:#38bdf8; font-size:18px; margin: 10px 0;">請出拳！</div>
+
+        <!-- 出拳按鈕 -->
+        <div id="choice-area" style="margin: 20px 0;">
+            <span class="choice-btn" onclick="makeChoice('rock')">✊</span>
+            <span class="choice-btn" onclick="makeChoice('paper')">✋</span>
+            <span class="choice-btn" onclick="makeChoice('scissors')">✌️</span>
+        </div>
+
+        <!-- 輪次結果提示 -->
+        <div id="round-result-area" style="font-size: 16px; margin-top: 15px; color:#4ade80;"></div>
+    </div>
+
+    <!-- 5. 系統日誌視窗 -->
     <div class="section">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 14px; font-weight: bold;">🛠️ 系統與代碼運行檢視窗</span>
+            <span style="font-size: 14px; font-weight: bold;">🛠️ 系統日誌</span>
             <button onclick="clearLog()" style="background:none; color:#94a3b8; font-size:12px; cursor:pointer;">清空</button>
         </div>
         <div id="log-window" class="log-window"></div>
@@ -143,71 +203,11 @@
             logWin.scrollTop = logWin.scrollHeight;
         }
 
-        function clearLog() {
-            document.getElementById('log-window').innerHTML = '';
-        }
+        function clearLog() { document.getElementById('log-window').innerHTML = ''; }
 
-        logToWindow('[系統] 正在載入版本 v1.1.1...');
+        logToWindow('[系統] 遊戲初始化載入中...');
 
-        // 預設隨機名稱
-        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
-        document.getElementById('player-name-input').value = myId;
-
-        function updatePlayerName() {
-            const inputVal = document.getElementById('player-name-input').value.trim();
-            if (inputVal) {
-                myId = inputVal;
-                logToWindow(`[狀態] 玩家名稱已更新為: ${myId}`);
-            } else {
-                alert('名字不能為空！');
-            }
-        }
-
-        // 語音錄音相關變數
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-
-        window.toggleRecording = async function() {
-            const recBtn = document.getElementById('rec-btn');
-            if (!isRecording) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
-
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const audioUrl = URL.createObjectURL(audioBlob);
-                        const audioElem = document.getElementById('audio-playback');
-                        audioElem.src = audioUrl;
-                        audioElem.style.display = 'block';
-                        logToWindow('[錄音] 錄音完成，已生成本地語音預覽');
-                    };
-
-                    mediaRecorder.start();
-                    isRecording = true;
-                    recBtn.innerText = '⏹️ 停止錄音';
-                    recBtn.className = 'btn-red';
-                    logToWindow('[錄音] 正在收音...');
-                } catch (err) {
-                    logToWindow('[錯誤] 無法存取麥克風: ' + err.message);
-                    alert('無法存取麥克風，請檢查瀏覽器權限。');
-                }
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                recBtn.innerText = '🎤 開始錄音';
-                recBtn.className = 'btn-yellow';
-                logToWindow('[錄音] 停止錄音');
-            }
-        }
-
-        // === Firebase 設定 ===
+        // Firebase 初始化
         const firebaseConfig = {
             apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
             authDomain: "game-ad81e.firebaseapp.com",
@@ -223,74 +223,296 @@
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
-            logToWindow('[系統] Firebase 連線初始化成功');
+            logToWindow('[系統] Firebase 連線成功');
         } catch (e) {
-            logToWindow('[錯誤] Firebase 初始化失敗: ' + e.message);
+            logToWindow('[錯誤] Firebase 連線失敗: ' + e.message);
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get('room') || '53477b';
+        // 全局變數
+        let myId = '';
+        let myName = '';
+        let roomId = '';
+        let roomRef = null;
         let isHost = false;
-        let isReadyState = false;
+        let isReady = false;
+        let audioBase64_1 = '';
+        let audioBase64_2 = '';
+        
+        // 錄音相關
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStep = 0;
 
-        document.getElementById('room-code-display').innerText = roomId;
+        function toggleRecord(step) {
+            const btn = document.getElementById(`rec-btn-${step}`);
+            if (recordingStep === 0) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = () => {
+                            if (step === 1) audioBase64_1 = reader.result;
+                            if (step === 2) audioBase64_2 = reader.result;
+                            checkAudioReady();
+                        };
+                        const preview = document.getElementById(`audio-preview-${step}`);
+                        preview.src = URL.createObjectURL(blob);
+                        preview.style.display = 'block';
+                        logToWindow(`[錄音] 音訊 ${step} 錄製完成`);
+                    };
+                    mediaRecorder.start();
+                    recordingStep = step;
+                    btn.innerText = '⏹️ 停止錄音';
+                    btn.className = 'btn-red';
+                    logToWindow(`[錄音] 正在錄製音訊 ${step}...`);
+                }).catch(err => alert('無法存取麥克風: ' + err.message));
+            } else if (recordingStep === step) {
+                mediaRecorder.stop();
+                recordingStep = 0;
+                btn.innerText = `🎤 重錄音訊 ${step}`;
+                btn.className = 'btn-yellow';
+            }
+        }
 
-        if (db) {
-            const roomRef = db.ref('rooms/' + roomId);
+        function checkAudioReady() {
+            if (audioBase64_1 && audioBase64_2) {
+                document.getElementById('upload-audio-btn').style.display = 'block';
+            }
+        }
+
+        function uploadAudios() {
+            if (roomRef && myId) {
+                roomRef.child('players/' + myId).update({
+                    audio1: audioBase64_1,
+                    audio2: audioBase64_2
+                });
+                logToWindow('[錄音] 兩段語音成功同步至房間！');
+                alert('語音上傳成功！');
+            }
+        }
+
+        // 加入房間
+        function joinRoom() {
+            myName = document.getElementById('player-name-input').value.trim();
+            if (!myName) { alert('請輸入名字'); return; }
             
-            roomRef.once('value', (snapshot) => {
-                const roomData = snapshot.val();
-                if (!roomData) {
+            myId = 'user_' + Math.random().toString(36).substring(2, 7);
+            const inputRoom = document.getElementById('room-id-input').value.trim();
+            roomId = inputRoom || '53477b';
+
+            document.getElementById('room-code-display').innerText = roomId;
+            document.getElementById('sec-user').style.display = 'none';
+            document.getElementById('sec-room').style.display = 'block';
+
+            roomRef = db.ref('rooms/' + roomId);
+
+            roomRef.child('players').once('value', snapshot => {
+                const players = snapshot.val();
+                if (!players) {
                     isHost = true;
+                    document.getElementById('host-start-btn').style.display = 'inline-block';
+                    document.getElementById('game-mode-select').disabled = false;
                     roomRef.set({
                         host: myId,
-                        gameStarted: false,
-                        status: 'waiting'
+                        mode: 'one',
+                        status: 'waiting',
+                        round: 1
                     });
-                    document.getElementById('host-start-btn').style.display = 'inline-block';
-                    logToWindow(`[狀態] 您是此房間的房主 (${roomId})`);
+                    logToWindow(`[房間] 您已創建房間 ${roomId}（房主）`);
                 } else {
                     isHost = false;
-                    document.getElementById('host-start-btn').style.display = 'none';
-                    logToWindow(`[狀態] 您已成功加入房間 (${roomId})`);
+                    logToWindow(`[房間] 已加入房間 ${roomId}`);
                 }
-                listenToRoomState(roomRef);
-            }, (error) => {
-                logToWindow('[錯誤] 讀取房間資料失敗: ' + error.message);
+
+                roomRef.child('players/' + myId).set({
+                    id: myId,
+                    name: myName,
+                    ready: false,
+                    alive: true,
+                    score: 0,
+                    streak: 0,
+                    choice: ''
+                });
+
+                listenRoom();
             });
+        }
 
-            window.toggleReady = function() {
-                isReadyState = !isReadyState;
-                logToWindow(`[狀態] 玩家 [${myId}] 切換準備狀態: ${isReadyState}`);
-                roomRef.child('players/' + myId).set({ ready: isReadyState });
-            }
+        function onModeChange() {
+            if (!isHost) return;
+            const mode = document.getElementById('game-mode-select').value;
+            roomRef.update({ mode: mode });
+        }
 
-            window.hostStartGame = function() {
-                if (!isHost) return;
-                logToWindow('[遊戲] 房主發起遊戲，模式: one');
-                roomRef.update({
-                    gameStarted: true,
-                    mode: 'one'
+        function toggleReady() {
+            isReady = !isReady;
+            roomRef.child('players/' + myId).update({ ready: isReady });
+        }
+
+        function listenRoom() {
+            roomRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                // 同步模式
+                if (data.mode) {
+                    document.getElementById('game-mode-select').value = data.mode;
+                }
+
+                // 更新玩家列表
+                const playerListDiv = document.getElementById('player-list');
+                playerListDiv.innerHTML = '';
+                
+                let allReady = true;
+                let playerCount = 0;
+                let players = data.players || {};
+
+                Object.values(players).forEach(p => {
+                    playerCount++;
+                    if (!p.ready) allReady = false;
+
+                    const item = document.createElement('div');
+                    item.className = 'player-item';
+                    item.innerHTML = `
+                        <span><strong>${p.name}</strong> <span class="badge badge-joined">已進房間</span></span>
+                        <span>
+                            ${p.alive === false ? '<span class="badge badge-out">已淘汰</span>' : ''}
+                            <span class="badge ${p.ready ? 'badge-ready' : 'badge-notready'}">${p.ready ? '準備好' : '未準備'}</span>
+                        </span>
+                    `;
+                    playerListDiv.appendChild(item);
                 });
-            }
 
-            function listenToRoomState(ref) {
-                ref.on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (!data) return;
+                // 房主顯示開始按鈕條件
+                if (isHost) {
+                    document.getElementById('host-start-btn').style.display = (allReady && playerCount >= 2) ? 'inline-block' : 'none';
+                }
 
-                    if (data.gameStarted === true) {
-                        logToWindow('[遊戲] 收到遊戲開始通知，正在切換畫面...');
-                        document.getElementById('waiting-area').style.display = 'none';
-                        document.getElementById('game-area').style.display = 'block';
+                // 遊戲狀態切換監聽
+                if (data.status === 'countdown' && currentStatus !== 'countdown') {
+                    startCountdownSequence();
+                } else if (data.status === 'playing' && currentStatus !== 'playing') {
+                    showGameArea(data);
+                } else if (data.status === 'evaluating' && isHost && !isEvaluating) {
+                    evaluateRound(data);
+                } else if (data.status === 'ended' && currentStatus !== 'ended') {
+                    showFinalWinner(data);
+                }
+                currentStatus = data.status;
+            });
+        }
+
+        let currentStatus = 'waiting';
+        let isEvaluating = false;
+
+        function hostStartGame() {
+            if (!isHost) return;
+            roomRef.update({ status: 'countdown', round: 1 });
+        }
+
+        // 3 秒倒數與遊戲切換
+        function startCountdownSequence() {
+            document.getElementById('sec-room').style.display = 'none';
+            document.getElementById('sec-game').style.display = 'block';
+            document.getElementById('choice-area').style.pointerEvents = 'none';
+            
+            let count = 3;
+            const cdBox = document.getElementById('countdown-display');
+            cdBox.innerText = `準備... ${count}`;
+            
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    cdBox.innerText = `準備... ${count}`;
+                } else {
+                    clearInterval(timer);
+                    cdBox.innerText = '開始！';
+                    if (isHost) {
+                        roomRef.update({ status: 'playing' });
                     }
+                }
+            }, 1000);
+        }
+
+        function showGameArea(data) {
+            document.getElementById('countdown-display').innerText = '';
+            document.getElementById('game-round-title').innerText = `第 ${data.round || 1} 輪比賽`;
+            document.getElementById('round-result-area').innerHTML = '';
+            
+            const myData = data.players[myId];
+            if (myData && myData.alive === false) {
+                document.getElementById('game-status-msg').innerText = '您已被淘汰，正在觀看比賽...';
+                document.getElementById('choice-area').style.display = 'none';
+            } else {
+                document.getElementById('game-status-msg').innerText = '請出拳！';
+                document.getElementById('choice-area').style.display = 'block';
+                document.getElementById('choice-area').style.pointerEvents = 'auto';
+            }
+
+            // 房主檢查是否所有存活玩家已出拳
+            if (isHost) {
+                let allChosen = true;
+                Object.values(data.players).forEach(p => {
+                    if (p.alive !== false && !p.choice) allChosen = false;
                 });
+                if (allChosen) {
+                    roomRef.update({ status: 'evaluating' });
+                }
             }
         }
 
-        window.makeChoice = function(choice) {
-            logToWindow(`[遊戲] 玩家 [${myId}] 選擇了出拳: ${choice}`);
+        function makeChoice(choice) {
+            document.getElementById('choice-area').style.pointerEvents = 'none';
+            document.getElementById('game-status-msg').innerText = '已出拳，等待其他玩家...';
+            roomRef.child(`players/${myId}`).update({ choice: choice });
+            logToWindow(`[遊戲] 我選擇了: ${choice}`);
         }
-    </script>
-</body>
-</html>
+
+        // 合唱與勝負計算邏輯 (房主主導)
+        async function evaluateRound(data) {
+            isEvaluating = true;
+            logToWindow('[遊戲] 所有玩家已出拳，播放大合唱錄音...');
+
+            // 同步播放合唱 (第一段錄音)
+            await playChorus(data.players);
+
+            // 計算勝負
+            const players = data.players;
+            const activePlayers = Object.values(players).filter(p => p.alive !== false);
+            
+            let choices = activePlayers.map(p => p.choice);
+            let uniqueChoices = [...new Set(choices)];
+
+            let roundWinners = [];
+            
+            // 裁決判定
+            if (uniqueChoices.length === 1 || uniqueChoices.length === 3) {
+                // 平局，無人淘汰
+                logToWindow('[結果] 本輪平局，無人淘汰');
+                roundWinners = activePlayers;
+            } else {
+                // 有勝負
+                let winChoice = '';
+                if (uniqueChoices.includes('rock') && uniqueChoices.includes('scissors')) winChoice = 'rock';
+                else if (uniqueChoices.includes('scissors') && uniqueChoices.includes('paper')) winChoice = 'scissors';
+                else if (uniqueChoices.includes('paper') && uniqueChoices.includes('rock')) winChoice = 'paper';
+
+                roundWinners = activePlayers.filter(p => p.choice === winChoice);
+                let losers = activePlayers.filter(p => p.choice !== winChoice);
+
+                // 淘汰輸家
+                losers.forEach(l => {
+                    roomRef.child(`players/${l.id}`).update({ alive: false });
+                });
+            }
+
+            // 更新分數與勝負規則判斷
+            let mode = data.mode;
+            let winnerId = null;
+
+            if (mode === 'one') {
+             
