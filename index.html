@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>包剪揼多人同步遊戲</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js"></script>
+    <style>
+        *{box-sizing:border-box;font-family:system-ui,sans-serif;}
+        body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7;}
+        .box{background:white;padding:16px;border-radius:12px;margin-bottom:12px;box-shadow:0 1px 3px #0002;}
+        button{padding:10px 14px;border:none;border-radius:8px;background:#2277dd;color:white;font-size:16px;margin:4px;}
+        button:disabled{background:#aaa;}
+        input, select{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:8px;font-size:16px;}
+        .ready-tag{color:green;font-weight:bold}
+        .inroom-tag{color:#2277dd}
+        .player-item{padding:8px;border-bottom:1px solid #eee}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>1. 輸入玩家名稱</h3>
+        <input id="playerName" placeholder="輸入你個名">
+    </div>
+
+    <div class="box">
+        <h3>2. 開房 / 入房</h3>
+        <input id="roomIdInput" placeholder="輸入房號（留空就開新房間）">
+        <button onclick="createOrJoinRoom()">開啟 / 進入房間</button>
+        <div id="roomInfo"></div>
+    </div>
+
+    <div class="box">
+        <h3>3. 等候區</h3>
+        <div id="waitArea"></div>
+        <button onclick="setReady()">標記準備好</button>
+    </div>
+
+    <div class="box">
+        <h3>4. 錄製音訊</h3>
+        <p>第一段：提示「請你講 包剪揼/Rock Paper Scissors shoot」</p>
+        <button onclick="recordAudio(1)">錄音 1</button>
+        <button onclick="playAudio(1)">試聽1</button>
+        <p>第二段：提示「當你贏咗你會講咩」</p>
+        <button onclick="recordAudio(2)">錄音 2</button>
+        <button onclick="playAudio(2)">試聽2</button>
+        <audio id="audio1">
+        <audio id="audio2">
+    </div>
+
+    <div class="box">
+        <h3>5. 揀遊戲模式</h3>
+        <select id="gameMode">
+            <option value="one">一鋪定勝負</option>
+            <option value="best2">贏兩鋪</option>
+            <option value="best3">贏三鋪</option>
+            <option value="streak2">連贏兩鋪</option>
+        </select>
+        <button onclick="startGame()">開始遊戲</button>
+    </div>
+
+    <div class="box">
+        <h3>遊戲區</h3>
+        <div id="gameArea"></div>
+        <div>
+            <button onclick="play('rock')">石頭</button>
+            <button onclick="play('paper')">布</button>
+            <button onclick="play('scissors')">剪刀</button>
+        </div>
+    </div>
+
+<script>
+// ========== 你最新嘅 Firebase Config ==========
+const firebaseConfig = {
+    apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
+    authDomain: "game-ad81e.firebaseapp.com",
+    databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "game-ad81e",
+    storageBucket: "game-ad81e.firebasestorage.app",
+    messagingSenderId: "524468263754",
+    appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
+    measurementId: "G-GSWSWK4WEL"
+};
+
+// 初始化Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let roomId = null;
+let myName = "";
+let playerRef = null;
+let mediaRecorder;
+let audioChunks = [];
+let audioBuffers = [null,null];
+
+// 開房或者加入房間
+function createOrJoinRoom(){
+    myName = document.getElementById("playerName").value.trim();
+    if(!myName){alert("請輸入名稱");return;}
+    let inputRoom = document.getElementById("roomIdInput").value.trim();
+    roomId = inputRoom || Math.random().toString(36).slice(2,8);
+    document.getElementById("roomInfo").innerText = "房號："+roomId;
+    const roomRef = db.ref("rooms/"+roomId);
+    playerRef = roomRef.child("players/"+myName);
+    playerRef.set({name:myName, inRoom:true, ready:false, choice:null, score:0});
+    // 實時監聽房內所有玩家
+    roomRef.child("players").on("value",snap=>{
+        const players = snap.val()||{};
+        let html="";
+        for(let p in players){
+            const d = players[p];
+            html += `<div class="player-item">${d.name}
+            <span class="inroom-tag">【已進房間】</span>
+            ${d.ready?'<span class="ready-tag">【準備好】</span>':''}
+            </div>`;
+        }
+        document.getElementById("waitArea").innerHTML = html;
+    })
+}
+
+// 設定自己準備好
+function setReady(){
+    if(!playerRef)return;
+    playerRef.update({ready:true});
+}
+
+// 錄音功能
+async function recordAudio(num){
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
+    mediaRecorder.onstop = ()=>{
+        const blob = new Blob(audioChunks,{type:"audio/mpeg"});
+        audioBuffers[num-1] = URL.createObjectURL(blob);
+    }
+    mediaRecorder.start();
+    setTimeout(()=>mediaRecorder.stop(),3000);
+}
+function playAudio(num){
+    if(!audioBuffers[num-1])return alert("尚未錄音");
+    const aud = document.getElementById("audio"+num);
+    aud.src = audioBuffers[num-1];
+    aud.play();
+}
+
+// 開始遊戲
+function startGame(){
+    const mode = document.getElementById("gameMode").value;
+    db.ref("rooms/"+roomId+"/game").set({mode:mode,playing:true,round:0});
+}
+// 玩家出拳
+function play(sel){
+    if(!playerRef)return;
+    playerRef.update({choice:sel});
+}
+</script>
+</body>
+</html>
