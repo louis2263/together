@@ -30,10 +30,22 @@
             white-space:pre-wrap;
             font-size:12px;
         }
+        /* 拳頭圖片樣式 */
+        .handContainer{
+            display:flex;
+            justify-content:center;
+            gap:20px;
+            margin:15px 0;
+        }
+        .handImg{
+            width:120px;
+            height:auto;
+            border-radius:8px;
+        }
     </style>
 </head>
 <body>
-    <div class="version">版本 v1.5｜修復連勝邏輯 + 修復文字重疊bug</div>
+    <div class="version">版本 v1.7｜加入拳頭圖片 rock.jpg / paper.jpg / scissors.jpg</div>
 
     <div class="box">
         <h3>1. 輸入玩家名稱</h3>
@@ -86,6 +98,8 @@
     <div class="box">
         <h3>遊戲區</h3>
         <div class="score" id="scoreBox">分數：你 0 ｜ 對手 0</div>
+        <!-- 拳頭圖片顯示區域 -->
+        <div class="handContainer" id="handBox"></div>
         <div id="gameResult" class="result-text"></div>
         <div id="gameArea">等待出拳</div>
         <div>
@@ -138,9 +152,19 @@ const nameMap = {
     paper:"布",
     scissors:"剪刀"
 };
+// 圖片檔名對應，完全配你倉庫入面嘅名
+const imgMap = {
+    rock:"rock.jpg",
+    paper:"paper.jpg",
+    scissors:"scissors.jpg"
+};
+
+const audio1 = document.getElementById("audio1");
+const audio2 = document.getElementById("audio2");
+const handBox = document.getElementById("handBox");
 
 window.onload = function(){
-    log("🚀 網頁載入完成，版本 v1.5｜修復連勝+文字重疊bug");
+    log("🚀 網頁載入完成，版本 v1.7｜加入拳頭圖片");
 }
 
 // 開房 / 入房
@@ -243,7 +267,7 @@ function playAudio(num){
         log(`⚠️ 錄音${num}尚未錄製`);
         return alert("尚未錄音");
     }
-    const aud = document.getElementById(`audio${num}`);
+    const aud = (num===1) ? audio1 : audio2;
     aud.src = audioBuffers[num-1];
     aud.play();
 }
@@ -262,6 +286,7 @@ function startGame(){
     winStreak = 0;
     updateScore();
     document.getElementById("gameResult").innerText = "";
+    handBox.innerHTML = ""; // 清空拳圖
     resetRound();
     log(`✅ 遊戲啟動，模式:${gameMode}`);
 }
@@ -273,6 +298,7 @@ function resetRound(){
     allHandChosen = false;
     document.getElementById("gameArea").innerText = "請揀石頭 / 布 / 剪刀";
     enableHandButtons(true);
+    handBox.innerHTML = "";
 }
 
 function enableHandButtons(enable){
@@ -320,17 +346,18 @@ function selectHand(sel){
     allHandChosen = true;
     log("✅ 所有人都揀好，播放開局錄音");
 
-    // 播放第一段錄音（包剪揼 shoot）
+    // 播放第一段錄音
     if(audioBuffers[0]){
-        const aud = document.getElementById("audio1");
-        aud.src = audioBuffers[0];
-        aud.play();
-    }
-
-    // 延遲等錄音播完再顯示結果
-    setTimeout(()=>{
+        audio1.src = audioBuffers[0];
+        // 監聽音訊完結事件
+        audio1.onended = function(){
+            showRoundResult();
+        }
+        audio1.play();
+    }else{
+        // 如果冇錄音，直接顯示結果
         showRoundResult();
-    },1200);
+    }
 }
 
 function showRoundResult(){
@@ -340,15 +367,26 @@ function showRoundResult(){
     let showText = `你：${nameMap[sel]}｜對手：${nameMap[oppSel]}`;
     let finalMsg = "";
 
+    // 顯示兩邊拳頭圖片
+    handBox.innerHTML = `
+        <div>
+            <img class="handImg" src="${imgMap[sel]}" alt="${nameMap[sel]}">
+            <div style="text-align:center">你</div>
+        </div>
+        <div>
+            <img class="handImg" src="${imgMap[oppSel]}" alt="${nameMap[oppSel]}">
+            <div style="text-align:center">對手</div>
+        </div>
+    `;
+
     if(res === "win"){
         scorePlayer++;
         winStreak++;
         showText += "\n🎉 你贏咗！";
         // 播放勝利錄音2
         if(audioBuffers[1]){
-            const aud = document.getElementById("audio2");
-            aud.src = audioBuffers[1];
-            aud.play();
+            audio2.src = audioBuffers[1];
+            audio2.play();
         }
     }else if(res === "lose"){
         scoreOpp++;
@@ -379,7 +417,6 @@ function showRoundResult(){
         finalMsg = scorePlayer>scoreOpp ? "\n🏆 恭喜你贏咗成局！" : "\n💔 今局輸咗，再試過！";
     }
 
-    // 一次寫入，唔會文字重疊
     document.getElementById("gameResult").innerText = showText + finalMsg;
     updateScore();
     log(`✅ 本局結果：${res}，當前連勝：${winStreak}`);
