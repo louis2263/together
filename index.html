@@ -1,10 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多人包剪揼遊戲</title>
-    <!-- 引入穩定的 Firebase v8 SDK -->
+    <!-- Firebase SDK v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -112,7 +113,7 @@
 
     <div class="header-container">
         <h2>🎮 多人包剪揼遊戲</h2>
-        <span class="version-tag">v2.0.2</span>
+        <span class="version-tag">v2.0.3</span>
     </div>
 
     <!-- 1. 玩家設定區 -->
@@ -184,11 +185,11 @@
         <div id="round-result-area" style="font-size: 16px; margin-top: 15px; color:#4ade80;"></div>
     </div>
 
-    <!-- 5. 系統日誌視窗 -->
+    <!-- 5. 系統日誌視窗（已修復多餘重複區塊） -->
     <div class="section">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 14px; font-weight: bold;">🛠️ 系統日誌</span>
-            <button onclick="clearLog()" style="background:none; color:#94a3b8; font-size:12px; cursor:pointer;">清空</button>
+            <button onclick="clearLog()" style="background:none; color:#94a3b8; font-size:12px; cursor:pointer; padding:0;">清空</button>
         </div>
         <div id="log-window" class="log-window"></div>
     </div>
@@ -196,16 +197,27 @@
     <script>
         function logToWindow(message) {
             const logWin = document.getElementById('log-window');
-            const timeStr = new Date().toLocaleTimeString();
-            logWin.innerHTML += `[${timeStr}] ${message}<br>`;
-            logWin.scrollTop = logWin.scrollHeight;
+            if (logWin) {
+                const timeStr = new Date().toLocaleTimeString();
+                logWin.innerHTML += `[${timeStr}] ${message}<br>`;
+                logWin.scrollTop = logWin.scrollHeight;
+            }
         }
 
-        function clearLog() { document.getElementById('log-window').innerHTML = ''; }
+        function clearLog() {
+            const logWin = document.getElementById('log-window');
+            if (logWin) logWin.innerHTML = '';
+        }
 
-        logToWindow('[系統] 遊戲初始化載入中...');
+        // 全域捕捉 JS 錯誤以防網頁無回應
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            logToWindow(`<span style="color:#ef4444;">[全域錯誤] ${msg} (Line: ${lineNo})</span>`);
+            return false;
+        };
 
-        // Firebase v8 初始化設定
+        logToWindow('[系統] 遊戲腳本載入中...');
+
+        // Firebase v8 初始化
         const firebaseConfig = {
             apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
             authDomain: "game-ad81e.firebaseapp.com",
@@ -218,15 +230,23 @@
         };
 
         let db = null;
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
+        function initFirebase() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    logToWindow('<span style="color:#f59e0b;">[警告] 正在等待 Firebase SDK 載入...</span>');
+                    setTimeout(initFirebase, 500);
+                    return;
+                }
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.database();
+                logToWindow('[系統] Firebase 連線已就緒！');
+            } catch (e) {
+                logToWindow('[錯誤] Firebase 初始化失敗: ' + e.message);
             }
-            db = firebase.database();
-            logToWindow('[系統] Firebase v8 連線成功');
-        } catch (e) {
-            logToWindow('[錯誤] Firebase 初始化失敗: ' + e.message);
         }
+        initFirebase();
 
         // 全局變數
         let myId = '';
@@ -309,10 +329,12 @@
             document.getElementById('room-code-display').innerText = roomId;
             document.getElementById('sec-user').style.display = 'none';
             document.getElementById('sec-room').style.display = 'block';
+            logToWindow(`[動作] 嘗試加入房間 ${roomId}...`);
 
             if (!db) {
-                logToWindow('[錯誤] Firebase 資料庫未就緒');
-                alert('Firebase 連線失敗，請重新整理頁面');
+                logToWindow('[錯誤] Firebase 資料庫未完成連線，請稍後再試');
+                alert('Firebase 連線中，請再按一次按鈕');
+                initFirebase();
                 return;
             }
 
@@ -494,21 +516,4 @@
                 logToWindow('[結果] 本輪平局，無人淘汰');
                 roundWinners = activePlayers;
             } else {
-                let winChoice = '';
-                if (uniqueChoices.includes('rock') && uniqueChoices.includes('scissors')) winChoice = 'rock';
-                else if (uniqueChoices.includes('scissors') && uniqueChoices.includes('paper')) winChoice = 'scissors';
-                else if (uniqueChoices.includes('paper') && uniqueChoices.includes('rock')) winChoice = 'paper';
-
-                roundWinners = activePlayers.filter(p => p.choice === winChoice);
-                let losers = activePlayers.filter(p => p.choice !== winChoice);
-
-                losers.forEach(l => {
-                    roomRef.child(`players/${l.id}`).update({ alive: false });
-                });
-            }
-
-            let mode = data.mode;
-            let winnerId = null;
-
-            if (mode === 'one') {
-                if (roundWinners.length === 1) winnerId = roundWinne
+                let wi
