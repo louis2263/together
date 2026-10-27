@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人遊戲 v1.7</title>
+<title>包剪揼多人遊戲 v1.8</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;margin:0;background:#f4f4f4;}
@@ -112,12 +112,13 @@ async function toggleRecord(){
         autoGainControl:true
       }
     });
-    const options = {mimeType:'audio/aac',audioBitsPerSecond:128000};
+    // 改用瀏覽器廣泛支援嘅 webm 音訊
+    const options = {mimeType:'audio/webm'};
     mediaRecorder = new MediaRecorder(stream,options);
     audioChunks = [];
     mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
     mediaRecorder.onstop = ()=>{
-      recordedBlob = new Blob(audioChunks,{type:'audio/aac'});
+      recordedBlob = new Blob(audioChunks,{type:'audio/webm'});
       audioPlayer.src = URL.createObjectURL(recordedBlob);
     };
     mediaRecorder.start();
@@ -126,7 +127,7 @@ async function toggleRecord(){
     document.getElementById("recBtn").innerText = "🔴 錄音中…按呢度停止";
     document.getElementById("recStatus").innerText = "🎤 而家緊錄音，講說話";
     beep("start");
-    log("🎙️ 開始錄音，降噪已開啟");
+    log("🎙️ 開始錄音，降噪已開啟，格式 audio/webm");
   }catch(err){
     log("❌ 麥克風權限錯誤："+err.message);
   }
