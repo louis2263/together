@@ -3,32 +3,153 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼測試</title>
+<title>包剪揼多人對戰 v1.9</title>
 <style>
-#debug{background:#000;color:#0f0;padding:10px;height:180px;overflow:auto;white-space:pre-wrap}
+*{box-sizing:border-box;font-family:system-ui}
+body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px #00000012}
+button{padding:12px 24px;font-size:16px;border:none;border-radius:10px;background:#216fea;color:white;margin:4px}
+input{width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:10px;margin:8px 0}
+#debug{background:#111;color:#0f0;padding:12px;height:220px;overflow:auto;font-family:monospace;white-space:pre-wrap}
+.hide{display:none}
 </style>
 </head>
 <body>
-<h2>測試頁 v0</h2>
-<input id="nameInput" placeholder="輸入名字">
+<div class="card">
+<h2>包剪揼多人對戰 v1.9</h2>
+<div>版本號：v1.9</div>
+</div>
+
+<!-- 輸入名字頁 -->
+<div class="card" id="page-name">
+<h3>1. 輸入名字</h3>
+<input id="nameInput" placeholder="輸入你的名字">
+<br>
 <button id="btnConfirmName">確認名字</button>
-<div>Debug：</div>
+</div>
+
+<!-- 房間頁 -->
+<div class="card hide" id="page-room">
+<h3>房間頁面</h3>
+<p>房間號碼：<span id="roomIdText"></span></p>
+<button id="btnCreateRoom">開啟新房間</button>
+<button id="btnJoinRoom">進入房間</button>
+<input id="roomIdInput" placeholder="輸入房間號碼">
+<h4>等候區：</h4>
+<div id="roomUserList"></div>
+</div>
+
+<div class="card">
+<h3>測試視窗（Debug）</h3>
 <div id="debug"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
 
 <script>
-const debugBox = document.getElementById('debug');
-function log(txt){
-  const time = new Date().toLocaleTimeString();
-  debugBox.innerText += `[${time}] ${txt}\n`;
-  debugBox.scrollTop = debugBox.scrollHeight;
+const DEBUG = document.getElementById("debug");
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  DEBUG.innerText += `[${t}] ${msg}\n`;
+  DEBUG.scrollTop = DEBUG.scrollHeight;
 }
-log("頁面載入完成");
+log("頁面載入完成，準備初始化Firebase");
 
-document.getElementById("btnConfirmName").addEventListener("click",()=>{
-  log("✅ 按鈕被點擊！");
-  const name = document.getElementById("nameInput").value;
-  log("輸入名字：" + name);
-})
+// Firebase 設定
+const firebaseConfig = {
+    apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
+    authDomain: "game-ad81e.firebaseapp.com",
+    databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "game-ad81e",
+    storageBucket: "game-ad81e.appspot.com",
+    messagingSenderId: "947205132112",
+    appId: "1:947205132112:web:xxxxxxxxxxxxxxxxx"
+};
+
+let app, db;
+try{
+  app = firebase.initializeApp(firebaseConfig);
+  db = firebase.database(app);
+  log("✅ Firebase 連接成功");
+}catch(e){
+  log("❌ Firebase 錯誤：" + e.message);
+}
+
+let myName = "";
+let myRoomId = "";
+const pageName = document.getElementById("page-name");
+const pageRoom = document.getElementById("page-room");
+
+// 確認名字按鈕
+document.getElementById("btnConfirmName").addEventListener("click", ()=>{
+  log("👉 撳咗確認名字按鈕");
+  myName = document.getElementById("nameInput").value.trim();
+  if(!myName){
+    log("⚠️ 請輸入名字");
+    return;
+  }
+  log("名字設定：" + myName);
+  pageName.classList.add("hide");
+  pageRoom.classList.remove("hide");
+});
+
+// 開新房間
+document.getElementById("btnCreateRoom").addEventListener("click", ()=>{
+  log("👉 撳開啟房間");
+  const rid = Math.random().toString(36).slice(2,8);
+  myRoomId = rid;
+  document.getElementById("roomIdText").innerText = rid;
+  log("建立房間：" + rid);
+  // 寫入資料庫，建立房間
+  db.ref("rooms/"+rid).set({
+    owner: myName,
+    players: {
+      [myName]: {ready:false}
+    }
+  });
+  // 監聽房間更新，刷新等候區
+  listenRoom(rid);
+});
+
+// 進入房間
+document.getElementById("btnJoinRoom").addEventListener("click", ()=>{
+  const rid = document.getElementById("roomIdInput").value.trim();
+  if(!rid){
+    log("⚠️ 請輸入房間號碼");
+    return;
+  }
+  myRoomId = rid;
+  log("嘗試進入房間：" + rid);
+  const roomRef = db.ref("rooms/"+rid);
+  roomRef.once("value", snap=>{
+    if(!snap.exists()){
+      log("❌ 房間不存在");
+      return;
+    }
+    // 加入玩家
+    db.ref("rooms/"+rid+"/players/"+myName).set({ready:false});
+    listenRoom(rid);
+  });
+});
+
+// 監聽房間資料，自動更新等候區
+function listenRoom(rid){
+  log("🔍 開始監聽房間：" + rid);
+  db.ref("rooms/"+rid).on("value", snap=>{
+    const data = snap.val();
+    if(!data) return;
+    log("📥 房間資料更新");
+    const players = data.players || {};
+    let html = "";
+    for(const p in players){
+      const readyText = players[p].ready ? "✅ 準備好" : "⏳ 未準備";
+      html += `<div>${p} — ${readyText}</div>`;
+    }
+    document.getElementById("roomUserList").innerHTML = html;
+  });
+}
 </script>
 </body>
 </html>
