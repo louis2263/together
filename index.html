@@ -1,326 +1,34 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.7</title>
+<title>包剪揼測試</title>
 <style>
-*{box-sizing:border-box;font-family:system-ui,sans-serif;}
-body{padding:16px;margin:0;background:#f5f5f5;}
-.container{max-width:600px;margin:0 auto;}
-.card{background:white;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px #0002;}
-button{padding:10px 14px;border:none;border-radius:8px;background:#2277dd;color:white;font-size:16px;margin:4px;cursor:pointer;}
-button:disabled{background:#aaa;cursor:not-allowed;}
-input{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin:6px 0;}
-#debug{background:#111;color:#0f0;padding:10px;height:180px;overflow:auto;font-size:12px;white-space:pre-wrap;}
-.wait-item{padding:8px;border-bottom:1px solid #eee;}
-.ready-tag{color:green;font-weight:bold;}
-.entered-tag{color:#2277dd;}
+#debug{background:#000;color:#0f0;padding:10px;height:180px;overflow:auto;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="card">
-    <h3>包剪揼多人對戰 <span id="ver">v1.7</span></h3>
-    <div>版本號：<span id="versionText">v1.7</span></div>
-  </div>
+<h2>測試頁 v0</h2>
+<input id="nameInput" placeholder="輸入名字">
+<button id="btnConfirmName">確認名字</button>
+<div>Debug：</div>
+<div id="debug"></div>
 
-  <div class="card" id="page-name">
-    <h4>1. 輸入名字</h4>
-    <input id="playerName" placeholder="輸入你嘅名稱">
-    <button onclick="saveName()">確認名字</button>
-  </div>
-
-  <div class="card" id="page-room" style="display:none">
-    <h4>2. 開啟 / 進入房間</h4>
-    <input id="roomIdInput" placeholder="輸入房間編號（開房可以留空）">
-    <button onclick="createRoom()">開啟新房间</button>
-    <button onclick="joinRoom()">進入房間</button>
-    <div id="roomInfo"></div>
-  </div>
-
-  <div class="card" id="page-record" style="display:none">
-    <h4>3. 錄製音訊</h4>
-    <p>第一段：請你講 包剪揼 / Rock Paper Scissors Shoot</p>
-    <button id="rec1Btn" onclick="recordAudio(1)">開始錄製第一段</button>
-    <button onclick="playAudio(1)">試聽第一段</button>
-    <button onclick="uploadAudio(1)">上傳第一段</button>
-    <p>第二段：當你贏咗你會講咩</p>
-    <button id="rec2Btn" onclick="recordAudio(2)">開始錄製第二段</button>
-    <button onclick="playAudio(2)">試聽第二段</button>
-    <button onclick="uploadAudio(2)">上傳第二段</button>
-    <div id="recStatus"></div>
-    <button onclick="setReady()">我準備好</button>
-  </div>
-
-  <div class="card" id="page-wait" style="display:none">
-    <h4>等候區</h4>
-    <div id="waitList"></div>
-  </div>
-
-  <div class="card" id="page-gameSelect" style="display:none">
-    <h4>揀遊戲規則</h4>
-    <button onclick="setGameMode('one')">一鋪定勝負</button>
-    <button onclick="setGameMode('best2')">贏兩鋪</button>
-    <button onclick="setGameMode('best3')">贏三鋪</button>
-    <button onclick="setGameMode('consec2')">連贏兩鋪</button>
-  </div>
-
-  <div class="card" id="page-play" style="display:none">
-    <h4>揀包 / 剪 / 揼</h4>
-    <button onclick="pickHand('rock')">包</button>
-    <button onclick="pickHand('scissors')">剪</button>
-    <button onclick="pickHand('paper')">揼</button>
-    <div id="gameMsg"></div>
-  </div>
-
-  <div class="card">
-    <h4>測試視窗（Debug）</h4>
-    <div id="debug"></div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue, push, get } from "firebase/database";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
-  authDomain: "game-ad81e.firebaseapp.com",
-  databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "game-ad81e",
-  storageBucket: "game-ad81e.firebasestorage.app",
-  messagingSenderId: "524468263754",
-  appId: "1:524468263754:web:880c8b37f1792b8322ffb3"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// 全域變數
-const VERSION = "v1.7";
-let playerName = "";
-let roomId = "";
-let myHand = null;
-let gameMode = "one";
-let scoreMe = 0;
-let scoreOpp = 0;
-let streak = 0;
-let audio1 = null, audio2 = null;
-let mediaRecorder = null;
-let audioChunks = [];
-
-// Debug log
-function log(msg){
-  const d = document.getElementById("debug");
-  d.innerText += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
-  d.scrollTop = d.scrollHeight;
+<script>
+const debugBox = document.getElementById('debug');
+function log(txt){
+  const time = new Date().toLocaleTimeString();
+  debugBox.innerText += `[${time}] ${txt}\n`;
+  debugBox.scrollTop = debugBox.scrollHeight;
 }
-log(`遊戲版本 ${VERSION} 載入`);
+log("頁面載入完成");
 
-// 頁面切換
-function hideAll(){
-  document.querySelectorAll("[id^=page-]").forEach(el=>el.style.display="none");
-}
-function showPage(id){hideAll();document.getElementById(id).style.display="block";}
-
-// 1.輸入名稱
-window.saveName = function(){
-  playerName = document.getElementById("playerName").value.trim();
-  if(!playerName){alert("請輸入名稱");return;}
-  log("玩家名稱："+playerName);
-  showPage("page-room");
-}
-
-// 開房
-window.createRoom = async function(){
-  const roomRef = push(ref(db,"rooms"));
-  roomId = roomRef.key;
-  await set(ref(db,"rooms/"+roomId),{
-    creator:playerName,
-    players:{[playerName]:{name:playerName,entered:true,ready:false,hand:null}},
-    gameState:"wait",
-    mode:null
-  });
-  log("建立房間："+roomId);
-  document.getElementById("roomInfo").innerText = "房間號碼："+roomId;
-  listenRoom();
-  showPage("page-record");
-}
-
-// 入房
-window.joinRoom = async function(){
-  const rid = document.getElementById("roomIdInput").value.trim();
-  if(!rid)return;
-  roomId = rid;
-  const snap = await get(ref(db,"rooms/"+roomId));
-  if(!snap.exists()){alert("房間不存在");return;}
-  const roomData = snap.val();
-  await set(ref(db,"rooms/"+roomId+"/players/"+playerName),{
-    name:playerName,entered:true,ready:false,hand:null
-  });
-  log("進入房間 "+roomId);
-  listenRoom();
-  showPage("page-record");
-}
-
-// 監聽房間資料
-function listenRoom(){
-  const roomRef = ref(db,"rooms/"+roomId);
-  onValue(roomRef,snap=>{
-    const data = snap.val();
-    if(!data)return;
-    log("房間資料更新");
-    renderWaitList(data.players);
-    if(data.gameState === "selectMode"){
-      showPage("page-gameSelect");
-    }else if(data.gameState === "play"){
-      showPage("page-play");
-    }
-  })
-}
-
-// 渲染等候區
-function renderWaitList(players){
-  const div = document.getElementById("waitList");
-  div.innerHTML = "";
-  Object.values(players).forEach(p=>{
-    div.innerHTML += `<div class="wait-item">${p.name}
-    <span class="entered-tag">【已進房間】</span>
-    ${p.ready ? `<span class="ready-tag">✅準備好</span>`:""}
-    </div>`;
-  })
-}
-
-// 錄音
-window.recordAudio = async function(num){
-  if(mediaRecorder && mediaRecorder.state==="recording"){
-    mediaRecorder.stop();
-    log("停止錄音"+num);
-    return;
-  }
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-    mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
-    mediaRecorder.onstop = ()=>{
-      const blob = new Blob(audioChunks,{type:"audio/webm"});
-      const aud = new Audio(URL.createObjectURL(blob));
-      if(num===1) audio1=aud; else audio2=aud;
-      log("錄音"+num+"完成");
-    }
-    mediaRecorder.start();
-    log("開始錄音"+num);
-    document.getElementById("rec"+num+"Btn").innerText="停止錄製";
-  }catch(e){log("錄音錯誤："+e.message);alert("無法取得麥克風權限");}
-}
-window.playAudio = function(num){
-  const aud = num===1 ? audio1 : audio2;
-  if(!aud){alert("未有錄音");return;}
-  aud.currentTime=0;aud.play();
-}
-window.uploadAudio = function(num){
-  log("音訊"+num+"已標記上傳");
-  alert("音訊"+num+"上傳完成");
-}
-
-window.setReady = async function(){
-  await set(ref(db,"rooms/"+roomId+"/players/"+playerName+"/ready"),true);
-  log(playerName+" 標記準備好");
-  // 檢查全部人ready就進入揀模式
-  const snap = await get(ref(db,"rooms/"+roomId));
-  const players = snap.val().players;
-  const allReady = Object.values(players).every(p=>p.ready===true);
-  if(allReady){
-    await set(ref(db,"rooms/"+roomId+"/gameState"),"selectMode");
-    log("全部玩家準備好，可以揀遊戲模式");
-  }
-}
-
-window.setGameMode = async function(mode){
-  gameMode = mode;
-  await set(ref(db,"rooms/"+roomId+"/mode"),mode);
-  await set(ref(db,"rooms/"+roomId+"/gameState"),"play");
-  scoreMe=0;scoreOpp=0;streak=0;
-  log("設定遊戲模式："+mode);
-  showPage("page-play");
-}
-
-window.pickHand = async function(hand){
-  myHand = hand;
-  await set(ref(db,"rooms/"+roomId+"/players/"+playerName+"/hand"),hand);
-  log("揀咗："+hand);
-  // 檢查全部人已經選擇
-  const snap = await get(ref(db,"rooms/"+roomId));
-  const players = snap.val().players;
-  const allPicked = Object.values(players).every(p=>p.hand);
-  if(allPicked){
-    log("所有人揀好，播放第一段錄音");
-    if(audio1){
-      audio1.onended = ()=>{
-        log("第一段音訊播放完，計算結果");
-        calcResult(players);
-      }
-      audio1.currentTime=0;
-      audio1.play();
-    }else{
-      calcResult(players);
-    }
-  }
-}
-
-function calcResult(players){
-  const arr = Object.values(players);
-  const p1 = arr[0], p2=arr[1];
-  const h1 = p1.hand, h2=p2.hand;
-  let resText = "";
-  let win = 0;
-  //判輸贏
-  if(h1===h2){
-    resText = "平手！繼續";
-    streak = 0; //平手重置連勝
-  }else if(
-    (h1==="rock"&&h2==="scissors")||
-    (h1==="scissors"&&h2==="paper")||
-    (h1==="paper"&&h2==="rock")
-  ){
-    resText = `${p1.name} 贏呢一鋪`;
-    if(p1.name === playerName){scoreMe++;streak++;}else{scoreOpp++;streak=0;}
-    if(audio2){audio2.play();}
-  }else{
-    resText = `${p2.name} 贏呢一鋪`;
-    if(p2.name === playerName){scoreMe++;streak++;}else{scoreOpp++;streak=0;}
-  }
-  log(resText+" | 我分:"+scoreMe+" 對手:"+scoreOpp+" 連勝:"+streak);
-  document.getElementById("gameMsg").innerText = resText;
-
-  // 判斷遊戲結局
-  let gameEnd = false;
-  switch(gameMode){
-    case "one":
-      if(h1!==h2) gameEnd=true;
-      break;
-    case "best2":
-      if(scoreMe>=2 || scoreOpp>=2) gameEnd=true;
-      break;
-    case "best3":
-      if(scoreMe>=3 || scoreOpp>=3) gameEnd=true;
-      break;
-    case "consec2":
-      if(streak >=2) gameEnd=true;
-      break;
-  }
-  if(gameEnd){
-    log("遊戲完結");
-  }else{
-    // 重置本回合手勢，下一鋪繼續
-    Object.keys(players).forEach(pn=>{
-      set(ref(db,"rooms/"+roomId+"/players/"+pn+"/hand"),null);
-    })
-  }
-}
-
-showPage("page-name");
+document.getElementById("btnConfirmName").addEventListener("click",()=>{
+  log("✅ 按鈕被點擊！");
+  const name = document.getElementById("nameInput").value;
+  log("輸入名字：" + name);
+})
 </script>
 </body>
 </html>
