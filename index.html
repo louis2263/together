@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.2</title>
+<title>包剪揼多人對戰 v1.3</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
@@ -14,12 +14,23 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 .debug{background:#111;color:#3f3;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto;}
 .ready-ok{color:#28a745;font-weight:bold;}
 .ready-wait{color:#999;}
+.input-name{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius:12px;}
 </style>
 </head>
 <body>
+
+<!-- 名字輸入頁面（取代彈窗） -->
+<div class="card" id="nameInputCard">
+<h2 style="text-align:center">輸入你的名稱</h2>
+<input class="input-name" id="nameInput" placeholder="輸入名字">
+<button class="btn" id="nameConfirmBtn">確認</button>
+</div>
+
+<!-- 遊戲主介面，預設隱藏 -->
+<div id="gameMain" style="display:none">
 <div class="card">
 <h1 style="text-align:center">✊✌✋ 包剪揼多人對戰</h1>
-<div>版本: v1.2 | 修復準備狀態同步bug</div>
+<div>版本: v1.3 | 移除名字彈窗，修復準備狀態同步</div>
 <div id="roomInfo"></div>
 <div>連線狀態: <span id="connStatus">等待其他人...</span></div>
 </div>
@@ -64,6 +75,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 <h3>Debug 測試視窗</h3>
 <div class="debug" id="debugLog"></div>
 </div>
+</div>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
@@ -89,10 +101,15 @@ let gameMode = null;
 let myHand=null, remoteHand=null;
 let scoreMe=0, scoreOpp=0, streak=0;
 
-// 頁面初始化
-(async function(){
-  myName = prompt("輸入你的名字");
-  if(!myName) return;
+// 【名字確認按鈕，取代prompt彈窗】
+$("#nameConfirmBtn").onclick = function(){
+  myName = $("#nameInput").value.trim();
+  if(!myName){
+    alert("請輸入名字");
+    return;
+  }
+  $("#nameInputCard").style.display="none";
+  $("#gameMain").style.display="block";
   log(`玩家名字設定: ${myName}`);
   $("#playerList").innerText = "";
   players[myName] = {name:myName,ready:false};
@@ -110,7 +127,7 @@ let scoreMe=0, scoreOpp=0, streak=0;
     $("#roomInfo").innerText = `房號：${roomId}`;
     startPeer(false);
   }
-})();
+}
 
 function startPeer(host){
   peer = new Peer();
@@ -187,7 +204,6 @@ function renderPlayerList(){
 $("#readyBtn").onclick = function(){
   myReady = !myReady;
   players[myName].ready = myReady;
-  // ✅ 關鍵：更新完狀態，馬上廣播玩家列表俾對方（修復不同步bug）
   sendPlayerList();
   renderPlayerList();
   log(`${myName} 設定準備狀態:${myReady}`);
@@ -197,83 +213,4 @@ $("#readyBtn").onclick = function(){
 function checkAllReady(){
   const allReady = Object.values(players).every(p=>p.ready===true);
   if(allReady && isHost){
-    log("全部玩家已準備，可以揀遊戲模式");
-  }
-}
-
-// 錄音
-let rec = null;
-async function recordAudio(num){
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    rec = new MediaRecorder(stream);
-    const chunks=[];
-    rec.ondataavailable=e=>chunks.push(e.data);
-    rec.onstop=()=>{
-      const blob = new Blob(chunks,{type:"audio/webm"});
-      if(num===1) audio1 = new Audio(URL.createObjectURL(blob));
-      if(num===2) audio2 = new Audio(URL.createObjectURL(blob));
-      sendMsg({type:"AUDIO_BLOB",a:num,blob});
-      log(`錄音${num}完成，自動發送P2P給對方`);
-    }
-    rec.start();
-    log(`開始錄音${num}`);
-    setTimeout(()=>rec.stop(),3000);
-  }catch(e){log("錄音失敗:"+e)}
-}
-$("#rec1Btn").onclick=()=>recordAudio(1);
-$("#rec2Btn").onclick=()=>recordAudio(2);
-$("#play1Btn").onclick=()=>audio1?.play();
-$("#play2Btn").onclick=()=>audio2?.play();
-
-// 遊戲模式
-$$("#modePanel button[data-mode]").forEach(btn=>{
-  btn.onclick=()=>{
-    gameMode = btn.dataset.mode;
-    sendMsg({type:"GAME_START",mode:gameMode});
-    $("#modePanel").style.display="none";
-    $("#gamePanel").style.display="block";
-    log("房主設定遊戲模式："+gameMode);
-  }
-})
-
-// 出拳
-$$("#gamePanel button[data-hand]").forEach(btn=>{
-  btn.onclick=()=>{
-    myHand = btn.dataset.hand;
-    sendMsg({type:"HAND",hand:myHand});
-    log("我揀咗："+myHand);
-  }
-})
-
-// 判定規則（平手繼續，連贏兩鋪已修正）
-function checkGameResult(){
-  const win = {rock:"scissors",scissors:"paper",paper:"rock"};
-  let res;
-  if(myHand === remoteHand){
-    res="平手，本鋪不計分，繼續";
-    streak=0;
-  }else if(win[myHand] === remoteHand){
-    res="你贏呢鋪";
-    scoreMe++;
-    streak++;
-  }else{
-    res="你輸呢鋪";
-    scoreOpp++;
-    streak=0;
-  }
-  // 先播放雙方口令，播完先顯示結果
-  Promise.all([audio1.play(),remoteAudio1.play()]).then(()=>{
-    audio1.onended = ()=>{
-      setTimeout(()=>{
-        alert(res + `\n我:${scoreMe} 對手:${scoreOpp}\n連贏:${streak}`);
-        $("#scoreText").textContent=`我分數:${scoreMe} | 對手分數:${scoreOpp} | 連贏:${streak}`;
-      },200)
-    }
-  })
-}
-
-$("#leaveBtn").onclick=()=>location.reload();
-</script>
-</body>
-</html>
+    log("全部玩家已準備，可以揀遊戲
