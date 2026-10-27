@@ -3,21 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.7 修復版｜4位房號</title>
+<title>包剪揼多人對戰 v1.8</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
+/* Debug放最上面 */
+.debugWrap{background:#111;color:#3f3;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:180px;overflow:auto;margin-bottom:16px;}
+.versionText{text-align:center;font-weight:bold;font-size:16px;margin-bottom:8px;color:#333;}
 .card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px #00000014;}
 .btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:18px;color:white;background:#2b78e4;margin:8px 0;}
 .btn:disabled{background:#aaa;}
 .btn-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.debug{background:#111;color:#3f3;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto;}
 .ready-ok{color:#28a745;font-weight:bold;}
 .ready-wait{color:#999;}
 .input-name{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius:12px;}
 </style>
 </head>
 <body>
+
+<!-- 【Debug視窗放最前面 + 版本號】 -->
+<div class="versionText">版本：v1.8｜包剪揼4位房號版</div>
+<div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
 <h2 style="text-align:center">輸入你的名稱</h2>
@@ -40,7 +46,6 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 <div id="gameMain" style="display:none">
 <div class="card">
 <h1 style="text-align:center">✊✌✋ 包剪揼多人對戰</h1>
-<div>版本: v1.7 修復版</div>
 <div id="roomInfo"></div>
 <div>連線狀態: <span id="connStatus">等待其他人...</span></div>
 </div>
@@ -80,16 +85,8 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </div>
 <div id="scoreText">我分數:0 | 對手分數:0 | 連贏:0</div>
 </div>
-
-<div class="card">
-<h3>Debug 測試視窗</h3>
-<div class="debug" id="debugLog"></div>
-</div>
 </div>
 
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
 <script>
 let peer, conn;
 let roomId;
@@ -103,6 +100,7 @@ let remoteAudio1=null, remoteAudio2=null;
 let gameMode = null;
 let myHand=null, remoteHand=null;
 let scoreMe=0, scoreOpp=0, streak=0;
+let firebaseApp, firebaseDB;
 
 // ========== Firebase 設定，記得替換返你自己嘅！ ==========
 const firebaseConfig = {
@@ -123,13 +121,59 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-// 一定要等頁面全部載入，先綁定按鈕
-document.addEventListener("DOMContentLoaded", function(){
-  log("✅頁面DOM載入完成，可以操作");
-  const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
-  const nameInput = document.querySelector("#nameInput");
-  const nameInputCard = document.querySelector("#nameInputCard");
-  const roomSelectCard = document.querySelector("#roomSelectCard");
+log("✅ v1.8 頁面開始載入");
+
+// 【第一重點：輸入名字按鈕，獨立綁定，唔受外部JS影響】
+const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
+const nameInput = document.querySelector("#nameInput");
+const nameInputCard = document.querySelector("#nameInputCard");
+const roomSelectCard = document.querySelector("#roomSelectCard");
+nameConfirmBtn.onclick = function(){
+  myName = nameInput.value.trim();
+  log(`🖱️ 按下【確認】，輸入名稱：${myName}`);
+  if(!myName){
+    alert("請輸入名字");
+    return;
+  }
+  nameInputCard.style.display="none";
+  roomSelectCard.style.display="block";
+  log(`✅玩家名字設定: ${myName}`);
+}
+
+// 延遲載入外部庫，唔阻礙頁面操作
+async function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = url;
+    script.onload = ()=>resolve(url);
+    script.onerror = ()=>reject(`載入失敗:${url}`);
+    document.body.appendChild(script);
+  })
+}
+
+// 載入PeerJS + Firebase
+async function loadAllLibs(){
+  try{
+    log("🔄 開始載入PeerJS");
+    await loadScript("https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js");
+    log("✅ PeerJS載入成功");
+    log("🔄 開始載入Firebase SDK");
+    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
+    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
+    log("✅ Firebase SDK載入成功，初始化Firebase");
+    firebaseApp = firebase.initializeApp(firebaseConfig);
+    firebaseDB = firebase.database(firebaseApp);
+    log("✅ Firebase初始化完成");
+    bindAllOtherButtons();
+  }catch(err){
+    log("❌外部庫載入失敗:"+err);
+    alert("網絡問題，無法載入遊戲核心庫，請轉用另一個網絡/瀏覽器");
+  }
+}
+
+// 載入完庫先綁定剩餘按鈕
+function bindAllOtherButtons(){
+  log("🔗 綁定房間、錄音、遊戲按鈕");
   const createRoomBtn = document.querySelector("#createRoomBtn");
   const joinRoomBtn = document.querySelector("#joinRoomBtn");
   const roomJoinCard = document.querySelector("#roomJoinCard");
@@ -149,20 +193,6 @@ document.addEventListener("DOMContentLoaded", function(){
   const gamePanel = document.querySelector("#gamePanel");
   const scoreText = document.querySelector("#scoreText");
 
-  // 輸入名字確認
-  nameConfirmBtn.onclick = function(){
-    myName = nameInput.value.trim();
-    log(`🖱️ 按下確認，輸入名稱：${myName}`);
-    if(!myName){
-      alert("請輸入名字");
-      return;
-    }
-    nameInputCard.style.display="none";
-    roomSelectCard.style.display="block";
-    log(`✅玩家名字設定: ${myName}`);
-  }
-
-  // 建立房間
   createRoomBtn.onclick = async function(){
     isHost=true;
     roomSelectCard.style.display="none";
@@ -173,11 +203,9 @@ document.addEventListener("DOMContentLoaded", function(){
     peer.on("open", pid=>{
       hostPeerId = pid;
       log(`✅房主PeerID:${pid}`);
-      const app = firebase.initializeApp(firebaseConfig);
-      const db = firebase.database(app);
-      db.ref(`rooms/${roomId}`).set({hostPeer:pid, players:{[myName]:{ready:false}}});
+      firebaseDB.ref(`rooms/${roomId}`).set({hostPeer:pid, players:{[myName]:{ready:false}}});
       roomInfo.innerText = `房號：${roomId}\n將4位房號發送俾朋友`;
-      listenRoom(db);
+      listenRoom();
     })
     peer.on("connection",c=>{
       log("🎉有玩家接入");
@@ -186,13 +214,11 @@ document.addEventListener("DOMContentLoaded", function(){
     peer.on("error",err=>log("❌Peer錯誤:"+err));
   }
 
-  // 加入房間頁
   joinRoomBtn.onclick = function(){
     roomSelectCard.style.display="none";
     roomJoinCard.style.display="block";
   }
 
-  // 確認加入房間
   joinConfirmBtn.onclick = async function(){
     roomId = roomIdInput.value.trim();
     if(!/^\d{4}$/.test(roomId)){alert("請輸入4位數字");return;}
@@ -200,9 +226,7 @@ document.addEventListener("DOMContentLoaded", function(){
     gameMain.style.display="block";
     isHost=false;
     log(`🔍嘗試加入房號:${roomId}`);
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-    const snap = await db.ref(`rooms/${roomId}`).get();
+    const snap = await firebaseDB.ref(`rooms/${roomId}`).get();
     if(!snap.exists()){
       log("❌房號不存在");
       alert("房號不存在！");
@@ -216,15 +240,14 @@ document.addEventListener("DOMContentLoaded", function(){
       log("客戶Peer已開啟，嘗試連房主");
       conn = peer.connect(hostPeerId);
       bindConnEvents(conn, connStatus);
-      db.ref(`rooms/${roomId}/players/${myName}`).set({ready:false});
-      listenRoom(db);
+      firebaseDB.ref(`rooms/${roomId}/players/${myName}`).set({ready:false});
+      listenRoom();
     })
     peer.on("error",err=>log("❌Peer錯誤:"+err));
   }
 
-  // 監聽房間更新
-  function listenRoom(db){
-    db.ref(`rooms/${roomId}`).on("value",snap=>{
+  function listenRoom(){
+    firebaseDB.ref(`rooms/${roomId}`).on("value",snap=>{
       const d = snap.val();
       if(!d) return;
       players = d.players || {};
@@ -275,9 +298,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   readyBtn.onclick = function(){
     myReady = !myReady;
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-    db.ref(`rooms/${roomId}/players/${myName}/ready`).set(myReady);
+    firebaseDB.ref(`rooms/${roomId}/players/${myName}/ready`).set(myReady);
     log(`${myName} 設定準備狀態:${myReady}`);
   }
 
@@ -288,7 +309,7 @@ document.addEventListener("DOMContentLoaded", function(){
     }
   }
 
-  // 錄音功能
+  //錄音
   let rec = null;
   async function recordAudio(num){
     try{
@@ -313,7 +334,7 @@ document.addEventListener("DOMContentLoaded", function(){
   play1Btn.onclick=()=>audio1?.play();
   play2Btn.onclick=()=>audio2?.play();
 
-  // 遊戲模式按鈕
+  //遊戲模式
   document.querySelectorAll("#modePanel button[data-mode]").forEach(btn=>{
     btn.onclick=()=>{
       gameMode = btn.dataset.mode;
@@ -324,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function(){
     }
   })
 
-  // 出拳按鈕
+  //出拳
   document.querySelectorAll("#gamePanel button[data-hand]").forEach(btn=>{
     btn.onclick=()=>{
       myHand = btn.dataset.hand;
@@ -333,7 +354,7 @@ document.addEventListener("DOMContentLoaded", function(){
     }
   })
 
-  // 遊戲判定（平手唔計分，連贏兩鋪修正）
+  //判定邏輯：平手繼續，連贏兩鋪修正
   function checkGameResult(scoreDom){
     const win = {rock:"scissors",scissors:"paper",paper:"rock"};
     let res;
@@ -349,7 +370,7 @@ document.addEventListener("DOMContentLoaded", function(){
       scoreOpp++;
       streak=0;
     }
-    // 等音訊播完先顯示結果
+    //等音訊播完先顯示結果
     Promise.all([audio1.play(),remoteAudio1.play()]).then(()=>{
       audio1.onended = ()=>{
         setTimeout(()=>{
@@ -361,6 +382,12 @@ document.addEventListener("DOMContentLoaded", function(){
   }
 
   leaveBtn.onclick=()=>location.reload();
+}
+
+// 頁面載入完，開始載入外部庫
+window.addEventListener('load', ()=>{
+  log("📄 頁面全部DOM載入完，開始載入遊戲庫");
+  loadAllLibs();
 })
 </script>
 </body>
