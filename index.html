@@ -1,531 +1,279 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>包剪揼多人對戰 P2P v2.1.1‑PeerJS</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>包剪揼多人對戰 v1.2</title>
 <style>
-*{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont}
-body{background:#f7f7f7;margin:0;padding:16px;min-height:100vh}
-.wrap{max-width:600px;margin:0 auto}
-.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}
-h2{margin:0 0 8px 0;font-size:22px}
-input{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px;margin:8px 0}
-button{padding:12px 18px;font-size:16px;border:0;border-radius:10px;background:#2374ea;color:#fff;margin:4px;cursor:pointer}
-button:disabled{background:#aaa}
-#debug{background:#111;color:#0f0;padding:12px;height:200px;overflow:auto;white-space:pre-wrap;font-family:monospace;font-size:12px}
-.bigRoomCode{font-size:36px;font-weight:bold;text-align:center;letter-spacing:4px;color:#2374ea;margin:6px 0}
-.hide{display:none}
-.wait-item{padding:8px 0;border-bottom:1px solid #eee}
-.readyOk{color:#009933;font-weight:bold}
-.readyWait{color:#888}
+*{box-sizing:border-box;font-family:system-ui,sans-serif;}
+body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px #00000014;}
+.btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:18px;color:white;background:#2b78e4;margin:8px 0;}
+.btn:disabled{background:#aaa;}
+.btn-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.debug{background:#111;color:#3f3;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto;}
+.ready-ok{color:#28a745;font-weight:bold;}
+.ready-wait{color:#999;}
 </style>
 </head>
 <body>
-<div class="wrap">
 <div class="card">
-<h2>✊✌️✋ 包剪揼多人對戰 v2.1.1‑PeerJS 【P2P互傳錄音｜大合唱】</h2>
-<div>版本：v2.1.1 修復 invalid-id 錯誤</div>
+<h1 style="text-align:center">✊✌✋ 包剪揼多人對戰</h1>
+<div>版本: v1.2 | 修復準備狀態同步bug</div>
+<div id="roomInfo"></div>
+<div>連線狀態: <span id="connStatus">等待其他人...</span></div>
 </div>
 
-<!-- 登入輸入名字 -->
-<div id="pageLogin" class="card">
-<h3>輸入你的名稱</h3>
-<input id="inpMyName" placeholder="例如 Louis">
-<button id="btnLogin">✅ 確認名字</button>
+<div class="card">
+<h3>等候區</h3>
+<div id="playerList"></div>
 </div>
 
-<!-- 主頁：建立/加入房間 -->
-<div id="pageHome" class="card hide">
-<p>你好，<span id="dispMyName"></span></p>
-<button id="btnCreateRoom">🏠 建立新房間（房主）</button>
-<button id="btnShowJoin">🔗 加入已有房間</button>
+<div class="card">
+<h3>錄音設定（錄完會自動發送俾對方）</h3>
+<button class="btn" id="rec1Btn">開始錄音(包剪揼口令)</button>
+<button class="btn" id="play1Btn">試聽我的口令</button>
+<button class="btn" id="rec2Btn">開始錄音(勝利語)</button>
+<button class="btn" id="play2Btn">試聽我的勝利語</button>
+<p>錄製完成自動透過P2P傳送給對方，實現大合唱效果</p>
+<button class="btn" id="readyBtn">✅ 我準備好</button>
+<button class="btn" style="background:#666" id="leaveBtn">🚪 離開房間</button>
 </div>
 
-<!-- 房主介面 -->
-<div id="pageHost" class="card hide">
-<div class="bigRoomCode" id="dispRoomCode">----</div>
-<div style="font-size:12px;color:#666;text-align:center">將上面房號發送俾朋友</div>
-<div id="hostStatus" style="margin:10px 0">連線狀態：等待其他人...</div>
-<h4>等候區</h4>
-<div id="hostPlayerList"></div>
-
-<div style="margin-top:14px">
-<h4>錄音設定（錄完會自動發送俾對方）</h4>
-<button id="btnRec1Host">開始錄音(包剪揼口令)</button>
-<button id="btnPlay1Host">試聽我的口令</button>
-<br>
-<button id="btnRec2Host">開始錄音(勝利語)</button>
-<button id="btnPlay2Host">試聽我的勝利語</button>
-<div style="font-size:12px;color:#555;margin-top:4px">錄製完成自動透過P2P傳送給對方，實現大合唱效果</div>
+<div class="card" id="modePanel">
+<h3>選擇遊戲模式</h3>
+<div class="btn-wrap">
+<button class="btn" data-mode="one">一鋪定勝負</button>
+<button class="btn" data-mode="win2">贏兩鋪</button>
+<button class="btn" data-mode="win3">贏三鋪</button>
+<button class="btn" data-mode="con2">連贏兩鋪</button>
+</div>
 </div>
 
-<div style="margin-top:12px">
-<button id="btnSetReadyHost">✅ 我準備好</button>
-</div>
-<div id="hostReadyPanel" class="card hide">
-<h4>選擇遊戲模式</h4>
-<button data-mode="one">一鋪定勝負</button>
-<button data-mode="best2">贏兩鋪</button>
-<button data-mode="best3">贏三鋪</button>
-<button data-mode="consec2">連贏兩鋪</button>
-</div>
-<button id="btnLeaveHost" style="background:#666">🚪 離開房間</button>
-</div>
-
-<!-- 客戶加入房間介面 -->
-<div id="pageJoinForm" class="card hide">
-<h3>輸入房號加入</h3>
-<input id="inpRoomCode" placeholder="4位房號，大小寫無所謂">
-<button id="btnDoJoin">🔗 連接房間</button>
-<div id="joinStatus">狀態：未連接</div>
-<button id="btnBackHome">← 返回</button>
-</div>
-
-<!-- 客戶等候介面 -->
-<div id="pageClientLobby" class="card hide">
-<p>房號：<span id="clientRoomCode"></span></p>
-<div id="clientConnStatus">連線正常</div>
-<h4>等候區</h4>
-<div id="clientPlayerList"></div>
-
-<div style="margin-top:14px">
-<h4>錄音設定（錄完會自動發送俾對方）</h4>
-<button id="btnRec1Cli">開始錄音(包剪揼口令)</button>
-<button id="btnPlay1Cli">試聽我的口令</button>
-<br>
-<button id="btnRec2Cli">開始錄音(勝利語)</button>
-<button id="btnPlay2Cli">試聽我的勝利語</button>
-</div>
-<button id="btnSetReadyCli">✅ 我準備好</button>
-<button id="btnLeaveClient" style="background:#666">🚪 離開房間</button>
-</div>
-
-<!-- 遊戲出拳頁面 -->
-<div id="pageGamePlay" class="card hide">
+<div class="card" id="gamePanel" style="display:none">
 <h3>請選擇：包 / 剪 / 揼</h3>
-<button data-mode-hand="rock">✊ 包</button>
-<button data-mode-hand="scissors">✌️ 剪</button>
-<button data-mode-hand="paper">✋ 揼</button>
-<div id="gameMsgBox" style="margin-top:12px;font-size:17px"></div>
-<div>我分數:<span id="scrMe">0</span>｜對手分數:<span id="scrOpp">0</span>｜連贏:<span id="scrStreak">0</span></div>
+<div class="btn-wrap">
+<button class="btn" data-hand="rock">✊ 包</button>
+<button class="btn" data-hand="scissors">✌ 剪</button>
+<button class="btn" data-hand="paper">✋ 揼</button>
+</div>
+<div id="scoreText">我分數:0 | 對手分數:0 | 連贏:0</div>
 </div>
 
-<!-- Debug -->
 <div class="card">
-<h4>Debug 測試視窗</h4>
-<div id="debug"></div>
-</div>
+<h3>Debug 測試視窗</h3>
+<div class="debug" id="debugLog"></div>
 </div>
 
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-const $=id=>document.getElementById(id);
-const DEBUG=$("debug");
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+const debugLog = $("#debugLog");
 function log(msg){
-  const t=new Date().toLocaleTimeString();
-  DEBUG.innerText+=`[${t}] ${msg}\n`;
-  DEBUG.scrollTop=DEBUG.scrollHeight;
+  const t = new Date().toLocaleTimeString();
+  debugLog.textContent += `[${t}] ${msg}\n`;
+  debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-// --------全域狀態
-let myName="";
-let peer=null;
-let isHost=false;
-let roomCode="";
-let hostConn=null; //客戶端連接房主嘅連線
-let conns=[]; //房主保存所有客戶連線
+// 狀態
+let peer, conn;
+let roomId;
+let myName = "";
+let isHost = false;
+let players = {};
+let myReady = false;
+let audio1 = null, audio2=null;
+let remoteAudio1=null, remoteAudio2=null;
+let gameMode = null;
+let myHand=null, remoteHand=null;
+let scoreMe=0, scoreOpp=0, streak=0;
 
-//本地自己錄嘅音訊
-let audio1=null,audio2=null;
-//P2P收到對方嘅音訊
-let remoteAudio1=null,remoteAudio2=null;
-
-let mediaRecorder=null,audioChunks=[];
-
-//遊戲狀態
-let gameMode="one";
-let scoreMe=0,scoreOpp=0,streak=0;
-let myHand=null;
-let playerMap={}; // {名字:{ready:boolean,hand:null|rock|scissors|paper}}
-
-//頁面切換
-function hideAllPages(){
-  ["pageLogin","pageHome","pageHost","pageJoinForm","pageClientLobby","pageGamePlay"].forEach(p=>$(p).classList.add("hide"));
-}
-function showPage(pid){hideAllPages();$(pid).classList.remove("hide");}
-
-//登入名字
-$("btnLogin").addEventListener("click",()=>{
-  myName=$("inpMyName").value.trim();
-  if(!myName){alert("請輸入名字");return;}
-  log("玩家名字設定："+myName);
-  $("dispMyName").textContent=myName;
-  showPage("pageHome");
-});
-
-//顯示加入房號輸入框
-$("btnShowJoin").addEventListener("click",()=>{
-  showPage("pageJoinForm");
-});
-$("btnBackHome").addEventListener("click",()=>{
-  showPage("pageHome");
-});
-
-//產生隨機4位大寫房號
-function genRoomCode(){
-  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let s="";
-  for(let i=0;i<4;i++) s+=chars[Math.floor(Math.random()*chars.length)];
-  return s;
-}
-
-// 發送blob音訊給另一方
-function sendAudioBlob(num,blob){
-  const pkt={type:"AUDIO_BLOB",num:num,blob:blob};
-  if(isHost){
-    conns.forEach(c=>{if(c.open) c.send(pkt);});
-  }else{
-    if(hostConn && hostConn.open) hostConn.send(pkt);
-  }
-  log("P2P發送錄音"+num+" blob，大小："+blob.size);
-}
-
-//接收遠端過來嘅音訊blob
-function receiveAudioBlob(num,blob){
-  const aud=new Audio(URL.createObjectURL(blob));
-  if(num===1){
-    remoteAudio1=aud;
-    log("✅收到對方口令錄音");
-  }else{
-    remoteAudio2=aud;
-    log("✅收到對方勝利錄音");
-  }
-}
-
-// ========= 房主建立房間 =========
-$("btnCreateRoom").addEventListener("click",()=>{
-  isHost=true;
-  roomCode=genRoomCode();
-  log("【房主】建立房號："+roomCode);
-  $("dispRoomCode").textContent=roomCode;
-  playerMap={};
-  playerMap[myName]={ready:false,hand:null};
-
-  //重點修復：移除減號，peerID唔可以有"-"
-  const peerId="bjgame"+roomCode;
-  peer=new Peer(peerId);
-  peer.on("open",(id)=>{
-    log("房主PeerID開啟："+id);
-  });
-  peer.on("connection",(c)=>{
-    log("收到新客戶連線");
-    conns.push(c);
-    c.on("open",()=>{
-      c.on("data",(d)=>handleHostReceiveData(d,c));
-    });
-    c.on("close",()=>log("一個客戶連線關閉"));
-  });
-  peer.on("error",(err)=>{
-    log("房主Peer錯誤："+err.type);
-    alert("網絡連線錯誤，請重新建立房間");
-  });
-  showPage("pageHost");
+// 頁面初始化
+(async function(){
+  myName = prompt("輸入你的名字");
+  if(!myName) return;
+  log(`玩家名字設定: ${myName}`);
+  $("#playerList").innerText = "";
+  players[myName] = {name:myName,ready:false};
   renderPlayerList();
-});
 
-//房主接收客戶訊息
-function handleHostReceiveData(data,conn){
-  log("房主收到訊息："+JSON.stringify(data));
-  switch(data.type){
-    case "JOIN":{
-      const pname=data.name;
-      playerMap[pname]={ready:false,hand:null};
-      broadcastAll({type:"PLAYER_LIST",players:playerMap});
-      renderPlayerList();
-      break;
-    }
-    case "SET_READY":{
-      const pname=data.name;
-      if(playerMap[pname]) playerMap[pname].ready=true;
-      broadcastAll({type:"PLAYER_LIST",players:playerMap});
-      renderPlayerList();
-      break;
-    }
-    case "SUBMIT_HAND":{
-      const pname=data.name;
-      if(playerMap[pname]) playerMap[pname].hand=data.hand;
-      broadcastAll({type:"PLAYER_LIST",players:playerMap});
-      renderPlayerList();
-      checkAllHandPicked();
-      break;
-    }
-    case "AUDIO_BLOB":{
-      receiveAudioBlob(data.num,data.blob);
-      //房主收到之後轉發俾其他客戶
-      broadcastAll(data);
-      break;
-    }
+  const opt = confirm("開啟房間按【確定】，加入房間按【取消】");
+  if(opt){
+    isHost=true;
+    roomId = Math.random().toString(36).slice(2,8).toUpperCase();
+    $("#roomInfo").innerText = `房號：${roomId}\n將上面房號發送俾朋友`;
+    startPeer(true);
+  }else{
+    isHost=false;
+    roomId = prompt("輸入房號");
+    $("#roomInfo").innerText = `房號：${roomId}`;
+    startPeer(false);
   }
+})();
+
+function startPeer(host){
+  peer = new Peer();
+  peer.on("open", pid=>{
+    log(`PeerID:${pid}`);
+    if(!host){
+      conn = peer.connect(roomId);
+      bindConnEvents();
+    }
+  })
+  peer.on("connection",c=>{
+    log("有玩家接入");
+    conn = c;
+    bindConnEvents();
+  })
+  peer.on("error",err=>log("Peer錯誤:"+err));
 }
 
-//房主廣播訊息俾全部連線客戶
-function broadcastAll(msg){
-  conns.forEach(c=>{
-    if(c.open) c.send(msg);
-  });
+function bindConnEvents(){
+  $("#connStatus").textContent="已連線";
+  conn.on("open",()=>{
+    log("連線成功");
+    if(!isHost) sendMsg({type:"JOIN",name:myName});
+  })
+  conn.on("data",data=>{
+    log("收到訊息："+JSON.stringify(data));
+    switch(data.type){
+      case "JOIN":
+        players[data.name]={name:data.name,ready:false};
+        sendPlayerList();
+        renderPlayerList();
+        break;
+      case "PLAYER_LIST":
+        players = data.list;
+        renderPlayerList();
+        checkAllReady();
+        break;
+      case "AUDIO_BLOB":
+        if(data.a==1) remoteAudio1 = new Audio(URL.createObjectURL(data.blob));
+        if(data.a==2) remoteAudio2 = new Audio(URL.createObjectURL(data.blob));
+        break;
+      case "GAME_START":
+        gameMode = data.mode;
+        $("#modePanel").style.display="none";
+        $("#gamePanel").style.display="block";
+        break;
+      case "HAND":
+        remoteHand = data.hand;
+        checkGameResult();
+        break;
+    }
+  })
 }
 
-//房主渲染等候列表
+// ========== 重點修復：更新玩家清單並廣播 ==========
+function sendPlayerList(){
+  const list = Object.values(players);
+  sendMsg({type:"PLAYER_LIST", list});
+}
+function sendMsg(obj){
+  if(conn && conn.open) conn.send(obj);
+}
 function renderPlayerList(){
   let html="";
-  Object.entries(playerMap).forEach(([name,obj])=>{
-    const readyTxt=obj.ready
-      ?`<span class="readyOk">✅已準備</span>`
-      :`<span class="readyWait">⏳未準備</span>`;
-    html+=`<div class="wait-item">${name} ${readyTxt}</div>`;
-  });
-  $("hostPlayerList").innerHTML=html;
-  $("clientPlayerList").innerHTML=html;
+  Object.values(players).forEach(p=>{
+    const cls = p.ready ? "ready-ok" : "ready-wait";
+    const icon = p.ready ? "✅已準備" : "⏳未準備";
+    html += `<div class="${cls}">${p.name} ${icon}</div>`;
+  })
+  $("#playerList").innerHTML = html;
 }
 
-//房主：我準備好
-$("btnSetReadyHost").addEventListener("click",()=>{
-  playerMap[myName].ready=true;
-  broadcastAll({type:"PLAYER_LIST",players:playerMap});
+// 【我準備好】按鈕
+$("#readyBtn").onclick = function(){
+  myReady = !myReady;
+  players[myName].ready = myReady;
+  // ✅ 關鍵：更新完狀態，馬上廣播玩家列表俾對方（修復不同步bug）
+  sendPlayerList();
   renderPlayerList();
-  $("hostReadyPanel").classList.remove("hide");
-});
+  log(`${myName} 設定準備狀態:${myReady}`);
+  checkAllReady();
+}
 
-//房主選擇遊戲模式
-document.querySelectorAll("#hostReadyPanel [data-mode]").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    gameMode=btn.dataset.mode;
-    log("房主設定遊戲模式："+gameMode);
-    broadcastAll({type:"GAME_MODE",mode:gameMode});
-    resetGameRound();
-    showPage("pageGamePlay");
-    broadcastAll({type:"START_GAME"});
-  });
-});
-
-// ========== 客戶端加入房間 =========
-$("btnDoJoin").addEventListener("click",()=>{
-  roomCode=$("inpRoomCode").value.trim().toUpperCase();
-  if(!roomCode){alert("輸入房號");return;}
-  log("【客戶】嘗試連接房號："+roomCode);
-  isHost=false;
-  peer=new Peer();
-  peer.on("open",()=>{
-    //客戶連接目標 peerID 同房主一致，冇減號
-    const targetPeerId="bjgame"+roomCode;
-    hostConn=peer.connect(targetPeerId,{reliable:true});
-    hostConn.on("open",()=>{
-      log("客戶成功連接房主");
-      $("joinStatus").textContent="✅連線成功";
-      hostConn.send({type:"JOIN",name:myName});
-      $("clientRoomCode").textContent=roomCode;
-      showPage("pageClientLobby");
-    });
-    hostConn.on("data",(d)=>handleClientReceiveData(d));
-    hostConn.on("close",()=>{
-      log("客戶同房主斷開");
-      alert("同房主斷線，返回主頁");
-      showPage("pageHome");
-    });
-  });
-  peer.on("error",(e)=>{
-    log("客戶Peer錯誤："+e.type);
-    $("joinStatus").textContent="❌連接失敗，房號錯或者網絡問題";
-  });
-});
-
-//客戶接收房主廣播訊息
-function handleClientReceiveData(d){
-  log("客戶收到廣播："+d.type);
-  switch(d.type){
-    case "PLAYER_LIST":
-      playerMap=d.players;
-      renderPlayerList();
-      break;
-    case "GAME_MODE":
-      gameMode=d.mode;
-      break;
-    case "START_GAME":
-      resetGameRound();
-      showPage("pageGamePlay");
-      break;
-    case "AUDIO_BLOB":
-      receiveAudioBlob(d.num,d.blob);
-      break;
-    case "ROUND_RESULT":
-      applyRoundUi(d);
-      break;
+function checkAllReady(){
+  const allReady = Object.values(players).every(p=>p.ready===true);
+  if(allReady && isHost){
+    log("全部玩家已準備，可以揀遊戲模式");
   }
 }
 
-//客戶：我準備好
-$("btnSetReadyCli").addEventListener("click",()=>{
-  if(hostConn && hostConn.open){
-    hostConn.send({type:"SET_READY",name:myName});
-  }
-});
-
-// --------錄音共用函數（錄完自動P2P發送blob）
-async function doRecord(num){
-  if(mediaRecorder && mediaRecorder.state==="recording"){
-    mediaRecorder.stop();
-    log("停止錄音"+num);
-    return;
-  }
+// 錄音
+let rec = null;
+async function recordAudio(num){
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    mediaRecorder=new MediaRecorder(stream);
-    audioChunks=[];
-    mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-    mediaRecorder.onstop=()=>{
-      const blob=new Blob(audioChunks,{type:"audio/webm"});
-      const aud=new Audio(URL.createObjectURL(blob));
-      if(num===1) audio1=aud; else audio2=aud;
-      log("錄音"+num+"完成，自動發送P2P給對方");
-      sendAudioBlob(num,blob);
-    };
-    mediaRecorder.start();
-    log("開始錄音"+num);
-  }catch(err){
-    log("錄音錯誤："+err.message);
-    alert("無法獲得麥克風權限");
-  }
-}
-function playRec(num){
-  const aud=num===1?audio1:audio2;
-  if(!aud){alert("未有錄音");return;}
-  aud.currentTime=0;aud.play();
-}
-
-//綁定錄音按鈕
-$("btnRec1Host").onclick=()=>doRecord(1);
-$("btnPlay1Host").onclick=()=>playRec(1);
-$("btnRec2Host").onclick=()=>doRecord(2);
-$("btnPlay2Host").onclick=()=>playRec(2);
-
-$("btnRec1Cli").onclick=()=>doRecord(1);
-$("btnPlay1Cli").onclick=()=>playRec(1);
-$("btnRec2Cli").onclick=()=>doRecord(2);
-$("btnPlay2Cli").onclick=()=>playRec(2);
-
-//=========遊戲邏輯========
-function resetGameRound(){
-  myHand=null;
-  scoreMe=0;scoreOpp=0;streak=0;
-  $("scrMe").textContent=scoreMe;
-  $("scrOpp").textContent=scoreOpp;
-  $("scrStreak").textContent=streak;
-  $("gameMsgBox").textContent="";
-  //重置所有人手勢
-  Object.keys(playerMap).forEach(p=>{playerMap[p].hand=null;});
-  if(isHost) broadcastAll({type:"PLAYER_LIST",players:playerMap});
-}
-
-//玩家出拳
-document.querySelectorAll("#pageGamePlay [data-mode-hand]").forEach(btn=>{
-  btn.addEventListener("click",async ()=>{
-    const h=btn.dataset.modeHand;
-    myHand=h;
-    log("自己揀出手勢："+h);
-    if(isHost){
-      playerMap[myName].hand=h;
-      broadcastAll({type:"PLAYER_LIST",players:playerMap});
-      checkAllHandPicked();
-    }else{
-      if(hostConn&&hostConn.open){
-        hostConn.send({type:"SUBMIT_HAND",name:myName,hand:h});
-      }
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    rec = new MediaRecorder(stream);
+    const chunks=[];
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=()=>{
+      const blob = new Blob(chunks,{type:"audio/webm"});
+      if(num===1) audio1 = new Audio(URL.createObjectURL(blob));
+      if(num===2) audio2 = new Audio(URL.createObjectURL(blob));
+      sendMsg({type:"AUDIO_BLOB",a:num,blob});
+      log(`錄音${num}完成，自動發送P2P給對方`);
     }
-  });
-});
-
-//【房主專用】檢查兩個人都已經出拳
-function checkAllHandPicked(){
-  const arr=Object.values(playerMap);
-  if(arr.length<2) return;
-  const allPick=arr.every(p=>p.hand!==null);
-  if(!allPick) return;
-  log("全部玩家已經出拳，播放雙方口令大合唱");
-  // 同時播放自己 + 收到對方嘅口令，實現大合唱
-  if(audio1) {audio1.currentTime=0; audio1.play();}
-  if(remoteAudio1) {remoteAudio1.currentTime=0; remoteAudio1.play();}
-  // 等待較長嘅嗰段音訊完畢再計算結果
-  const maxDur = Math.max(audio1?.duration||0, remoteAudio1?.duration||0, 2.2);
-  setTimeout(()=>{
-    calcGameResult(arr);
-  },maxDur*1000);
+    rec.start();
+    log(`開始錄音${num}`);
+    setTimeout(()=>rec.stop(),3000);
+  }catch(e){log("錄音失敗:"+e)}
 }
+$("#rec1Btn").onclick=()=>recordAudio(1);
+$("#rec2Btn").onclick=()=>recordAudio(2);
+$("#play1Btn").onclick=()=>audio1?.play();
+$("#play2Btn").onclick=()=>audio2?.play();
 
-//房主計算結果
-function calcGameResult(playerArr){
-  const p1=playerArr[0],p2=playerArr[1];
-  const h1=p1.hand,h2=p2.hand;
-  let resText="";
-  if(h1===h2){
-    resText="🤝平手！繼續本回合";
+// 遊戲模式
+$$("#modePanel button[data-mode]").forEach(btn=>{
+  btn.onclick=()=>{
+    gameMode = btn.dataset.mode;
+    sendMsg({type:"GAME_START",mode:gameMode});
+    $("#modePanel").style.display="none";
+    $("#gamePanel").style.display="block";
+    log("房主設定遊戲模式："+gameMode);
+  }
+})
+
+// 出拳
+$$("#gamePanel button[data-hand]").forEach(btn=>{
+  btn.onclick=()=>{
+    myHand = btn.dataset.hand;
+    sendMsg({type:"HAND",hand:myHand});
+    log("我揀咗："+myHand);
+  }
+})
+
+// 判定規則（平手繼續，連贏兩鋪已修正）
+function checkGameResult(){
+  const win = {rock:"scissors",scissors:"paper",paper:"rock"};
+  let res;
+  if(myHand === remoteHand){
+    res="平手，本鋪不計分，繼續";
     streak=0;
-  }else if(
-    (h1==="rock"&&h2==="scissors")||
-    (h1==="scissors"&&h2==="paper")||
-    (h1==="paper"&&h2==="rock")
-  ){
-    resText=`🎉${p1.name}贏咗呢一鋪！`;
-    if(p1.name===myName){scoreMe++;streak++;}else{scoreOpp++;streak=0;}
-    // 勝利同時播放雙方勝利語
-    if(audio2) {audio2.currentTime=0;audio2.play();}
-    if(remoteAudio2) {remoteAudio2.currentTime=0;remoteAudio2.play();}
+  }else if(win[myHand] === remoteHand){
+    res="你贏呢鋪";
+    scoreMe++;
+    streak++;
   }else{
-    resText=`🎉${p2.name}贏咗呢一鋪！`;
-    if(p2.name===myName){scoreMe++;streak++;}else{scoreOpp++;streak=0;}
-    if(audio2) {audio2.currentTime=0;audio2.play();}
-    if(remoteAudio2) {remoteAudio2.currentTime=0;remoteAudio2.play();}
+    res="你輸呢鋪";
+    scoreOpp++;
+    streak=0;
   }
-  log(resText+" | me:"+scoreMe+" opp:"+scoreOpp+" streak:"+streak);
-  const resultPacket={
-    type:"ROUND_RESULT",
-    text:resText,sm:scoreMe,so:scoreOpp,st:streak
-  };
-  //房主自己更新畫面+廣播俾客戶
-  applyRoundUi(resultPacket);
-  broadcastAll(resultPacket);
-
-  //判斷遊戲是否完結
-  let gameOver=false;
-  switch(gameMode){
-    case "one":if(h1!==h2) gameOver=true;break;
-    case "best2":if(scoreMe>=2||scoreOpp>=2) gameOver=true;break;
-    case "best3":if(scoreMe>=3||scoreOpp>=3) gameOver=true;break;
-    case "consec2":if(streak>=2) gameOver=true;break;
-  }
-  if(gameOver){
-    log("本局遊戲完結");
-  }else{
-    //重置手勢，下一round
-    Object.keys(playerMap).forEach(pn=>{playerMap[pn].hand=null;});
-    broadcastAll({type:"PLAYER_LIST",players:playerMap});
-  }
+  // 先播放雙方口令，播完先顯示結果
+  Promise.all([audio1.play(),remoteAudio1.play()]).then(()=>{
+    audio1.onended = ()=>{
+      setTimeout(()=>{
+        alert(res + `\n我:${scoreMe} 對手:${scoreOpp}\n連贏:${streak}`);
+        $("#scoreText").textContent=`我分數:${scoreMe} | 對手分數:${scoreOpp} | 連贏:${streak}`;
+      },200)
+    }
+  })
 }
 
-//更新UI（房主、客戶兩邊都會執行）
-function applyRoundUi(pkt){
-  $("gameMsgBox").innerText=pkt.text;
-  $("scrMe").textContent=pkt.sm;
-  $("scrOpp").textContent=pkt.so;
-  $("scrStreak").textContent=pkt.st;
-}
-
-//離開房間，刷新頁
-$("btnLeaveHost").onclick=()=>location.reload();
-$("btnLeaveClient").onclick=()=>location.reload();
-
-log("頁面載入完畢，PeerJS庫已載入｜v2.1.1 修復invalid-id");
-showPage("pageLogin");
+$("#leaveBtn").onclick=()=>location.reload();
 </script>
 </body>
 </html>
