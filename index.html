@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.8</title>
+<title>包剪揼多人對戰 v1.9</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
-/* Debug放最上面 */
 .debugWrap{background:#111;color:#3f3;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:180px;overflow:auto;margin-bottom:16px;}
 .versionText{text-align:center;font-weight:bold;font-size:16px;margin-bottom:8px;color:#333;}
 .card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px #00000014;}
@@ -21,8 +20,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<!-- 【Debug視窗放最前面 + 版本號】 -->
-<div class="versionText">版本：v1.8｜包剪揼4位房號版</div>
+<div class="versionText">版本：v1.9｜包剪揼4位房號版</div>
 <div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
@@ -121,9 +119,9 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-log("✅ v1.8 頁面開始載入");
+log("✅ v1.9 頁面開始載入");
 
-// 【第一重點：輸入名字按鈕，獨立綁定，唔受外部JS影響】
+// 輸入名字按鈕獨立綁定
 const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
 const nameInput = document.querySelector("#nameInput");
 const nameInputCard = document.querySelector("#nameInputCard");
@@ -140,7 +138,6 @@ nameConfirmBtn.onclick = function(){
   log(`✅玩家名字設定: ${myName}`);
 }
 
-// 延遲載入外部庫，唔阻礙頁面操作
 async function loadScript(url) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
@@ -151,16 +148,17 @@ async function loadScript(url) {
   })
 }
 
-// 載入PeerJS + Firebase
+// 改用 Firebase 8（全域firebase物件，唔使import）
 async function loadAllLibs(){
   try{
     log("🔄 開始載入PeerJS");
     await loadScript("https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js");
     log("✅ PeerJS載入成功");
-    log("🔄 開始載入Firebase SDK");
-    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
-    await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
-    log("✅ Firebase SDK載入成功，初始化Firebase");
+    log("🔄 開始載入Firebase v8");
+    // Firebase 8 舊版，載入就自動有全域 firebase
+    await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
+    await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js");
+    log("✅ Firebase v8 SDK載入成功，初始化Firebase");
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firebaseDB = firebase.database(firebaseApp);
     log("✅ Firebase初始化完成");
@@ -171,7 +169,6 @@ async function loadAllLibs(){
   }
 }
 
-// 載入完庫先綁定剩餘按鈕
 function bindAllOtherButtons(){
   log("🔗 綁定房間、錄音、遊戲按鈕");
   const createRoomBtn = document.querySelector("#createRoomBtn");
@@ -384,7 +381,6 @@ function bindAllOtherButtons(){
   leaveBtn.onclick=()=>location.reload();
 }
 
-// 頁面載入完，開始載入外部庫
 window.addEventListener('load', ()=>{
   log("📄 頁面全部DOM載入完，開始載入遊戲庫");
   loadAllLibs();
