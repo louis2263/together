@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人遊戲 Firebase版 v3.0</title>
+<title>包剪揼遊戲 Firebase v3.1</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;margin:0;background:#f4f4f4;}
@@ -30,11 +30,11 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 <div class="container">
 <!-- 【第一步：輸入名字、開房 / 入房】 -->
 <div class="card" id="joinArea">
-<h2>🎮 包剪揼遊戲 Firebase v3.0</h2>
+<h2>🎮 包剪揼遊戲 Firebase v3.1</h2>
 <input type="text" id="playerName" placeholder="輸入你的名字">
 <input type="text" id="roomId" placeholder="房間編號（開新房就留空）">
 <br>
-<button class="btn btn-normal" onclick="createRoom()">開啟新房间</button>
+<button class="btn btn-normal" onclick="createRoom()">開啟新房間</button>
 <button class="btn btn-normal" onclick="joinRoom()">進入房間</button>
 </div>
 
@@ -92,11 +92,20 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </div>
 </div>
 
-<!-- Firebase CDN -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+<!-- Firebase CDN 備用源 -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/dist/firebase-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/dist/firebase-database.js"></script>
 <script>
-// ========== 【在此替換成你自己 Firebase config】 ==========
+// Debug 函數放最前面，就算firebase掛咗都可以寫日誌
+function log(text){
+  const t = new Date().toLocaleTimeString();
+  const el = document.getElementById("debugLog");
+  el.innerText += `[${t}] ${text}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+log("✅ 頁面載入完成，JS已啟動");
+
+// ========== 【在此替換成你自己 Firebase config！！！】 ==========
 const firebaseConfig = {
     apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
     authDomain: "game-ad81e.firebaseapp.com",
@@ -108,11 +117,19 @@ const firebaseConfig = {
 };
 // ===========================================================
 
-// 初始化 Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+let firebaseReady = false;
+let db = null;
 let roomRef = null;
 let gameRef = null;
+
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  firebaseReady = true;
+  log("✅ Firebase 初始化成功");
+}catch(err){
+  log("❌ Firebase 初始化失敗: " + err.message);
+}
 
 // ===== 全域變數 =====
 let myName = "";
@@ -224,11 +241,17 @@ function uploadAudio(recId){
 
 // ========== Firebase 房間功能 ==========
 function createRoom(){
+  log("👉 點擊：嘗試建立新房間");
+  if(!firebaseReady){
+    log("❌ Firebase 未載入，無法開房！");
+    alert("Firebase 載入失敗，請重新整理頁面");
+    return;
+  }
   myName = document.getElementById("playerName").value.trim();
   if(!myName){alert("請輸入你的名字");return;}
   roomCode = Math.floor(100000 + Math.random()*900000).toString();
   myPlayerId = "p_" + Date.now();
-  log(`🏠 開啟新房间，房號：${roomCode}，玩家名稱：${myName}`);
+  log(`🏠 開啟新房間，房號：${roomCode}，玩家名稱：${myName}`);
   roomRef = db.ref(`rooms/${roomCode}`);
   roomRef.set({
     gameStarted:false,
@@ -240,6 +263,12 @@ function createRoom(){
   enterRoomView();
 }
 function joinRoom(){
+  log("👉 點擊：嘗試進入房間");
+  if(!firebaseReady){
+    log("❌ Firebase 未載入，無法入房！");
+    alert("Firebase 載入失敗，請重新整理頁面");
+    return;
+  }
   myName = document.getElementById("playerName").value.trim();
   roomCode = document.getElementById("roomId").value.trim();
   if(!myName){alert("請輸入你的名字");return;}
@@ -414,14 +443,6 @@ function calcResult(){
       document.getElementById("pickStatus").innerText = "";
     },1500);
   }
-}
-
-// Debug日誌
-function log(text){
-  const t = new Date().toLocaleTimeString();
-  const el = document.getElementById("debugLog");
-  el.innerText += `[${t}] ${text}\n`;
-  el.scrollTop = el.scrollHeight;
 }
 </script>
 </body>
