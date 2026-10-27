@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.4</title>
+<title>包剪揼多人對戰 v1.6 Firebase版｜4位房號</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
@@ -19,32 +19,28 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<!-- 名字輸入頁 -->
 <div class="card" id="nameInputCard">
 <h2 style="text-align:center">輸入你的名稱</h2>
 <input class="input-name" id="nameInput" placeholder="輸入名字">
 <button class="btn" id="nameConfirmBtn">確認</button>
 </div>
 
-<!-- 選擇開房 / 入房 -->
 <div class="card" id="roomSelectCard" style="display:none">
 <h2 style="text-align:center">房間操作</h2>
 <button class="btn" id="createRoomBtn">建立房間</button>
 <button class="btn" id="joinRoomBtn">加入房間</button>
 </div>
 
-<!-- 輸入房號頁（加入房間用） -->
 <div class="card" id="roomJoinCard" style="display:none">
-<h2 style="text-align:center">輸入房號</h2>
-<input class="input-name" id="roomIdInput" placeholder="輸入房號">
+<h2 style="text-align:center">輸入4位房號</h2>
+<input class="input-name" id="roomIdInput" placeholder="4位數字">
 <button class="btn" id="joinConfirmBtn">確認加入</button>
 </div>
 
-<!-- 遊戲主介面 -->
 <div id="gameMain" style="display:none">
 <div class="card">
 <h1 style="text-align:center">✊✌✋ 包剪揼多人對戰</h1>
-<div>版本: v1.4 | 移除全部系統彈窗</div>
+<div>版本: v1.6 Firebase 4位房號版</div>
 <div id="roomInfo"></div>
 <div>連線狀態: <span id="connStatus">等待其他人...</span></div>
 </div>
@@ -92,6 +88,8 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
 <script>
 const $ = s=>document.querySelector(s);
 const $$ = s=>document.querySelectorAll(s);
@@ -102,9 +100,24 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-// 狀態變數
+// ========== 【重要！替換返你自己嘅firebaseConfig】==========
+const firebaseConfig = {
+  apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
+  authDomain: "game-ad81e.firebaseapp.com",
+  databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "game-ad81e",
+  storageBucket: "game-ad81e.appspot.com",
+  messagingSenderId: "xxxxxxx",
+  appId: "xxxxxxx"
+};
+// ======================================================
+
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database(app);
+
 let peer, conn;
 let roomId;
+let hostPeerId;
 let myName = "";
 let isHost = false;
 let players = {};
@@ -115,7 +128,6 @@ let gameMode = null;
 let myHand=null, remoteHand=null;
 let scoreMe=0, scoreOpp=0, streak=0;
 
-// 名字確認
 $("#nameConfirmBtn").onclick = function(){
   myName = $("#nameInput").value.trim();
   if(!myName){
@@ -125,71 +137,86 @@ $("#nameConfirmBtn").onclick = function(){
   $("#nameInputCard").style.display="none";
   $("#roomSelectCard").style.display="block";
   log(`玩家名字設定: ${myName}`);
-  players[myName] = {name:myName,ready:false};
-  renderPlayerList();
 }
 
-// 建立房間
-$("#createRoomBtn").onclick = function(){
+$("#createRoomBtn").onclick = async function(){
   isHost=true;
   $("#roomSelectCard").style.display="none";
   $("#gameMain").style.display="block";
-  roomId = Math.random().toString(36).slice(2,8).toUpperCase();
-  $("#roomInfo").innerText = `房號：${roomId}\n將上面房號發送俾朋友`;
-  startPeer(true);
+  // 生成4位數房號
+  roomId = String(Math.floor(Math.random()*9000)+1000);
+  log(`🏠建立4位房號:${roomId}`);
+  peer = new Peer();
+  peer.on("open", pid=>{
+    hostPeerId = pid;
+    log(`✅房主PeerID:${pid}`);
+    // 寫入Firebase：房號對應房主PeerID
+    db.ref(`rooms/${roomId}`).set({hostPeer:pid, players:{[myName]:{ready:false}}});
+    $("#roomInfo").innerText = `房號：${roomId}\n將4位房號發送俾朋友`;
+    // 監聽房間更新
+    listenRoom();
+  })
+  peer.on("connection",c=>{
+    log("🎉有玩家接入");
+    conn = c; bindConnEvents();
+  })
+  peer.on("error",err=>log("❌Peer錯誤:"+err));
 }
 
-// 加入房間
 $("#joinRoomBtn").onclick = function(){
   $("#roomSelectCard").style.display="none";
   $("#roomJoinCard").style.display="block";
 }
-$("#joinConfirmBtn").onclick = function(){
+$("#joinConfirmBtn").onclick = async function(){
   roomId = $("#roomIdInput").value.trim();
-  if(!roomId) return;
-  isHost=false;
+  if(!/^\d{4}$/.test(roomId)){alert("請輸入4位數字");return;}
   $("#roomJoinCard").style.display="none";
   $("#gameMain").style.display="block";
-  $("#roomInfo").innerText = `房號：${roomId}`;
-  startPeer(false);
+  isHost=false;
+  log(`🔍嘗試加入房號:${roomId}`);
+  // Firebase讀取房間資料
+  const snap = await db.ref(`rooms/${roomId}`).get();
+  if(!snap.exists()){
+    log("❌房號不存在");
+    alert("房號不存在！");
+    return;
+  }
+  const roomData = snap.val();
+  hostPeerId = roomData.hostPeer;
+  log(`✅搵到房主PeerID:${hostPeerId}`);
+  // 開Peer並連房主
+  peer = new Peer();
+  peer.on("open",()=>{
+    log("客戶Peer已開啟，嘗試連房主");
+    conn = peer.connect(hostPeerId);
+    bindConnEvents();
+    // 將自己寫入房間玩家列表
+    db.ref(`rooms/${roomId}/players/${myName}`).set({ready:false});
+    listenRoom();
+  })
+  peer.on("error",err=>log("❌Peer錯誤:"+err));
 }
 
-function startPeer(host){
-  peer = new Peer();
-  peer.on("open", pid=>{
-    log(`PeerID:${pid}`);
-    if(!host){
-      conn = peer.connect(roomId);
-      bindConnEvents();
-    }
+// 監聽Firebase房間資料變化（等候區同步）
+function listenRoom(){
+  db.ref(`rooms/${roomId}`).on("value",snap=>{
+    const d = snap.val();
+    if(!d) return;
+    players = d.players || {};
+    renderPlayerList();
+    checkAllReady();
   })
-  peer.on("connection",c=>{
-    log("有玩家接入");
-    conn = c;
-    bindConnEvents();
-  })
-  peer.on("error",err=>log("Peer錯誤:"+err));
 }
 
 function bindConnEvents(){
-  $("#connStatus").textContent="已連線";
+  $("#connStatus").textContent="✅已連線";
   conn.on("open",()=>{
-    log("連線成功");
-    if(!isHost) sendMsg({type:"JOIN",name:myName});
+    log("🔗P2P連線成功");
+    sendMsg({type:"JOIN",name:myName});
   })
   conn.on("data",data=>{
-    log("收到訊息："+JSON.stringify(data));
+    log("📥收到訊息："+JSON.stringify(data));
     switch(data.type){
-      case "JOIN":
-        players[data.name]={name:data.name,ready:false};
-        sendPlayerList();
-        renderPlayerList();
-        break;
-      case "PLAYER_LIST":
-        players = data.list;
-        renderPlayerList();
-        checkAllReady();
-        break;
       case "AUDIO_BLOB":
         if(data.a===1) remoteAudio1 = new Audio(URL.createObjectURL(data.blob));
         if(data.a===2) remoteAudio2 = new Audio(URL.createObjectURL(data.blob));
@@ -207,36 +234,29 @@ function bindConnEvents(){
   })
 }
 
-function sendPlayerList(){
-  const list = Object.values(players);
-  sendMsg({type:"PLAYER_LIST", list});
-}
 function sendMsg(obj){
   if(conn && conn.open) conn.send(obj);
 }
 function renderPlayerList(){
   let html="";
-  Object.values(players).forEach(p=>{
+  Object.entries(players).forEach(([name,p])=>{
     const cls = p.ready ? "ready-ok" : "ready-wait";
     const icon = p.ready ? "✅已準備" : "⏳未準備";
-    html += `<div class="${cls}">${p.name} ${icon}</div>`;
+    html += `<div class="${cls}">${name} ${icon}</div>`;
   })
   $("#playerList").innerHTML = html;
 }
 
 $("#readyBtn").onclick = function(){
   myReady = !myReady;
-  players[myName].ready = myReady;
-  sendPlayerList();
-  renderPlayerList();
+  db.ref(`rooms/${roomId}/players/${myName}/ready`).set(myReady);
   log(`${myName} 設定準備狀態:${myReady}`);
-  checkAllReady();
 }
 
 function checkAllReady(){
   const allReady = Object.values(players).every(p=>p.ready===true);
   if(allReady && isHost){
-    log("全部玩家已準備，可以揀遊戲模式");
+    log("✅全部玩家已準備，可以揀遊戲模式");
   }
 }
 
@@ -253,12 +273,12 @@ async function recordAudio(num){
       if(num===1) audio1 = new Audio(URL.createObjectURL(blob));
       if(num===2) audio2 = new Audio(URL.createObjectURL(blob));
       sendMsg({type:"AUDIO_BLOB",a:num,blob});
-      log(`錄音${num}完成，自動發送P2P給對方`);
+      log(`🎙錄音${num}完成，自動發送P2P給對方`);
     }
     rec.start();
-    log(`開始錄音${num}`);
+    log(`🎙開始錄音${num}`);
     setTimeout(()=>rec.stop(),3000);
-  }catch(e){log("錄音失敗:"+e)}
+  }catch(e){log("❌錄音失敗:"+e)}
 }
 $("#rec1Btn").onclick=()=>recordAudio(1);
 $("#rec2Btn").onclick=()=>recordAudio(2);
@@ -272,7 +292,7 @@ $$("#modePanel button[data-mode]").forEach(btn=>{
     sendMsg({type:"GAME_START",mode:gameMode});
     $("#modePanel").style.display="none";
     $("#gamePanel").style.display="block";
-    log("房主設定遊戲模式："+gameMode);
+    log("🎮房主設定遊戲模式："+gameMode);
   }
 })
 
@@ -281,11 +301,11 @@ $$("#gamePanel button[data-hand]").forEach(btn=>{
   btn.onclick=()=>{
     myHand = btn.dataset.hand;
     sendMsg({type:"HAND",hand:myHand});
-    log("我揀咗："+myHand);
+    log("✊我揀咗："+myHand);
   }
 })
 
-// 判定邏輯（平手繼續、連贏兩鋪規則已修正）
+// 判定邏輯（平手繼續、連贏兩鋪修正）
 function checkGameResult(){
   const win = {rock:"scissors",scissors:"paper",paper:"rock"};
   let res;
