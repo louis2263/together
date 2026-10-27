@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.0</title>
+<title>包剪揼多人對戰 v2.1</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
@@ -21,7 +21,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<div class="versionText">版本：v2.0｜包剪揼4位房號版</div>
+<div class="versionText">版本：v2.1｜包剪揼4位房號版【同步大合唱修復】</div>
 <div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
@@ -100,7 +100,11 @@ let gameMode = null;
 let myHand=null, remoteHand=null;
 let scoreMe=0, scoreOpp=0, streak=0;
 let firebaseApp, firebaseDB;
-let isRecording = false; // 鎖定，防止同時多個錄音
+let isRecording = false;
+// 新增：回合狀態，等待雙方都出拳
+let roundReadyMyHand = null;
+let roundReadyRemoteHand = null;
+let roundLocked = false;
 
 // ========== Firebase 設定，記得替換返你自己嘅！ ==========
 const firebaseConfig = {
@@ -121,7 +125,7 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-log("✅ v2.0 頁面開始載入");
+log("✅ v2.1 頁面載入｜修復：雙方手勢齊先同步大合唱");
 
 // 輸入名字按鈕獨立綁定
 const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
@@ -150,14 +154,12 @@ async function loadScript(url) {
   })
 }
 
-// 改用 Firebase 8（全域firebase物件，唔使import）
 async function loadAllLibs(){
   try{
     log("🔄 開始載入PeerJS");
     await loadScript("https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js");
     log("✅ PeerJS載入成功");
     log("🔄 開始載入Firebase v8");
-    // Firebase 8 舊版，載入就自動有全域 firebase
     await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
     await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js");
     log("✅ Firebase v8 SDK載入成功，初始化Firebase");
@@ -272,10 +274,13 @@ function bindAllOtherButtons(){
           gameMode = data.mode;
           modePanel.style.display="none";
           gamePanel.style.display="block";
+          resetRound();
           break;
         case "HAND":
           remoteHand = data.hand;
-          checkGameResult(scoreText);
+          roundReadyRemoteHand = data.hand;
+          log(`📥收到對手手勢:${remoteHand}`);
+          checkBothHandReady(scoreText);
           break;
       }
     })
@@ -308,7 +313,7 @@ function bindAllOtherButtons(){
     }
   }
 
-  // ==========【重寫錄音函數 v2.0 紅色按鈕 + 3秒強制倒數】==========
+  // ==========【錄音函數：紅色按鈕 + 3秒強制倒數】==========
   async function recordAudio(num, btnElement){
     if(isRecording) return;
     isRecording = true;
@@ -319,14 +324,12 @@ function bindAllOtherButtons(){
       const chunks=[];
       rec.ondataavailable=e=>chunks.push(e.data);
 
-      // 按鈕轉紅色
       btnElement.classList.add("recording");
       let remain = 3;
       btnElement.innerText = `錄音中 ${remain}`;
       log(`🎙開始錄音${num}`);
       rec.start();
 
-      // 倒數計時
       const timer = setInterval(()=>{
         remain--;
         if(remain>0){
@@ -336,10 +339,8 @@ function bindAllOtherButtons(){
         }
       },1000);
 
-      // 固定3秒後自動停止
       setTimeout(()=>{
         rec.stop();
-        // 還原按鈕樣式
         btnElement.classList.remove("recording");
         btnElement.innerText = num===1 ? "開始錄音(包剪揼口令)" : "開始錄音(勝利語)";
       },3000);
@@ -375,6 +376,7 @@ function bindAllOtherButtons(){
       sendMsg(conn, {type:"GAME_START",mode:gameMode});
       modePanel.style.display="none";
       gamePanel.style.display="block";
+      resetRound();
       log("🎮房主設定遊戲模式："+gameMode);
     }
   })
@@ -382,14 +384,53 @@ function bindAllOtherButtons(){
   //出拳
   document.querySelectorAll("#gamePanel button[data-hand]").forEach(btn=>{
     btn.onclick=()=>{
+      if(roundLocked) return;
       myHand = btn.dataset.hand;
+      roundReadyMyHand = myHand;
       sendMsg(conn, {type:"HAND",hand:myHand});
       log("✊我揀咗："+myHand);
+      checkBothHandReady(scoreText);
     }
   })
 
+  // 檢查：雙方都提交手勢先執行大合唱
+  function checkBothHandReady(scoreDom){
+    if(roundLocked) return;
+    if(roundReadyMyHand && roundReadyRemoteHand){
+      roundLocked = true;
+      log("✅雙方手勢齊！開始同步播放口令（大合唱）");
+      startSyncPlay(scoreDom);
+    }
+  }
+
+  // 同步播放兩邊錄音，全部播完先顯示結果
+  function startSyncPlay(scoreDom){
+    // 同時播放兩個口令音頻
+    audio1.currentTime = 0;
+    remoteAudio1.currentTime = 0;
+    audio1.play();
+    remoteAudio1.play();
+
+    // 等兩個音頻都播完，先判定結果
+    Promise.all([
+      waitAudioEnd(audio1),
+      waitAudioEnd(remoteAudio1)
+    ]).then(()=>{
+      log("🔊大合唱全部播完，計算結果");
+      calcGameResult(scoreDom);
+    })
+  }
+
+  // 等待單個音頻播放完畢
+  function waitAudioEnd(audioObj){
+    return new Promise(resolve=>{
+      if(!audioObj) return resolve();
+      audioObj.onended = resolve;
+    })
+  }
+
   //判定邏輯：平手繼續，連贏兩鋪修正
-  function checkGameResult(scoreDom){
+  function calcGameResult(scoreDom){
     const win = {rock:"scissors",scissors:"paper",paper:"rock"};
     let res;
     if(myHand === remoteHand){
@@ -404,15 +445,24 @@ function bindAllOtherButtons(){
       scoreOpp++;
       streak=0;
     }
-    //等音訊播完先顯示結果
-    Promise.all([audio1.play(),remoteAudio1.play()]).then(()=>{
-      audio1.onended = ()=>{
-        setTimeout(()=>{
-          alert(res + `\n我:${scoreMe} 對手:${scoreOpp}\n連贏:${streak}`);
-          scoreDom.textContent=`我分數:${scoreMe} | 對手分數:${scoreOpp} | 連贏:${streak}`;
-        },200)
-      }
-    })
+
+    alert(res + `\n我:${scoreMe} 對手:${scoreOpp}\n連贏:${streak}`);
+    scoreDom.textContent=`我分數:${scoreMe} | 對手分數:${scoreOpp} | 連贏:${streak}`;
+
+    // 本回合完結，重置，準備下一鋪
+    setTimeout(()=>{
+      resetRound();
+    },500);
+  }
+
+  // 重置回合狀態
+  function resetRound(){
+    log("🔄重置回合，等待下一鋪出拳");
+    roundReadyMyHand = null;
+    roundReadyRemoteHand = null;
+    roundLocked = false;
+    myHand = null;
+    remoteHand = null;
   }
 
   leaveBtn.onclick=()=>location.reload();
