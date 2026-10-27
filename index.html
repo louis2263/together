@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼遊戲 Firebase v3.1</title>
+<title>包剪揼遊戲 Firebase v3.2</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;margin:0;background:#f4f4f4;}
@@ -30,7 +30,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 <div class="container">
 <!-- 【第一步：輸入名字、開房 / 入房】 -->
 <div class="card" id="joinArea">
-<h2>🎮 包剪揼遊戲 Firebase v3.1</h2>
+<h2>🎮 包剪揼遊戲 Firebase v3.2</h2>
 <input type="text" id="playerName" placeholder="輸入你的名字">
 <input type="text" id="roomId" placeholder="房間編號（開新房就留空）">
 <br>
@@ -92,9 +92,10 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </div>
 </div>
 
-<!-- Firebase CDN 備用源 -->
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/dist/firebase-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/dist/firebase-database.js"></script>
+<!-- 改用 Firebase 官方 UMD CDN，會自動建立全域 firebase 物件 -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
 <script>
 // Debug 函數放最前面，就算firebase掛咗都可以寫日誌
 function log(text){
@@ -103,7 +104,7 @@ function log(text){
   el.innerText += `[${t}] ${text}\n`;
   el.scrollTop = el.scrollHeight;
 }
-log("✅ 頁面載入完成，JS已啟動");
+log("✅ 頁面載入完成，JS已啟動，等待Firebase庫載入...");
 
 // ========== 【在此替換成你自己 Firebase config！！！】 ==========
 const firebaseConfig = {
@@ -122,14 +123,17 @@ let db = null;
 let roomRef = null;
 let gameRef = null;
 
-try{
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.database();
-  firebaseReady = true;
-  log("✅ Firebase 初始化成功");
-}catch(err){
-  log("❌ Firebase 初始化失敗: " + err.message);
-}
+// 等Firebase腳本完全載入先初始化
+window.addEventListener('load', function() {
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebaseReady = true;
+    log("✅ Firebase 初始化成功！可以開房間");
+  }catch(err){
+    log("❌ Firebase 初始化失敗: " + err.message);
+  }
+});
 
 // ===== 全域變數 =====
 let myName = "";
@@ -243,8 +247,8 @@ function uploadAudio(recId){
 function createRoom(){
   log("👉 點擊：嘗試建立新房間");
   if(!firebaseReady){
-    log("❌ Firebase 未載入，無法開房！");
-    alert("Firebase 載入失敗，請重新整理頁面");
+    log("❌ Firebase 仲未載入，無法開房！請等一等或重新整理頁面");
+    alert("Firebase 載入緊，請等幾秒再試");
     return;
   }
   myName = document.getElementById("playerName").value.trim();
@@ -265,8 +269,8 @@ function createRoom(){
 function joinRoom(){
   log("👉 點擊：嘗試進入房間");
   if(!firebaseReady){
-    log("❌ Firebase 未載入，無法入房！");
-    alert("Firebase 載入失敗，請重新整理頁面");
+    log("❌ Firebase 仲未載入，無法入房！");
+    alert("Firebase 載入緊，請等幾秒再試");
     return;
   }
   myName = document.getElementById("playerName").value.trim();
