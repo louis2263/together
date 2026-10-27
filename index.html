@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.1</title>
+<title>包剪揼多人對戰 v2.3</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
@@ -21,7 +21,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<div class="versionText">版本：v2.1｜包剪揼4位房號版【同步大合唱修復】</div>
+<div class="versionText">版本：v2.3｜包剪揼4位房號版【雙機播放勝利者音訊】</div>
 <div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
@@ -78,9 +78,9 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 <div class="card" id="gamePanel" style="display:none">
 <h3>請選擇：包 / 剪 / 揼</h3>
 <div class="btn-wrap">
-<button class="btn" data-hand="rock">✊ 包</button>
-<button class="btn" data-hand="scissors">✌ 剪</button>
-<button class="btn" data-hand="paper">✋ 揼</button>
+<button class="btn handBtn" data-hand="rock">✊ 包</button>
+<button class="btn handBtn" data-hand="scissors">✌ 剪</button>
+<button class="btn handBtn" data-hand="paper">✋ 揼</button>
 </div>
 <div id="scoreText">我分數:0 | 對手分數:0 | 連贏:0</div>
 </div>
@@ -101,12 +101,10 @@ let myHand=null, remoteHand=null;
 let scoreMe=0, scoreOpp=0, streak=0;
 let firebaseApp, firebaseDB;
 let isRecording = false;
-// 新增：回合狀態，等待雙方都出拳
 let roundReadyMyHand = null;
 let roundReadyRemoteHand = null;
 let roundLocked = false;
 
-// ========== Firebase 設定，記得替換返你自己嘅！ ==========
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
   authDomain: "game-ad81e.firebaseapp.com",
@@ -116,7 +114,6 @@ const firebaseConfig = {
   messagingSenderId: "xxxxxxx",
   appId: "xxxxxxx"
 };
-// ======================================================
 
 const debugLog = document.querySelector("#debugLog");
 function log(msg){
@@ -125,9 +122,8 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-log("✅ v2.1 頁面載入｜修復：雙方手勢齊先同步大合唱");
+log("✅ v2.3 頁面載入｜雙機播放勝利者音訊");
 
-// 輸入名字按鈕獨立綁定
 const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
 const nameInput = document.querySelector("#nameInput");
 const nameInputCard = document.querySelector("#nameInputCard");
@@ -193,6 +189,7 @@ function bindAllOtherButtons(){
   const modePanel = document.querySelector("#modePanel");
   const gamePanel = document.querySelector("#gamePanel");
   const scoreText = document.querySelector("#scoreText");
+  const handBtns = document.querySelectorAll(".handBtn");
 
   createRoomBtn.onclick = async function(){
     isHost=true;
@@ -282,6 +279,18 @@ function bindAllOtherButtons(){
           log(`📥收到對手手勢:${remoteHand}`);
           checkBothHandReady(scoreText);
           break;
+        // 接收勝利者指令，雙邊播放勝利音
+        case "PLAY_WIN_AUDIO":
+          if(data.winner==="me"){
+            log("🔊播放【我方】勝利錄音");
+            audio2.currentTime=0;
+            audio2.play();
+          }else if(data.winner==="opp"){
+            log("🔊播放【對手】勝利錄音");
+            remoteAudio2.currentTime=0;
+            remoteAudio2.play();
+          }
+          break;
       }
     })
   }
@@ -313,7 +322,6 @@ function bindAllOtherButtons(){
     }
   }
 
-  // ==========【錄音函數：紅色按鈕 + 3秒強制倒數】==========
   async function recordAudio(num, btnElement){
     if(isRecording) return;
     isRecording = true;
@@ -369,7 +377,6 @@ function bindAllOtherButtons(){
   play1Btn.onclick=()=>audio1?.play();
   play2Btn.onclick=()=>audio2?.play();
 
-  //遊戲模式
   document.querySelectorAll("#modePanel button[data-mode]").forEach(btn=>{
     btn.onclick=()=>{
       gameMode = btn.dataset.mode;
@@ -381,10 +388,10 @@ function bindAllOtherButtons(){
     }
   })
 
-  //出拳
-  document.querySelectorAll("#gamePanel button[data-hand]").forEach(btn=>{
+  handBtns.forEach(btn=>{
     btn.onclick=()=>{
       if(roundLocked) return;
+      handBtns.forEach(b=>b.disabled=true);
       myHand = btn.dataset.hand;
       roundReadyMyHand = myHand;
       sendMsg(conn, {type:"HAND",hand:myHand});
@@ -393,7 +400,6 @@ function bindAllOtherButtons(){
     }
   })
 
-  // 檢查：雙方都提交手勢先執行大合唱
   function checkBothHandReady(scoreDom){
     if(roundLocked) return;
     if(roundReadyMyHand && roundReadyRemoteHand){
@@ -403,15 +409,12 @@ function bindAllOtherButtons(){
     }
   }
 
-  // 同步播放兩邊錄音，全部播完先顯示結果
   function startSyncPlay(scoreDom){
-    // 同時播放兩個口令音頻
     audio1.currentTime = 0;
     remoteAudio1.currentTime = 0;
     audio1.play();
     remoteAudio1.play();
 
-    // 等兩個音頻都播完，先判定結果
     Promise.all([
       waitAudioEnd(audio1),
       waitAudioEnd(remoteAudio1)
@@ -421,7 +424,6 @@ function bindAllOtherButtons(){
     })
   }
 
-  // 等待單個音頻播放完畢
   function waitAudioEnd(audioObj){
     return new Promise(resolve=>{
       if(!audioObj) return resolve();
@@ -429,10 +431,10 @@ function bindAllOtherButtons(){
     })
   }
 
-  //判定邏輯：平手繼續，連贏兩鋪修正
   function calcGameResult(scoreDom){
     const win = {rock:"scissors",scissors:"paper",paper:"rock"};
     let res;
+    let winnerTag = null;
     if(myHand === remoteHand){
       res="平手，本鋪不計分，繼續";
       streak=0;
@@ -440,22 +442,35 @@ function bindAllOtherButtons(){
       res="你贏呢鋪";
       scoreMe++;
       streak++;
+      winnerTag = "me"; // 我係勝利者
     }else{
       res="你輸呢鋪";
       scoreOpp++;
       streak=0;
+      winnerTag = "opp"; // 對手係勝利者
     }
 
     alert(res + `\n我:${scoreMe} 對手:${scoreOpp}\n連贏:${streak}`);
     scoreDom.textContent=`我分數:${scoreMe} | 對手分數:${scoreOpp} | 連贏:${streak}`;
 
-    // 本回合完結，重置，準備下一鋪
+    // 有勝利者，就發送訊息，兩部機一齊播放勝利嗰段聲
+    if(winnerTag){
+      sendMsg(conn, {type:"PLAY_WIN_AUDIO", winner:winnerTag});
+      // 本機都要同步播放
+      if(winnerTag==="me"){
+        audio2.currentTime=0;
+        audio2.play();
+      }else if(winnerTag==="opp"){
+        remoteAudio2.currentTime=0;
+        remoteAudio2.play();
+      }
+    }
+
     setTimeout(()=>{
       resetRound();
-    },500);
+    },800);
   }
 
-  // 重置回合狀態
   function resetRound(){
     log("🔄重置回合，等待下一鋪出拳");
     roundReadyMyHand = null;
@@ -463,6 +478,7 @@ function bindAllOtherButtons(){
     roundLocked = false;
     myHand = null;
     remoteHand = null;
+    document.querySelectorAll(".handBtn").forEach(b=>b.disabled=false);
   }
 
   leaveBtn.onclick=()=>location.reload();
