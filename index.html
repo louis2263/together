@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.93</title>
+<title>包剪揼多人對戰 v1.94</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui}
 body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7}
@@ -16,8 +16,8 @@ input{width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius
 </head>
 <body>
 <div class="card">
-<h2>包剪揼多人對戰 v1.93</h2>
-<div>版本號：v1.93</div>
+<h2>包剪揼多人對戰 v1.94</h2>
+<div>版本號：v1.94</div>
 </div>
 
 <div class="card" id="page-name">
@@ -42,9 +42,9 @@ input{width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius
 <div id="debug"></div>
 </div>
 
-<!-- Firebase CDN 全局版本 -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+<!-- 改用 jsDelivr CDN，香港網絡較穩定 -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/dist/firebase-database.js"></script>
 
 <script>
 const DEBUG = document.getElementById("debug");
@@ -58,7 +58,7 @@ log("頁面載入，等待Firebase SDK");
 let app, db;
 let firebaseReady = false;
 
-// 等 Firebase 物件出現
+// 輪詢檢查 Firebase 有冇載入
 function initFirebase(){
   if(window.firebase && window.firebase.initializeApp){
     log("✅ Firebase SDK 已載入，開始初始化");
