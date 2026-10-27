@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人遊戲 v1.8</title>
+<title>包剪揼多人遊戲 v2.1</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;margin:0;background:#f4f4f4;}
 .container{max-width:500px;margin:0 auto;}
 .card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px #00000015;}
 .btn{padding:14px 20px;border:none;border-radius:12px;font-size:18px;margin:6px;cursor:pointer;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
 .btn-normal{background:#ddd;}
 .btn-rec{background:#2288dd;color:white;}
 .btn-rec-recording{background:#dd2222;color:white;}
@@ -18,11 +19,35 @@ body{padding:16px;margin:0;background:#f4f4f4;}
 .img-hand{width:140px;height:140px;object-fit:contain;}
 .hand-row{display:flex;gap:20px;justify-content:center;margin:16px 0;}
 .status-tip{font-size:16px;color:#444;margin:8px 0;}
+input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius:12px;margin:8px 0;}
+.wait-item{padding:10px;border-bottom:1px solid #eee;font-size:18px;}
+.room-area{display:none;}
+.game-area{display:none;}
+.rec-block{border:1px solid #ddd;border-radius:12px;padding:14px;margin:10px 0;}
 </style>
 </head>
 <body>
 <div class="container">
-<div class="card">
+<!-- 【第一步：輸入名字、開房 / 入房】 -->
+<div class="card" id="joinArea">
+<h2>🎮 包剪揼遊戲 v2.1</h2>
+<input type="text" id="playerName" placeholder="輸入你的名字">
+<input type="text" id="roomId" placeholder="房間編號（開新房就留空）">
+<br>
+<button class="btn btn-normal" onclick="createRoom()">開啟新房间</button>
+<button class="btn btn-normal" onclick="joinRoom()">進入房間</button>
+</div>
+
+<!-- 等候區域 -->
+<div class="card room-area" id="roomArea">
+<h3>🏠 房間等候區</h3>
+<div id="waitList"></div>
+<div class="status-tip" id="roomStatus">等候其他玩家進入</div>
+<button class="btn btn-normal" onclick="startGame()">開始遊戲</button>
+</div>
+
+<!-- 遊戲主畫面 -->
+<div class="card game-area" id="gameArea">
 <div style="font-size:26px;font-weight:bold;">分數：你 <span id="scoreMe">0</span> | 對手 <span id="scoreOp">0</span></div>
 <div class="hand-row">
 <div><img id="imgMe" class="img-hand" src="" alt="你"><div style="text-align:center;font-size:20px">你</div></div>
@@ -38,12 +63,23 @@ body{padding:16px;margin:0;background:#f4f4f4;}
 </div>
 </div>
 
+<!-- 雙段錄音設定 -->
 <div class="card">
-<h3>🎙️ 錄音設定</h3>
-<div id="recStatus" class="status-tip">未開始錄音</div>
-<button id="recBtn" class="btn btn-rec" onclick="toggleRecord()">開始錄音</button>
-<button class="btn btn-normal" onclick="playAudio()">試聽</button>
-<button class="btn btn-normal" onclick="uploadAudio()">上傳</button>
+<h3>🎙️ 錄音設定（兩段音訊）</h3>
+<div class="rec-block">
+<h4>第一段：包剪揼開局提示<br>（講：包剪揼 / Rock Paper Scissors shoot）</h4>
+<div id="recStatus1" class="status-tip">未錄音</div>
+<button id="recBtn1" class="btn btn-rec" onclick="toggleRecord(1)">開始錄音</button>
+<button id="btnPlay1" class="btn btn-normal" onclick="playAudio(1)" disabled>試聽</button>
+<button id="btnUpload1" class="btn btn-normal" onclick="uploadAudio(1)" disabled>儲存</button>
+</div>
+<div class="rec-block">
+<h4>第二段：贏咗台詞<br>（當你贏咗會講嘅說話）</h4>
+<div id="recStatus2" class="status-tip">未錄音</div>
+<button id="recBtn2" class="btn btn-rec" onclick="toggleRecord(2)">開始錄音</button>
+<button id="btnPlay2" class="btn btn-normal" onclick="playAudio(2)" disabled>試聽</button>
+<button id="btnUpload2" class="btn btn-normal" onclick="uploadAudio(2)" disabled>儲存</button>
+</div>
 <audio id="audioPlayer">
 </div>
 
@@ -54,6 +90,11 @@ body{padding:16px;margin:0;background:#f4f4f4;}
 </div>
 
 <script>
+// ===== 全域變數 =====
+let myName = "";
+let roomCode = "";
+let playerList = [];
+
 // ===== 遊戲設定 =====
 const WIN_MODES = {
   oneRound:"一鋪定勝負",
@@ -68,11 +109,15 @@ let playerChoice = null, oppChoice = null;
 let allPicked = false;
 let gameFinished = false;
 
-// ===== 錄音變數 =====
+// ===== 雙錄音變數 =====
 let mediaRecorder = null;
 let audioChunks = [];
-let recordedBlob = null;
 let isRecording = false;
+let activeRecId = null; // 而家錄緊邊一段 1 / 2
+const audioStore = {
+  1: { blob:null, ready:false }, // 第一段：包剪揼
+  2: { blob:null, ready:false }  // 第二段：獲勝台詞
+};
 const audioPlayer = document.getElementById("audioPlayer");
 
 // 提示音效
@@ -87,19 +132,18 @@ function beep(type){
   setTimeout(()=>osc.stop(),120);
 }
 
-// 切換錄音
-async function toggleRecord(){
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    log("❌ 瀏覽器唔支援麥克風");return;
-  }
+// 切換錄音  recId=1 包剪揼；recId=2 贏台詞
+async function toggleRecord(recId){
   if(isRecording){
     // 停止錄音
     mediaRecorder.stop();
     isRecording = false;
-    document.getElementById("recBtn").className = "btn btn-rec";
-    document.getElementById("recBtn").innerText = "開始錄音";
-    document.getElementById("recStatus").innerText = "✅ 錄製完成，可以試聽";
+    const btn = document.getElementById(`recBtn${activeRecId}`);
+    btn.className = "btn btn-rec";
+    btn.innerText = "開始錄音";
+    document.getElementById(`recStatus${activeRecId}`).innerText = "⏳ 處理音訊，請稍候";
     beep("stop");
+    log(`🛑 停止第${activeRecId}段錄音，等待處理音訊`);
     return;
   }
   try{
@@ -112,34 +156,93 @@ async function toggleRecord(){
         autoGainControl:true
       }
     });
-    // 改用瀏覽器廣泛支援嘅 webm 音訊
     const options = {mimeType:'audio/webm'};
     mediaRecorder = new MediaRecorder(stream,options);
     audioChunks = [];
+    activeRecId = recId;
+    // 鎖按鈕
+    document.getElementById(`btnPlay${recId}`).disabled = true;
+    document.getElementById(`btnUpload${recId}`).disabled = true;
+
     mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
     mediaRecorder.onstop = ()=>{
-      recordedBlob = new Blob(audioChunks,{type:'audio/webm'});
-      audioPlayer.src = URL.createObjectURL(recordedBlob);
+      const blob = new Blob(audioChunks,{type:'audio/webm'});
+      audioStore[recId].blob = blob;
+      audioStore[recId].ready = true;
+      document.getElementById(`recStatus${recId}`).innerText = "✅ 錄製完成，可以試聽";
+      document.getElementById(`btnPlay${recId}`).disabled = false;
+      document.getElementById(`btnUpload${recId}`).disabled = false;
+      log(`✅ 第${recId}段音訊處理完畢，可以試聽`);
     };
     mediaRecorder.start();
     isRecording = true;
-    document.getElementById("recBtn").className = "btn btn-rec-recording";
-    document.getElementById("recBtn").innerText = "🔴 錄音中…按呢度停止";
-    document.getElementById("recStatus").innerText = "🎤 而家緊錄音，講說話";
+    const btn = document.getElementById(`recBtn${recId}`);
+    btn.className = "btn btn-rec-recording";
+    btn.innerText = "🔴 錄音中…按呢度停止";
+    document.getElementById(`recStatus${recId}`).innerText = "🎤 錄音中，請講說話";
     beep("start");
-    log("🎙️ 開始錄音，降噪已開啟，格式 audio/webm");
+    log(`🎙️ 開始第${recId}段錄音，格式 audio/webm`);
   }catch(err){
     log("❌ 麥克風權限錯誤："+err.message);
   }
 }
-function playAudio(){
-  if(!recordedBlob){log("⚠️ 未有錄音");return;}
+function playAudio(recId){
+  if(!audioStore[recId].ready){log(`⚠️ 第${recId}段未有錄音`);return;}
+  audioPlayer.src = URL.createObjectURL(audioStore[recId].blob);
   audioPlayer.play();
-  log("▶️ 試聽錄音");
+  log(`▶️ 試聽第${recId}段錄音`);
 }
-function uploadAudio(){
-  if(!recordedBlob){log("⚠️ 未有錄音，無法上傳");return;}
-  log("✅ 錄音已上傳（模擬）");
+function uploadAudio(recId){
+  if(!audioStore[recId].ready){log(`⚠️ 第${recId}段未有錄音，無法儲存`);return;}
+  log(`✅ 第${recId}段錄音已儲存（模擬）`);
+}
+
+// ========== 房間功能 ==========
+function createRoom(){
+  myName = document.getElementById("playerName").value.trim();
+  if(!myName){alert("請輸入你的名字");return;}
+  // 隨機產生房間號碼
+  roomCode = Math.floor(100000 + Math.random()*900000).toString();
+  log(`🏠 開啟新房间，房號：${roomCode}，玩家名稱：${myName}`);
+  enterRoomView();
+  addPlayer(myName);
+}
+function joinRoom(){
+  myName = document.getElementById("playerName").value.trim();
+  roomCode = document.getElementById("roomId").value.trim();
+  if(!myName){alert("請輸入你的名字");return;}
+  if(!roomCode){alert("請輸入房間編號");return;}
+  log(`🚪 嘗試進房：${roomCode}，名稱：${myName}`);
+  enterRoomView();
+  addPlayer(myName);
+}
+function enterRoomView(){
+  document.getElementById("joinArea").style.display="none";
+  document.getElementById("roomArea").style.display="block";
+}
+function addPlayer(name){
+  if(playerList.find(x=>x.name===name)) return;
+  playerList.push({name:name,ready:false});
+  renderWaitList();
+}
+function renderWaitList(){
+  const box = document.getElementById("waitList");
+  box.innerHTML = "";
+  playerList.forEach(p=>{
+    const div = document.createElement("div");
+    div.className="wait-item";
+    div.innerText = `${p.name} ${p.ready?"✅ 已進房間｜準備好":"🟡等候中"}`;
+    box.appendChild(div);
+  })
+}
+function startGame(){
+  if(playerList.length <2){
+    alert("至少要有2個玩家先可以開始遊戲");
+    return;
+  }
+  log("▶️ 所有人齊，進入遊戲畫面");
+  document.getElementById("roomArea").style.display="none";
+  document.getElementById("gameArea").style.display="block";
 }
 
 // ===== 遊戲邏輯 =====
@@ -154,11 +257,23 @@ function playerPick(hand){
     oppChoice = arr[Math.floor(Math.random()*3)];
     log("🤖 對手揀咗："+oppChoice);
     allPicked = true;
-    document.getElementById("pickStatus").innerText = "✅ 所有人都揀好，播放開局錄音";
-    log("✅ 所有人都揀好，播放開局錄音");
-    // 等錄音播完先計結果
-    setTimeout(()=>calcResult(),800);
+    document.getElementById("pickStatus").innerText = "✅ 所有人都揀好，播放【包剪揼】錄音";
+    log("✅ 所有人都揀好，播放第一段錄音");
+    // 播放第一段包剪揼音訊，播完先計結果
+    playRoundAudioThenCalc();
   },700);
+}
+
+async function playRoundAudioThenCalc(){
+  if(audioStore[1].ready){
+    audioPlayer.src = URL.createObjectURL(audioStore[1].blob);
+    await audioPlayer.play();
+    // 等待播放完畢
+    await new Promise(resolve=>{
+      audioPlayer.onended = resolve;
+    })
+  }
+  calcResult();
 }
 
 function transHand(h){
@@ -188,8 +303,13 @@ function calcResult(){
   }else if(res==="win"){
     scoreMe++;
     currentStreak++;
-    document.getElementById("roundResult").innerText += "\n🎉 你贏咗！";
+    document.getElementById("roundResult").innerText += "\n🎉 你贏咗！播放勝利台詞";
     log("✅ 本局結果：win，當前連勝："+currentStreak);
+    // 播放第二段獲勝錄音
+    if(audioStore[2].ready){
+      audioPlayer.src = URL.createObjectURL(audioStore[2].blob);
+      audioPlayer.play();
+    }
   }else{
     scoreOp++;
     currentStreak=0;
