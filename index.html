@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.3</title>
+<title>包剪揼多人對戰 v2.4</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
@@ -21,7 +21,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<div class="versionText">版本：v2.3｜包剪揼4位房號版【雙機播放勝利者音訊】</div>
+<div class="versionText">版本：v2.4｜包剪揼4位房號版【修復大合唱卡死問題】</div>
 <div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
@@ -122,7 +122,7 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-log("✅ v2.3 頁面載入｜雙機播放勝利者音訊");
+log("✅ v2.4 頁面載入｜修復大合唱卡死");
 
 const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
 const nameInput = document.querySelector("#nameInput");
@@ -264,8 +264,14 @@ function bindAllOtherButtons(){
       log("📥收到訊息："+JSON.stringify(data));
       switch(data.type){
         case "AUDIO_BLOB":
-          if(data.a===1) remoteAudio1 = new Audio(URL.createObjectURL(data.blob));
-          if(data.a===2) remoteAudio2 = new Audio(URL.createObjectURL(data.blob));
+          if(data.a===1) {
+            remoteAudio1 = new Audio(URL.createObjectURL(data.blob));
+            log("🎵收到對方口令音訊 remoteAudio1");
+          }
+          if(data.a===2) {
+            remoteAudio2 = new Audio(URL.createObjectURL(data.blob));
+            log("🎵收到對方勝利音 remoteAudio2");
+          }
           break;
         case "GAME_START":
           gameMode = data.mode;
@@ -279,16 +285,15 @@ function bindAllOtherButtons(){
           log(`📥收到對手手勢:${remoteHand}`);
           checkBothHandReady(scoreText);
           break;
-        // 接收勝利者指令，雙邊播放勝利音
         case "PLAY_WIN_AUDIO":
           if(data.winner==="me"){
             log("🔊播放【我方】勝利錄音");
             audio2.currentTime=0;
-            audio2.play();
+            audio2.play().catch(e=>log("⚠️勝利音播放失敗:"+e.message));
           }else if(data.winner==="opp"){
             log("🔊播放【對手】勝利錄音");
             remoteAudio2.currentTime=0;
-            remoteAudio2.play();
+            remoteAudio2.play().catch(e=>log("⚠️對手勝利音播放失敗:"+e.message));
           }
           break;
       }
@@ -374,8 +379,8 @@ function bindAllOtherButtons(){
   rec1Btn.onclick=()=>recordAudio(1, rec1Btn);
   rec2Btn.onclick=()=>recordAudio(2, rec2Btn);
 
-  play1Btn.onclick=()=>audio1?.play();
-  play2Btn.onclick=()=>audio2?.play();
+  play1Btn.onclick=()=>audio1?.play().catch(e=>log("試聽口令失敗:"+e));
+  play2Btn.onclick=()=>audio2?.play().catch(e=>log("試聽勝利語失敗:"+e));
 
   document.querySelectorAll("#modePanel button[data-mode]").forEach(btn=>{
     btn.onclick=()=>{
@@ -409,17 +414,28 @@ function bindAllOtherButtons(){
     }
   }
 
-  function startSyncPlay(scoreDom){
-    audio1.currentTime = 0;
-    remoteAudio1.currentTime = 0;
-    audio1.play();
-    remoteAudio1.play();
+  // =========重寫大合唱函數，就算播放失敗都會計賽果=========
+  async function startSyncPlay(scoreDom){
+    let p1 = Promise.resolve();
+    let p2 = Promise.resolve();
 
-    Promise.all([
-      waitAudioEnd(audio1),
-      waitAudioEnd(remoteAudio1)
-    ]).then(()=>{
-      log("🔊大合唱全部播完，計算結果");
+    if(audio1){
+      audio1.currentTime =0;
+      p1 = audio1.play().then(()=>waitAudioEnd(audio1)).catch(err=>{
+        log("⚠️自己口令播放異常，直接繼續:"+err.message);
+        return true;
+      })
+    }
+    if(remoteAudio1){
+      remoteAudio1.currentTime =0;
+      p2 = remoteAudio1.play().then(()=>waitAudioEnd(remoteAudio1)).catch(err=>{
+        log("⚠️對方口令播放異常，直接繼續:"+err.message);
+        return true;
+      })
+    }
+
+    Promise.all([p1,p2]).then(()=>{
+      log("🔊大合唱流程完結，計算結果");
       calcGameResult(scoreDom);
     })
   }
@@ -427,7 +443,10 @@ function bindAllOtherButtons(){
   function waitAudioEnd(audioObj){
     return new Promise(resolve=>{
       if(!audioObj) return resolve();
-      audioObj.onended = resolve;
+      audioObj.onended = ()=>{
+        log("🎵音訊播放完畢");
+        resolve();
+      }
     })
   }
 
@@ -442,27 +461,25 @@ function bindAllOtherButtons(){
       res="你贏呢鋪";
       scoreMe++;
       streak++;
-      winnerTag = "me"; // 我係勝利者
+      winnerTag = "me";
     }else{
       res="你輸呢鋪";
       scoreOpp++;
       streak=0;
-      winnerTag = "opp"; // 對手係勝利者
+      winnerTag = "opp";
     }
 
     alert(res + `\n我:${scoreMe} 對手:${scoreOpp}\n連贏:${streak}`);
     scoreDom.textContent=`我分數:${scoreMe} | 對手分數:${scoreOpp} | 連贏:${streak}`;
 
-    // 有勝利者，就發送訊息，兩部機一齊播放勝利嗰段聲
     if(winnerTag){
       sendMsg(conn, {type:"PLAY_WIN_AUDIO", winner:winnerTag});
-      // 本機都要同步播放
       if(winnerTag==="me"){
         audio2.currentTime=0;
-        audio2.play();
+        audio2.play().catch(e=>log("播放勝利音錯誤:"+e));
       }else if(winnerTag==="opp"){
         remoteAudio2.currentTime=0;
-        remoteAudio2.play();
+        remoteAudio2.play().catch(e=>log("播放對手勝利音錯誤:"+e));
       }
     }
 
