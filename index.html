@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.9</title>
+<title>包剪揼多人對戰 v2.0</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 .debugWrap{background:#111;color:#3f3;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:180px;overflow:auto;margin-bottom:16px;}
 .versionText{text-align:center;font-weight:bold;font-size:16px;margin-bottom:8px;color:#333;}
 .card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px #00000014;}
-.btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:18px;color:white;background:#2b78e4;margin:8px 0;}
+.btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:18px;color:white;background:#2b78e4;margin:8px 0;transition:0.2s;}
 .btn:disabled{background:#aaa;}
+.btn.recording{background:#d62828 !important;}
 .btn-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .ready-ok{color:#28a745;font-weight:bold;}
 .ready-wait{color:#999;}
@@ -20,7 +21,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<div class="versionText">版本：v1.9｜包剪揼4位房號版</div>
+<div class="versionText">版本：v2.0｜包剪揼4位房號版</div>
 <div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
@@ -99,6 +100,7 @@ let gameMode = null;
 let myHand=null, remoteHand=null;
 let scoreMe=0, scoreOpp=0, streak=0;
 let firebaseApp, firebaseDB;
+let isRecording = false; // 鎖定，防止同時多個錄音
 
 // ========== Firebase 設定，記得替換返你自己嘅！ ==========
 const firebaseConfig = {
@@ -119,7 +121,7 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-log("✅ v1.9 頁面開始載入");
+log("✅ v2.0 頁面開始載入");
 
 // 輸入名字按鈕獨立綁定
 const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
@@ -306,28 +308,63 @@ function bindAllOtherButtons(){
     }
   }
 
-  //錄音
-  let rec = null;
-  async function recordAudio(num){
+  // ==========【重寫錄音函數 v2.0 紅色按鈕 + 3秒強制倒數】==========
+  async function recordAudio(num, btnElement){
+    if(isRecording) return;
+    isRecording = true;
+    let rec = null;
     try{
       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
       rec = new MediaRecorder(stream);
       const chunks=[];
       rec.ondataavailable=e=>chunks.push(e.data);
+
+      // 按鈕轉紅色
+      btnElement.classList.add("recording");
+      let remain = 3;
+      btnElement.innerText = `錄音中 ${remain}`;
+      log(`🎙開始錄音${num}`);
+      rec.start();
+
+      // 倒數計時
+      const timer = setInterval(()=>{
+        remain--;
+        if(remain>0){
+          btnElement.innerText = `錄音中 ${remain}`;
+        }else{
+          clearInterval(timer);
+        }
+      },1000);
+
+      // 固定3秒後自動停止
+      setTimeout(()=>{
+        rec.stop();
+        // 還原按鈕樣式
+        btnElement.classList.remove("recording");
+        btnElement.innerText = num===1 ? "開始錄音(包剪揼口令)" : "開始錄音(勝利語)";
+      },3000);
+
       rec.onstop=()=>{
+        clearInterval(timer);
         const blob = new Blob(chunks,{type:"audio/webm"});
         if(num===1) audio1 = new Audio(URL.createObjectURL(blob));
         if(num===2) audio2 = new Audio(URL.createObjectURL(blob));
         sendMsg(conn, {type:"AUDIO_BLOB",a:num,blob});
         log(`🎙錄音${num}完成，自動發送P2P給對方`);
+        stream.getTracks().forEach(t=>t.stop());
+        isRecording = false;
       }
-      rec.start();
-      log(`🎙開始錄音${num}`);
-      setTimeout(()=>rec.stop(),3000);
-    }catch(e){log("❌錄音失敗:"+e)}
+    }catch(e){
+      log("❌錄音失敗:"+e);
+      btnElement.classList.remove("recording");
+      btnElement.innerText = num===1 ? "開始錄音(包剪揼口令)" : "開始錄音(勝利語)";
+      isRecording = false;
+    }
   }
-  rec1Btn.onclick=()=>recordAudio(1);
-  rec2Btn.onclick=()=>recordAudio(2);
+
+  rec1Btn.onclick=()=>recordAudio(1, rec1Btn);
+  rec2Btn.onclick=()=>recordAudio(2, rec2Btn);
+
   play1Btn.onclick=()=>audio1?.play();
   play2Btn.onclick=()=>audio2?.play();
 
