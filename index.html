@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v1.9</title>
+<title>包剪揼多人對戰 v1.91</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui}
 body{max-width:600px;margin:20px auto;padding:16px;background:#f7f7f7}
@@ -16,8 +16,8 @@ input{width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius
 </head>
 <body>
 <div class="card">
-<h2>包剪揼多人對戰 v1.9</h2>
-<div>版本號：v1.9</div>
+<h2>包剪揼多人對戰 v1.91</h2>
+<div>版本號：v1.91</div>
 </div>
 
 <!-- 輸入名字頁 -->
@@ -55,7 +55,7 @@ function log(msg){
   DEBUG.innerText += `[${t}] ${msg}\n`;
   DEBUG.scrollTop = DEBUG.scrollHeight;
 }
-log("頁面載入完成，準備初始化Firebase");
+log("頁面載入完成，等待Firebase SDK載入...");
 
 // Firebase 設定
 const firebaseConfig = {
@@ -69,13 +69,19 @@ const firebaseConfig = {
 };
 
 let app, db;
-try{
-  app = firebase.initializeApp(firebaseConfig);
-  db = firebase.database(app);
-  log("✅ Firebase 連接成功");
-}catch(e){
-  log("❌ Firebase 錯誤：" + e.message);
-}
+let firebaseReady = false;
+
+// 等所有資源載完先初始化Firebase
+window.addEventListener('load', function(){
+  try{
+    app = firebase.initializeApp(firebaseConfig);
+    db = firebase.database(app);
+    firebaseReady = true;
+    log("✅ Firebase 連接成功");
+  }catch(e){
+    log("❌ Firebase 錯誤：" + e.message);
+  }
+});
 
 let myName = "";
 let myRoomId = "";
@@ -97,24 +103,30 @@ document.getElementById("btnConfirmName").addEventListener("click", ()=>{
 
 // 開新房間
 document.getElementById("btnCreateRoom").addEventListener("click", ()=>{
+  if(!firebaseReady){
+    log("⚠️ Firebase 尚未準備好，請稍等");
+    return;
+  }
   log("👉 撳開啟房間");
   const rid = Math.random().toString(36).slice(2,8);
   myRoomId = rid;
   document.getElementById("roomIdText").innerText = rid;
   log("建立房間：" + rid);
-  // 寫入資料庫，建立房間
   db.ref("rooms/"+rid).set({
     owner: myName,
     players: {
       [myName]: {ready:false}
     }
   });
-  // 監聽房間更新，刷新等候區
   listenRoom(rid);
 });
 
 // 進入房間
 document.getElementById("btnJoinRoom").addEventListener("click", ()=>{
+  if(!firebaseReady){
+    log("⚠️ Firebase 尚未準備好，請稍等");
+    return;
+  }
   const rid = document.getElementById("roomIdInput").value.trim();
   if(!rid){
     log("⚠️ 請輸入房間號碼");
@@ -128,7 +140,6 @@ document.getElementById("btnJoinRoom").addEventListener("click", ()=>{
       log("❌ 房間不存在");
       return;
     }
-    // 加入玩家
     db.ref("rooms/"+rid+"/players/"+myName).set({ready:false});
     listenRoom(rid);
   });
