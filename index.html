@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>包剪揼多人對戰 P2P v2.1‑PeerJS</title>
+<title>包剪揼多人對戰 P2P v2.1.1‑PeerJS</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont}
@@ -25,8 +25,8 @@ button:disabled{background:#aaa}
 <body>
 <div class="wrap">
 <div class="card">
-<h2>✊✌️✋ 包剪揼多人對戰 v2.1‑PeerJS 【P2P互傳錄音｜大合唱】</h2>
-<div>版本：v2.1 P2P，錄音點對點互傳，唔上傳伺服器</div>
+<h2>✊✌️✋ 包剪揼多人對戰 v2.1.1‑PeerJS 【P2P互傳錄音｜大合唱】</h2>
+<div>版本：v2.1.1 修復 invalid-id 錯誤</div>
 </div>
 
 <!-- 登入輸入名字 -->
@@ -212,7 +212,9 @@ $("btnCreateRoom").addEventListener("click",()=>{
   playerMap={};
   playerMap[myName]={ready:false,hand:null};
 
-  peer=new Peer("bj‑game‑"+roomCode);
+  //重點修復：移除減號，peerID唔可以有"-"
+  const peerId="bjgame"+roomCode;
+  peer=new Peer(peerId);
   peer.on("open",(id)=>{
     log("房主PeerID開啟："+id);
   });
@@ -315,7 +317,9 @@ $("btnDoJoin").addEventListener("click",()=>{
   isHost=false;
   peer=new Peer();
   peer.on("open",()=>{
-    hostConn=peer.connect("bj‑game‑"+roomCode,{reliable:true});
+    //客戶連接目標 peerID 同房主一致，冇減號
+    const targetPeerId="bjgame"+roomCode;
+    hostConn=peer.connect(targetPeerId,{reliable:true});
     hostConn.on("open",()=>{
       log("客戶成功連接房主");
       $("joinStatus").textContent="✅連線成功";
@@ -520,7 +524,7 @@ function applyRoundUi(pkt){
 $("btnLeaveHost").onclick=()=>location.reload();
 $("btnLeaveClient").onclick=()=>location.reload();
 
-log("頁面載入完畢，PeerJS庫已載入｜v2.1 P2P互傳錄音大合唱");
+log("頁面載入完畢，PeerJS庫已載入｜v2.1.1 修復invalid-id");
 showPage("pageLogin");
 </script>
 </body>
