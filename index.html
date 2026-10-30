@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.9 無彈窗版</title>
+<title>包剪揼多人對戰 v3.1｜Debug永久顯示｜無彈窗｜4位房號校驗</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
-.debug{background:#111;color:#3f3;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:12px;max-height:220px;overflow-y:auto;margin-bottom:16px;position:sticky;top:0;z-index:99}
+.debug{background:#111;color:#3f3;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:12px;max-height:220px;overflow-y:auto;margin-bottom:16px;position:sticky;top:0;z-index:99;}
 .card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px #00000015}
 button{width:100%;padding:16px;font-size:18px;border:none;border-radius:10px;margin:6px 0;color:#fff;background:#2b78e4}
 button:disabled{background:#aaa}
@@ -20,7 +20,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v2.9｜無彈窗｜Firebase回合同步 + PeerJS音頻</div>
+<div class="debug" id="debug">版本 v3.1｜Debug永久顯示｜無彈窗｜4位房號校驗</div>
 
 <!-- 第一頁：頁面輸入名字同房號，唔會彈窗 -->
 <div class="card" id="startPanel">
@@ -101,10 +101,13 @@ function log(txt){
 // 開房
 $("#btnCreateRoom").onclick = async ()=>{
   myName = $("#inputName").value.trim();
-  if(!myName) return alert("請輸入名字");
+  if(!myName) {
+    log("❌ 請輸入名字");
+    return;
+  }
   roomId = String(Math.floor(Math.random()*9000)+1000);
   isHost = true;
-  log(`房主，建立房號 ${roomId}`);
+  log(`✅ 房主，建立房號 ${roomId}`);
   await db.ref(`rooms/${roomId}`).set({
     players:{},
     round:{state:"idle",c1:null,c2:null},
@@ -112,13 +115,21 @@ $("#btnCreateRoom").onclick = async ()=>{
   });
   enterGame();
 };
-// 入房
+// 入房【4位數校驗，無彈窗】
 $("#btnJoinRoom").onclick = ()=>{
   myName = $("#inputName").value.trim();
   roomId = $("#inputRoom").value.trim();
-  if(!myName || !roomId) return alert("請填寫名字同房號");
+  if(!myName) {
+    log("❌ 請輸入名字");
+    return;
+  }
+  // 校驗房號必須係4個數字
+  if(!/^\d{4}$/.test(roomId)){
+    log("❌ 房號必須輸入4個數字！");
+    return;
+  }
   isHost = false;
-  log(`玩家，準備進房 ${roomId}`);
+  log(`✅ 玩家，準備進房 ${roomId}`);
   enterGame();
 };
 // 切換去遊戲畫面
@@ -139,7 +150,7 @@ function initPeer(){
     }else{
       db.ref(`rooms/${roomId}/peerHost`).once(snap=>{
         const hostPid = snap.val();
-        if(!hostPid) { log("搵唔到房主Peer"); return; }
+        if(!hostPid) { log("❌ 搵唔到房主Peer"); return; }
         peerConn = peer.connect(hostPid);
         bindPeerConn();
       })
@@ -152,10 +163,10 @@ function initPeer(){
 }
 function bindPeerConn(){
   $("#connStatus").innerText = "✅已連線";
-  log("P2P連線成功，P2P只用來傳音頻");
+  log("✅ P2P連線成功，P2P只用來傳音頻");
   peerConn.on("data",d=>{
-    if(d.type==="audio1"){oppAudio1=d.blob;log("收到對方口令音頻")}
-    if(d.type==="audio2"){oppAudio2=d.blob;log("收到對方勝利音頻")}
+    if(d.type==="audio1"){oppAudio1=d.blob;log("✅收到對方口令音頻")}
+    if(d.type==="audio2"){oppAudio2=d.blob;log("✅收到對方勝利音頻")}
   })
 }
 
@@ -213,7 +224,7 @@ function unlockSelect(){
   $("#selRock").disabled=false;
   $("#selScissors").disabled=false;
   $("#selPaper").disabled=false;
-  log("可以揀包/剪/撚");
+  log("✅可以揀包/剪/撚");
 }
 function lockSelect(){
   $("#selRock").disabled=true;
@@ -239,7 +250,7 @@ function submitChoice(c){
 }
 
 function calcResult(c1,c2){
-  log("開始計賽果 + 大合唱");
+  log("✅開始計賽果 + 大合唱");
   if(audioBlob1 && oppAudio1){
     const aMy = new Audio(URL.createObjectURL(audioBlob1));
     const aOpp = new Audio(URL.createObjectURL(oppAudio1));
@@ -268,6 +279,8 @@ function calcResult(c1,c2){
         const aud = new Audio(URL.createObjectURL(oppAudio2));
         aud.play();
       }
+      // 唔再隱藏Debug視窗！移除左hide相關代碼
+
       if(isHost){
         setTimeout(()=>{
           db.ref(`rooms/${roomId}/round`).update({state:"reset",c1:null,c2:null})
@@ -279,7 +292,7 @@ function calcResult(c1,c2){
 function resetRoundUI(){
   myChoice = null;
   lockSelect();
-  log("回合重置，等待下一輪");
+  log("✅回合重置，等待下一輪");
 }
 
 $("#recBtn1").onclick=async()=>{await startRec(1,$("#recBtn1"))}
@@ -296,7 +309,7 @@ async function startRec(no,btn){
     if(no===1) {audioBlob1=b;if(peerConn)peerConn.send({type:"audio1",blob:b})}
     if(no===2) {audioBlob2=b;if(peerConn)peerConn.send({type:"audio2",blob:b})}
     btn.classList.remove("recording");
-    log(`錄音${no}完成，已發送對方`);
+    log(`✅錄音${no}完成，已發送對方`);
     stream.getTracks().forEach(t=>t.stop());
   }
   rec.start();
