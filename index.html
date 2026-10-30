@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v3.1｜Debug永久顯示｜無彈窗｜4位房號校驗</title>
+<title>包剪揼多人對戰 v3.4｜修正對應：包=paper，剪=scissors，揼=rock</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -20,7 +20,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v3.1｜Debug永久顯示｜無彈窗｜4位房號校驗</div>
+<div class="debug" id="debug">版本 v3.4｜永久Debug｜包=paper，剪=scissors，揼=rock｜修復出拳同步bug</div>
 
 <!-- 第一頁：頁面輸入名字同房號，唔會彈窗 -->
 <div class="card" id="startPanel">
@@ -55,10 +55,10 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
   </div>
 
   <div class="card">
-    <h3>請選擇：包 / 剪 / 撚</h3>
-    <button id="selRock" disabled>✊ 包</button>
+    <h3>請選擇：包 / 剪 / 揼</h3>
+    <button id="selPaper" disabled>🖐️ 包</button>
     <button id="selScissors" disabled>✌️ 剪</button>
-    <button id="selPaper" disabled>🖐️ 撚</button>
+    <button id="selRock" disabled>✊ 揼</button>
     <div class="score">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span> | 連贏:<span id="winStreak">0</span></div>
   </div>
 </div>
@@ -189,11 +189,12 @@ function initRoom(){
     if(r.state==="waitingChoose"){
       unlockSelect();
     }
-    if(r.state==="judge"){
-      if(r.c1 && r.c2 && !roundLock){
-        roundLock=true;
-        calcResult(r.c1,r.c2);
-      }
+    // 當c1同c2都有值，直接進入判局
+    if(r.c1 && r.c2 && r.state !== "judge" && !roundLock){
+      log("✅雙方已經出拳，進入賽果判斷");
+      roundLock=true;
+      db.ref(`rooms/${roomId}/round`).update({state:"judge"});
+      calcResult(r.c1,r.c2);
     }
     if(r.state==="reset"){
       resetRoundUI();
@@ -221,32 +222,35 @@ function checkAllReady(players){
 }
 
 function unlockSelect(){
-  $("#selRock").disabled=false;
-  $("#selScissors").disabled=false;
   $("#selPaper").disabled=false;
-  log("✅可以揀包/剪/撚");
+  $("#selScissors").disabled=false;
+  $("#selRock").disabled=false;
+  log("✅可以揀包/剪/揼");
 }
 function lockSelect(){
-  $("#selRock").disabled=true;
-  $("#selScissors").disabled=true;
   $("#selPaper").disabled=true;
+  $("#selScissors").disabled=true;
+  $("#selRock").disabled=true;
 }
 
-$("#selRock").onclick=()=>submitChoice("rock");
-$("#selScissors").onclick=()=>submitChoice("scissors");
+// 按鈕綁定：包=paper，剪=scissors，揼=rock
 $("#selPaper").onclick=()=>submitChoice("paper");
+$("#selScissors").onclick=()=>submitChoice("scissors");
+$("#selRock").onclick=()=>submitChoice("rock");
+
+// 直接寫入c1/c2，解決undefined問題
 function submitChoice(c){
   if(myChoice) return;
   myChoice = c;
   lockSelect();
   log(`我揀咗:${c}`);
-  db.ref(`rooms/${roomId}/round`).once(snap=>{
-    const rd = snap.val();
-    let newC1 = rd.c1, newC2 = rd.c2;
-    if(isHost) newC1 = c; else newC2 = c;
-    let nextState = (newC1 && newC2) ? "judge" : "waitingChoose";
-    db.ref(`rooms/${roomId}/round`).update({c1:newC1,c2:newC2,state:nextState})
-  })
+  let updateData = {};
+  if(isHost){
+    updateData["c1"] = c;
+  }else{
+    updateData["c2"] = c;
+  }
+  db.ref(`rooms/${roomId}/round`).update(updateData);
 }
 
 function calcResult(c1,c2){
@@ -257,13 +261,19 @@ function calcResult(c1,c2){
     aMy.play(); aOpp.play();
   }
   let win = null;
-  if(c1===c2) win="draw";
+  if(c1 === c2) {
+    win = "draw";
+  }
+  // 包剪揼規則：揼(rock)贏剪(scissors)｜剪(scissors)贏包(paper)｜包(paper)贏揼(rock)
   else if(
-    (c1=="rock"&&c2=="scissors")||
-    (c1=="scissors"&&c2=="paper")||
-    (c1=="paper"&&c2=="rock")
-  ) win="p1";
-  else win="p2";
+    (c1 === "rock" && c2 === "scissors") ||
+    (c1 === "scissors" && c2 === "paper") ||
+    (c1 === "paper" && c2 === "rock")
+  ){
+    win = "p1";
+  }else{
+    win = "p2";
+  }
   log(`賽果:${win}`);
   db.ref(`rooms/${roomId}/score`).once(snap=>{
     const s = snap.val();
@@ -279,8 +289,6 @@ function calcResult(c1,c2){
         const aud = new Audio(URL.createObjectURL(oppAudio2));
         aud.play();
       }
-      // 唔再隱藏Debug視窗！移除左hide相關代碼
-
       if(isHost){
         setTimeout(()=>{
           db.ref(`rooms/${roomId}/round`).update({state:"reset",c1:null,c2:null})
