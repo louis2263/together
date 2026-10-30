@@ -27,10 +27,6 @@ body{background:#f3f4f6;padding:16px}
 input{width:100%;padding:14px;border:1px solid #ddd;border-radius:10px;font-size:16px;margin:8px 0}
 button{width:100%;padding:16px;border:none;border-radius:10px;font-size:18px;color:white;background:#2b78e4;margin:8px 0}
 button:disabled{background:#999}
-button:disabled img{opacity:0.35;pointer-events:none}
-.score{text-align:center;margin-top:12px;font-size:20px;font-weight:bold}
-.title-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.title-row img{width:44px;height:44px;object-fit:contain}
 .choice-row{display:flex;gap:10px;width:100%}
 .choice-row button{flex:1;padding:10px;margin:0;border-radius:10px}
 .choice-row button img{width:100%;height:90px;object-fit:contain}
@@ -47,10 +43,19 @@ button:disabled img{opacity:0.35;pointer-events:none}
   font-weight:bold;
   color:#d02828;
 }
+.audio-row{
+  display:flex;
+  gap:8px;
+}
+.audio-row button{
+  flex:1;
+  font-size:15px;
+  padding:12px;
+}
 </style>
 </head>
 <body>
-<div class="debug" id="debugLog">版本 v4.6 | 包=paper，剪=scissors，揼=rock | Firebase傳音頻 | 心跳檢測斷線</div>
+<div class="debug" id="debugLog">版本 v4.7 | 包=paper，剪=scissors，揼=rock | Firebase傳音頻 | 心跳檢測斷線 + 試聽錄音</div>
 
 <!-- 預載圖片 -->
 <img id="imgRock" src="rock.jpg" style="display:none">
@@ -59,10 +64,10 @@ button:disabled img{opacity:0.35;pointer-events:none}
 
 <!-- 首頁 開房/加入房 -->
 <div id="pageLobby" class="card">
-  <div class="title-row">
-    <img src="paper.jpg" alt="包">
-    <img src="scissors.jpg" alt="剪">
-    <img src="rock.jpg" alt="揼">
+  <div class="title-row" style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <img src="paper.jpg" alt="包" style="width:44px;height:44px;object-fit:contain">
+    <img src="scissors.jpg" alt="剪" style="width:44px;height:44px;object-fit:contain">
+    <img src="rock.jpg" alt="揼" style="width:44px;height:44px;object-fit:contain">
     <h1>包剪揼多人對戰</h1>
   </div>
   <input id="playerName" placeholder="輸入你嘅名字">
@@ -79,10 +84,17 @@ button:disabled img{opacity:0.35;pointer-events:none}
     <div id="waitStatusText" style="margin-top:8px;"></div>
   </div>
 
-  <p style="margin-bottom:16px">錄製完成自動上傳到Firebase，對方自動接收</p>
+  <p style="margin-bottom:12px">錄製完成自動上傳到Firebase，對方自動接收</p>
 
   <button id="recGame">🎙️ 錄包剪揼聲（大合唱）</button>
+  <div class="audio-row">
+    <button id="previewGame" disabled>🔊 試聽大合唱</button>
+  </div>
+
   <button id="recWin">🎙️ 錄勝利語音</button>
+  <div class="audio-row">
+    <button id="previewWin" disabled>🔊 試聽勝利語音</button>
+  </div>
 
   <button id="btnReady">✅ 我準備好</button>
   <button id="btnLeave">🚪 離開房間</button>
@@ -100,7 +112,7 @@ button:disabled img{opacity:0.35;pointer-events:none}
         <img src="rock.jpg" alt="揼">
       </button>
     </div>
-    <div class="score">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span></div>
+    <div class="score" style="text-align:center;margin-top:12px;font-size:20px;font-weight:bold">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span></div>
   </div>
 </div>
 
@@ -131,8 +143,8 @@ let oppHand = null;
 let myScore = 0;
 let oppScore = 0;
 let heartbeatTimer;
-let myAudioWin = null;
-let myAudioGame = null;
+let localAudioGameUrl = null;
+let localAudioWinUrl = null;
 
 const debug = document.getElementById("debugLog");
 const pageLobby = document.getElementById("pageLobby");
@@ -150,6 +162,8 @@ const myScoreEl = document.getElementById("myScore");
 const oppScoreEl = document.getElementById("oppScore");
 const recGameBtn = document.getElementById("recGame");
 const recWinBtn = document.getElementById("recWin");
+const previewGameBtn = document.getElementById("previewGame");
+const previewWinBtn = document.getElementById("previewWin");
 const showRoomId = document.getElementById("showRoomId");
 const waitStatusText = document.getElementById("waitStatusText");
 
@@ -159,7 +173,7 @@ function log(msg){
   debug.scrollTop = debug.scrollHeight;
 }
 
-// 開新房間【重點：唔寫 guest:null】
+// 開新房間
 btnCreate.onclick = async ()=>{
   myName = playerNameInp.value.trim();
   if(!myName){alert("請輸入名字");return}
@@ -176,7 +190,7 @@ btnCreate.onclick = async ()=>{
   enterRoom();
 }
 
-// 加入房間【重點：檢查 guest 有冇存在】
+// 加入房間
 btnJoin.onclick = async ()=>{
   myName = playerNameInp.value.trim();
   roomId = roomIdInp.value.trim();
@@ -185,7 +199,6 @@ btnJoin.onclick = async ()=>{
   roomRef = db.ref(`rooms/${roomId}`);
   const snap = await roomRef.once("value");
   const roomData = snap.val();
-  // 判斷：房間唔存在 或者 guest 已經有玩家
   if(!roomData || roomData.guest){
     alert("房間滿或不存在");
     return;
@@ -215,7 +228,6 @@ function enterRoom(){
     oppReady = isHost ? p2.ready : p1.ready;
     btnReady.textContent = myReady ? "✅ 已準備" : "✅ 我準備好";
 
-    // 等候區文字
     let hostName = d.host;
     let guestName = d.guest || "等待玩家加入...";
     let hostReady = p1.ready ? "✅已準備" : "❌未準備";
@@ -289,7 +301,6 @@ btnReady.onclick = async ()=>{
   await playerRef.child("ready").set(!myReady);
 }
 
-// 離開房間【重點：玩家離開時刪除guest欄位，唔寫null】
 btnLeave.onclick = async ()=>{
   clearInterval(heartbeatTimer);
   roomRef.off();
@@ -308,42 +319,57 @@ let streamGame,streamWin;
 
 recGameBtn.onclick = recordGameAudio;
 recWinBtn.onclick = recordWinAudio;
+previewGameBtn.onclick = playPreviewGame;
+previewWinBtn.onclick = playPreviewWin;
 
 async function recordGameAudio(){
-  const btn = document.getElementById("recGame");
+  const btn = recGameBtn;
   btn.style.background="red";
   streamGame = await navigator.mediaDevices.getUserMedia({audio:true});
   recorderGame = new MediaRecorder(streamGame);
   let chunks=[];
   recorderGame.ondataavailable=e=>chunks.push(e.data);
   recorderGame.onstop = async ()=>{
-    const blob = new Blob(chunks,{type:"audio/mp3"});
-    const url = URL.createObjectURL(blob);
-    await playerRef.child("audioGame").set(url);
+    const blob = new Blob(chunks,{type:"audio/webm"});
+    localAudioGameUrl = URL.createObjectURL(blob);
+    await playerRef.child("audioGame").set(localAudioGameUrl);
+    previewGameBtn.disabled = false;
     btn.style.background="#2b78e4";
-    log("包剪揼錄音完成，已上傳");
+    log("包剪揼錄音完成，已上傳，可試聽");
     streamGame.getTracks().forEach(t=>t.stop());
   }
   recorderGame.start();
   setTimeout(()=>recorderGame.stop(),3000);
 }
 async function recordWinAudio(){
-  const btn = document.getElementById("recWin");
+  const btn = recWinBtn;
   btn.style.background="red";
   streamWin = await navigator.mediaDevices.getUserMedia({audio:true});
   recorderWin = new MediaRecorder(streamWin);
   let chunks=[];
   recorderWin.ondataavailable=e=>chunks.push(e.data);
   recorderWin.onstop = async ()=>{
-    const blob = new Blob(chunks,{type:"audio/mp3"});
-    const url = URL.createObjectURL(blob);
-    await playerRef.child("audioWin").set(url);
+    const blob = new Blob(chunks,{type:"audio/webm"});
+    localAudioWinUrl = URL.createObjectURL(blob);
+    await playerRef.child("audioWin").set(localAudioWinUrl);
+    previewWinBtn.disabled = false;
     btn.style.background="#2b78e4";
-    log("勝利錄音完成，已上傳");
+    log("勝利錄音完成，已上傳，可試聽");
     streamWin.getTracks().forEach(t=>t.stop());
   }
   recorderWin.start();
   setTimeout(()=>recorderWin.stop(),3000);
+}
+
+function playPreviewGame(){
+  if(!localAudioGameUrl)return;
+  const aud = new Audio(localAudioGameUrl);
+  aud.play().catch(e=>log("試聽大合唱失敗："+e));
+}
+function playPreviewWin(){
+  if(!localAudioWinUrl)return;
+  const aud = new Audio(localAudioWinUrl);
+  aud.play().catch(e=>log("試聽勝利語音失敗："+e));
 }
 </script>
 </body>
