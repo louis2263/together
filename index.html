@@ -38,6 +38,20 @@ button:disabled{background:#999}
   font-size:17px;
   margin-bottom:16px;
 }
+.rule-box{
+  background:#fff8dc;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:16px;
+  font-size:15px;
+  line-height:1.5;
+}
+.mode-box{
+  background:#e8f4ff;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:16px;
+}
 .room-number{
   font-size:22px;
   font-weight:bold;
@@ -52,10 +66,20 @@ button:disabled{background:#999}
   font-size:15px;
   padding:12px;
 }
+.win-banner{
+  background:#22bb22;
+  color:white;
+  font-size:22px;
+  font-weight:bold;
+  text-align:center;
+  padding:16px;
+  border-radius:12px;
+  margin:12px 0;
+}
 </style>
 </head>
 <body>
-<div class="debug" id="debugLog">版本 v4.8 | Base64音頻傳輸 | 包=paper，剪=scissors，揼=rock | Firebase | 試聽錄音</div>
+<div class="debug" id="debugLog">版本 v5.0 | 新增4種勝負模式 | 4條遊戲規則 | 修復重複播放 | Base64音頻傳輸 | Firebase</div>
 
 <img id="imgRock" src="rock.jpg" style="display:none">
 <img id="imgScissors" src="scissors.jpg" style="display:none">
@@ -69,6 +93,15 @@ button:disabled{background:#999}
     <h1>包剪揼多人對戰</h1>
   </div>
   <input id="playerName" placeholder="輸入你嘅名字">
+  <div class="mode-box">
+    <b>🎮 選擇勝利模式（房主設定）</b>
+    <select id="gameModeSel" style="width:100%;padding:10px;margin-top:8px;font-size:16px">
+      <option value="oneRound">一鋪定勝負</option>
+      <option value="win2">贏兩鋪</option>
+      <option value="win3">贏三鋪</option>
+      <option value="consec2">連贏兩鋪</option>
+    </select>
+  </div>
   <input id="roomIdInput" placeholder="房號（開新房間就留空）">
   <button id="btnCreate">開新房間</button>
   <button id="btnJoin">加入房間</button>
@@ -77,8 +110,18 @@ button:disabled{background:#999}
 <div id="pageRoom" class="card" style="display:none">
   <div class="wait-info">
     <div>🏠 房號：<span class="room-number" id="showRoomId"></span></div>
+    <div>📌 對戰模式：<span id="modeText"></span></div>
     <div id="waitStatusText" style="margin-top:8px;"></div>
   </div>
+
+  <div class="rule-box">
+    <b>📜 遊戲規則：</b>
+    <div>1. 包（布）贏揼（石頭）</div>
+    <div>2. 揼（石頭）贏剪（剪刀）</div>
+    <div>3. 剪（剪刀）贏包（布）</div>
+    <div>4. 雙方出一樣就和局，唔計分</div>
+  </div>
+  <div id="finalWinBanner" class="win-banner" style="display:none"></div>
 
   <p style="margin-bottom:12px">錄製完成自動上傳到Firebase，對方自動接收</p>
 
@@ -104,7 +147,10 @@ button:disabled{background:#999}
         <img src="rock.jpg" alt="揼">
       </button>
     </div>
-    <div class="score" style="text-align:center;margin-top:12px;font-size:20px;font-weight:bold">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span></div>
+    <div class="score" style="text-align:center;margin-top:12px;font-size:20px;font-weight:bold">
+      我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span>
+      <div style="font-size:16px;margin-top:4px">連勝：<span id="streak">0</span></div>
+    </div>
   </div>
 </div>
 
@@ -133,7 +179,12 @@ let myHand = null;
 let oppHand = null;
 let myScore = 0;
 let oppScore = 0;
+let currentStreak = 0;
+let streakOwner = null;
 let heartbeatTimer;
+let roundProcessed = false;
+let gameOver = false;
+let gameMode = "oneRound";
 
 let localAudioGameBlob = null;
 let localAudioWinBlob = null;
@@ -154,17 +205,31 @@ const selScissors = document.getElementById("selScissors");
 const selRock = document.getElementById("selRock");
 const myScoreEl = document.getElementById("myScore");
 const oppScoreEl = document.getElementById("oppScore");
+const streakEl = document.getElementById("streak");
 const recGameBtn = document.getElementById("recGame");
 const recWinBtn = document.getElementById("recWin");
 const previewGameBtn = document.getElementById("previewGame");
 const previewWinBtn = document.getElementById("previewWin");
 const showRoomId = document.getElementById("showRoomId");
 const waitStatusText = document.getElementById("waitStatusText");
+const gameModeSel = document.getElementById("gameModeSel");
+const modeText = document.getElementById("modeText");
+const finalWinBanner = document.getElementById("finalWinBanner");
 
 function log(msg){
   const t = new Date().toLocaleTimeString();
   debug.textContent += `\n[${t}] ${msg}`;
   debug.scrollTop = debug.scrollHeight;
+}
+
+function getModeName(modeKey){
+  switch(modeKey){
+    case "oneRound": return "一鋪定勝負";
+    case "win2": return "贏兩鋪";
+    case "win3": return "贏三鋪";
+    case "consec2": return "連贏兩鋪";
+    default: return modeKey;
+  }
 }
 
 // Blob 轉 Base64
@@ -184,14 +249,18 @@ async function base64ToAudio(base64Str){
 
 btnCreate.onclick = async ()=>{
   myName = playerNameInp.value.trim();
+  gameMode = gameModeSel.value;
   if(!myName){alert("請輸入名字");return}
   roomId = Math.floor(1000+Math.random()*9000).toString();
   isHost = true;
-  log(`房主，建立房號 ${roomId}`);
+  log(`房主，建立房號 ${roomId}，模式：${getModeName(gameMode)}`);
   roomRef = db.ref(`rooms/${roomId}`);
   await roomRef.set({
     host:myName,
+    mode:gameMode,
     round:"idle",
+    gameOver:false,
+    streak:{count:0,owner:null},
     p1:{ready:false,hand:null,audioGameB64:null,audioWinB64:null,score:0},
     p2:{ready:false,hand:null,audioGameB64:null,audioWinB64:null,score:0}
   });
@@ -231,6 +300,14 @@ function enterRoom(){
     if(!d)return;
     const p1 = d.p1||{};
     const p2 = d.p2||{};
+    gameMode = d.mode;
+    gameOver = d.gameOver === true;
+    currentStreak = d.streak?.count||0;
+    streakOwner = d.streak?.owner;
+    modeText.textContent = getModeName(gameMode);
+    streakEl.textContent = currentStreak;
+    finalWinBanner.style.display = "none";
+
     myReady = isHost ? p1.ready : p2.ready;
     oppReady = isHost ? p2.ready : p1.ready;
     btnReady.textContent = myReady ? "✅ 已準備" : "✅ 我準備好";
@@ -243,14 +320,22 @@ function enterRoom(){
 `房主：${hostName} ${hostReady}<br>
 玩家：${guestName} ${guestReady}`;
 
-    if(myReady && oppReady && d.round==="idle"){
+    if(gameOver){
+      selPaper.disabled = true;
+      selScissors.disabled = true;
+      selRock.disabled = true;
+    }else if(myReady && oppReady && d.round==="idle"){
       selPaper.disabled = false;
       selScissors.disabled = false;
       selRock.disabled = false;
+      roundProcessed = false;
       log("雙方準備完成，可以出拳！");
+    }else{
+      selPaper.disabled = true;
+      selScissors.disabled = true;
+      selRock.disabled = true;
     }
 
-    // 讀取對方音頻 Base64
     const oppAudioGameB64 = isHost ? p2.audioGameB64 : p1.audioGameB64;
     const oppAudioWinB64 = isHost ? p2.audioWinB64 : p1.audioWinB64;
     if(oppAudioGameB64 && oppAudioGameB64 !== remoteAudioGame){
@@ -264,7 +349,8 @@ function enterRoom(){
 
     const h1 = p1.hand;
     const h2 = p2.hand;
-    if(h1 && h2 && d.round==="fight"){
+    if(h1 && h2 && d.round==="fight" && !roundProcessed && !gameOver){
+      roundProcessed = true;
       calcResult(h1,h2,d);
     }
     myScoreEl.textContent = isHost ? p1.score||0 : p2.score||0;
@@ -277,6 +363,7 @@ selScissors.onclick = ()=>submitHand("scissors");
 selRock.onclick = ()=>submitHand("rock");
 
 async function submitHand(handStr){
+  if(gameOver)return;
   myHand = handStr;
   await playerRef.child("hand").set(handStr);
   await roomRef.child("round").set("fight");
@@ -308,20 +395,71 @@ async function calcResult(h1,h2,roomData){
     audio.play().catch(e=>log("播放音頻失敗:"+e));
   }
 
-  if(win===1){
-    roomRef.child("p1/score").transaction(s=>(s||0)+1);
-  }else if(win===2){
-    roomRef.child("p2/score").transaction(s=>(s||0)+1);
+  let newP1Score = roomData.p1.score||0;
+  let newP2Score = roomData.p2.score||0;
+  let newStreakCount = 0;
+  let newStreakOwner = null;
+
+  if(win === 1){
+    newP1Score += 1;
+    newStreakCount = (roomData.streak?.owner === "p1") ? (roomData.streak.count+1) : 1;
+    newStreakOwner = "p1";
+  }else if(win ===2){
+    newP2Score +=1;
+    newStreakCount = (roomData.streak?.owner === "p2") ? (roomData.streak.count+1) :1;
+    newStreakOwner = "p2";
+  }else{
+    newStreakCount = 0;
+    newStreakOwner = null;
   }
+
+  await roomRef.update({
+    "p1/score":newP1Score,
+    "p2/score":newP2Score,
+    "streak/count":newStreakCount,
+    "streak/owner":newStreakOwner
+  });
+
+  // 檢查總局勝利條件
+  let matchWinner = null;
+  switch(roomData.mode){
+    case "oneRound":
+      if(win!==0) matchWinner = win===1 ? roomData.host : roomData.guest;
+      break;
+    case "win2":
+      if(newP1Score >=2) matchWinner = roomData.host;
+      if(newP2Score >=2) matchWinner = roomData.guest;
+      break;
+    case "win3":
+      if(newP1Score >=3) matchWinner = roomData.host;
+      if(newP2Score >=3) matchWinner = roomData.guest;
+      break;
+    case "consec2":
+      if(newStreakCount >=2){
+        matchWinner = newStreakOwner==="p1" ? roomData.host : roomData.guest;
+      }
+      break;
+  }
+
+  if(matchWinner){
+    log(`🏆 總對戰完結！勝者：${matchWinner}`);
+    await roomRef.update({gameOver:true});
+    finalWinBanner.textContent = `🏆 ${matchWinner} 贏咗成場對戰！`;
+    finalWinBanner.style.display = "block";
+  }
+
   setTimeout(async ()=>{
-    await playerRef.update({hand:null,ready:false});
-    await opponentRef.update({hand:null,ready:false});
-    await roomRef.child("round").set("idle");
-    log("回合重置，可以重新準備");
+    if(!gameOver){
+      await playerRef.update({hand:null,ready:false});
+      await opponentRef.update({hand:null,ready:false});
+      await roomRef.child("round").set("idle");
+      log("回合重置，可以重新準備");
+    }
   },3500)
 }
 
 btnReady.onclick = async ()=>{
+  if(gameOver)return;
   await playerRef.child("ready").set(!myReady);
 }
 
@@ -395,7 +533,7 @@ function playPreviewGame(){
 }
 function playPreviewWin(){
   if(!localAudioWinBlob)return;
-  const audUrl = URL.createObjectURL(localAudioWinBlob);
+  const audUrl = URL.createObjectURL(localAudioGameBlob);
   const aud = new Audio(audUrl);
   aud.play().catch(e=>log("試聽勝利語音失敗："+e));
 }
