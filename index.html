@@ -34,6 +34,19 @@ button:disabled img{opacity:0.35;pointer-events:none}
 .choice-row{display:flex;gap:10px;width:100%}
 .choice-row button{flex:1;padding:10px;margin:0;border-radius:10px}
 .choice-row button img{width:100%;height:90px;object-fit:contain}
+.wait-info{
+  background:#eef6ff;
+  padding:14px;
+  border-radius:10px;
+  text-align:center;
+  font-size:17px;
+  margin-bottom:16px;
+}
+.room-number{
+  font-size:22px;
+  font-weight:bold;
+  color:#d02828;
+}
 </style>
 </head>
 <body>
@@ -60,6 +73,12 @@ button:disabled img{opacity:0.35;pointer-events:none}
 
 <!-- 遊戲等候 + 出拳頁 -->
 <div id="pageRoom" class="card" style="display:none">
+  <!-- 【新增：房號 + 等候狀態】 -->
+  <div class="wait-info">
+    <div>🏠 房號：<span class="room-number" id="showRoomId"></span></div>
+    <div id="waitStatusText" style="margin-top:8px;"></div>
+  </div>
+
   <p style="margin-bottom:16px">錄製完成自動上傳到Firebase，對方自動接收</p>
 
   <!-- 兩個錄音按鈕 -->
@@ -134,6 +153,9 @@ const myScoreEl = document.getElementById("myScore");
 const oppScoreEl = document.getElementById("oppScore");
 const recGameBtn = document.getElementById("recGame");
 const recWinBtn = document.getElementById("recWin");
+// 新增DOM
+const showRoomId = document.getElementById("showRoomId");
+const waitStatusText = document.getElementById("waitStatusText");
 
 function log(msg){
   const t = new Date().toLocaleTimeString();
@@ -176,6 +198,8 @@ btnJoin.onclick = async ()=>{
 function enterRoom(){
   pageLobby.style.display = "none";
   pageRoom.style.display = "block";
+  // 顯示房號
+  showRoomId.textContent = roomId;
   // 玩家節點
   playerRef = isHost ? roomRef.child("p1") : roomRef.child("p2");
   opponentRef = isHost ? roomRef.child("p2") : roomRef.child("p1");
@@ -197,6 +221,16 @@ function enterRoom(){
     // log(`回合狀態:${d.round},c1:${p1.hand},c2:${p2.hand}`);
     // 更新按鈕文字
     btnReady.textContent = myReady ? "✅ 已準備" : "✅ 我準備好";
+
+    // ====== 更新等候區狀態文字 ======
+    let hostName = d.host;
+    let guestName = d.guest || "等待玩家加入...";
+    let hostReady = p1.ready ? "✅已準備" : "❌未準備";
+    let guestReady = p2.ready ? "✅已準備" : "❌未準備";
+    waitStatusText.innerHTML =
+`房主：${hostName} ${hostReady}<br>
+玩家：${guestName} ${guestReady}`;
+
     // 雙方準備好 -> 開放揀手
     if(myReady && oppReady && d.round==="idle"){
       selPaper.disabled = false;
