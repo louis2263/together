@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v4.4｜斷線自動移除玩家</title>
+<title>包剪揼多人對戰 v4.5｜心跳偵測斷線</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -20,7 +20,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v4.4｜包=paper，剪=scissors，揼=rock｜Firebase傳音頻｜斷線自動移除玩家</div>
+<div class="debug" id="debug">版本 v4.5｜包=paper，剪=scissors，揼=rock｜Firebase傳音頻｜心跳檢測斷線</div>
 
 <div class="card" id="startPanel">
   <h2>✊✌️🖐️ 包剪揼多人對戰</h2>
@@ -86,6 +86,8 @@ let myChoice = null;
 let myScore = 0, oppScore = 0;
 let roundLock = false;
 let playerRef;
+let heartbeatTimer;
+let hostCheckTimer;
 
 const $ = s=>document.querySelector(s);
 const debugEl = $("#debug");
@@ -158,11 +160,35 @@ function initRoom(){
   const roomRef = db.ref(`rooms/${roomId}`);
   playerRef = roomRef.child("players").child(myName);
   // 註冊玩家
-  playerRef.set({ready:false});
+  playerRef.set({ready:false, heartbeat:Date.now()});
 
-  // ✨重點更新：斷線時直接刪除玩家，等候區會自動消失呢個玩家
+  // onDisconnect 作為後備
   playerRef.onDisconnect().remove();
-  log("🔗 已註冊斷線監聽：斷線會直接移除玩家");
+  log("🔗 已註冊斷線監聽 + 心跳檢測");
+
+  // ✅ 心跳：每1.5秒更新自己嘅時間戳
+  heartbeatTimer = setInterval(()=>{
+    playerRef.update({heartbeat: Date.now()});
+  },1500);
+
+  // ✅ 房主專用：每1秒檢查所有玩家心跳，超過3秒冇更新就踢走
+  if(isHost){
+    hostCheckTimer = setInterval(async ()=>{
+      const snap = await roomRef.child("players").get();
+      const players = snap.val() || {};
+      const now = Date.now();
+      for(const name in players){
+        // 跳過自己
+        if(name === myName) continue;
+        const p = players[name];
+        // 心跳超過3000ms冇更新 → 判定離線
+        if(now - p.heartbeat > 3000){
+          log(`💔 偵測${name}心跳逾時，移除玩家`);
+          await roomRef.child("players").child(name).remove();
+        }
+      }
+    },1000);
+  }
 
   // 監聽玩家列表
   roomRef.child("players").on("value",snap=>{
@@ -387,15 +413,22 @@ $("#playBtn2").onclick=()=>{if(audioBlob2)new Audio(URL.createObjectURL(audioBlo
 
 $("#readyBtn").onclick=()=>{
   myReady = !myReady;
-  playerRef.set({ready:myReady});
+  playerRef.update({ready:myReady, heartbeat:Date.now()});
   log(`${myName} 設定準備狀態:${myReady}`);
 }
 $("#leaveBtn").onclick=async ()=>{
-  //手動按離開：直接刪除自己嘅玩家紀錄
+  //手動按離開：清除定時器，再刪除玩家紀錄
+  clearInterval(heartbeatTimer);
+  if(isHost) clearInterval(hostCheckTimer);
   await playerRef.remove();
   log(`🚪手動離開，移除玩家紀錄`);
   location.reload();
 }
+// 頁面關閉時清理定時器
+window.addEventListener("beforeunload",()=>{
+  clearInterval(heartbeatTimer);
+  if(isHost) clearInterval(hostCheckTimer);
+})
 </script>
 </body>
 </html>
