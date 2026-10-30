@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v3.5｜修正分數+音頻+回合重置</title>
+<title>包剪揼多人對戰 v4.3｜Firebase傳音頻｜斷線重置ready</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -20,9 +20,8 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v3.5｜包=paper，剪=scissors，揼=rock｜修復分數、音頻、回合重置</div>
+<div class="debug" id="debug">版本 v4.3｜包=paper，剪=scissors，揼=rock｜Firebase傳音頻｜斷線重置ready</div>
 
-<!-- 第一頁：頁面輸入名字同房號 -->
 <div class="card" id="startPanel">
   <h2>✊✌️🖐️ 包剪揼多人對戰</h2>
   <input id="inputName" placeholder="輸入你嘅名字">
@@ -31,11 +30,10 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
   <button id="btnJoinRoom">加入房間</button>
 </div>
 
-<!-- 遊戲主面板 -->
 <div id="gamePanel" class="start-hide">
   <div class="card">
     <div class="info">房號：<span id="roomId"></span></div>
-    <div class="info">連線狀態：<span id="connStatus">待連線</span></div>
+    <div class="info">傳輸模式：Firebase實時資料庫</div>
   </div>
 
   <div class="card">
@@ -49,7 +47,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
     <button id="playBtn1">試聽我的口令</button>
     <button id="recBtn2">開始錄音(勝利語)</button>
     <button id="playBtn2">試聽我的勝利語</button>
-    <p>錄製完成自動發送俾對方</p>
+    <p>錄製完成自動上傳到Firebase，對方自動接收</p>
     <button id="readyBtn">✅ 我準備好</button>
     <button id="leaveBtn">🚪 離開房間</button>
   </div>
@@ -59,13 +57,12 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
     <button id="selPaper" disabled>🖐️ 包</button>
     <button id="selScissors" disabled>✌️ 剪</button>
     <button id="selRock" disabled>✊ 揼</button>
-    <div class="score">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span> | 連贏:<span id="winStreak">0</span></div>
+    <div class="score">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span></div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-database.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
@@ -80,15 +77,15 @@ const db = firebase.database();
 let roomId = "";
 let myName = "";
 let isHost = false;
-let peer = null;
-let peerConn = null;
-let recorder1, recorder2;
+
 let audioBlob1, audioBlob2;
 let oppAudio1, oppAudio2;
+
 let myReady = false;
 let myChoice = null;
-let myScore = 0, oppScore = 0, winStreak = 0;
+let myScore = 0, oppScore = 0;
 let roundLock = false;
+let playerRef;
 
 const $ = s=>document.querySelector(s);
 const debugEl = $("#debug");
@@ -98,7 +95,6 @@ function log(txt){
   debugEl.scrollTop = debugEl.scrollHeight;
 }
 
-// 開房
 $("#btnCreateRoom").onclick = async ()=>{
   myName = $("#inputName").value.trim();
   if(!myName) {
@@ -108,14 +104,20 @@ $("#btnCreateRoom").onclick = async ()=>{
   roomId = String(Math.floor(Math.random()*9000)+1000);
   isHost = true;
   log(`✅ 房主，建立房號 ${roomId}`);
+
+  // 開房時清空舊音訊
+  await db.ref(`rooms/${roomId}/audio`).remove();
+  log("🧹【開房】已清空本房舊音訊檔案");
+
   await db.ref(`rooms/${roomId}`).set({
     players:{},
     round:{state:"idle",c1:null,c2:null},
-    score:{p1:0,p2:0}
+    score:{p1:0,p2:0},
+    audio:{p1:{audio1:null,audio2:null},p2:{audio1:null,audio2:null}}
   });
   enterGame();
 };
-// 入房
+
 $("#btnJoinRoom").onclick = ()=>{
   myName = $("#inputName").value.trim();
   roomId = $("#inputRoom").value.trim();
@@ -131,46 +133,38 @@ $("#btnJoinRoom").onclick = ()=>{
   log(`✅ 玩家，準備進房 ${roomId}`);
   enterGame();
 };
+
 function enterGame(){
   $("#startPanel").classList.add("start-hide");
   $("#gamePanel").classList.remove("start-hide");
   $("#roomId").innerText = roomId;
   initRoom();
-  initPeer();
 }
 
-function initPeer(){
-  peer = new Peer({debug:1});
-  peer.on("open",pid=>{
-    log(`PeerID: ${pid}`);
-    if(isHost){
-      db.ref(`rooms/${roomId}/peerHost`).set(pid);
-    }else{
-      db.ref(`rooms/${roomId}/peerHost`).once(snap=>{
-        const hostPid = snap.val();
-        if(!hostPid) { log("❌ 搵唔到房主Peer"); return; }
-        peerConn = peer.connect(hostPid);
-        bindPeerConn();
-      })
-    }
-  })
-  peer.on("connection",c=>{
-    peerConn = c;
-    bindPeerConn();
+// Blob <-> Base64 轉換工具
+async function blobToBase64(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
   })
 }
-function bindPeerConn(){
-  $("#connStatus").innerText = "✅已連線";
-  log("✅ P2P連線成功，P2P只用來傳音頻");
-  peerConn.on("data",d=>{
-    if(d.type==="audio1"){oppAudio1=d.blob;log("✅收到對方口令音頻")}
-    if(d.type==="audio2"){oppAudio2=d.blob;log("✅收到對方勝利音頻")}
-  })
+async function base64ToBlob(base64Str) {
+  const res = await fetch(base64Str);
+  return res.blob();
 }
 
 function initRoom(){
   const roomRef = db.ref(`rooms/${roomId}`);
-  roomRef.child("players").child(myName).set({ready:false});
+  playerRef = roomRef.child("players").child(myName);
+  // 註冊玩家
+  playerRef.set({ready:false});
+
+  // 🌟 重點：監聽斷線，斷線時自動將ready設為false
+  playerRef.onDisconnect().update({ready:false});
+  log("🔗 已註冊斷線監聽：斷線會自動設定ready=false");
+
+  // 監聽玩家列表
   roomRef.child("players").on("value",snap=>{
     const pl = snap.val()||{};
     let html = "";
@@ -180,6 +174,35 @@ function initRoom(){
     $("#playerList").innerHTML = html;
     checkAllReady(pl);
   })
+
+  // 監聽音頻（對方錄音更新）
+  roomRef.child("audio").on("value", async snap=>{
+    const audioData = snap.val();
+    if(!audioData) return;
+    if(isHost){
+      //房主聽p2嘅音頻
+      if(audioData.p2?.audio1){
+        oppAudio1 = await base64ToBlob(audioData.p2.audio1);
+        log("✅收到對方口令音頻(Firebase)");
+      }
+      if(audioData.p2?.audio2){
+        oppAudio2 = await base64ToBlob(audioData.p2.audio2);
+        log("✅收到對方勝利音頻(Firebase)");
+      }
+    }else{
+      //客人聽p1嘅音頻
+      if(audioData.p1?.audio1){
+        oppAudio1 = await base64ToBlob(audioData.p1.audio1);
+        log("✅收到對方口令音頻(Firebase)");
+      }
+      if(audioData.p1?.audio2){
+        oppAudio2 = await base64ToBlob(audioData.p1.audio2);
+        log("✅收到對方勝利音頻(Firebase)");
+      }
+    }
+  })
+
+  //監聽回合狀態
   roomRef.child("round").on("value",snap=>{
     const r = snap.val();
     if(!r) return;
@@ -198,7 +221,8 @@ function initRoom(){
       roundLock=false;
     }
   })
-  // 監聽分數，實時更新UI（重點修復）
+
+  //監聽分數
   roomRef.child("score").on("value",snap=>{
     const sc = snap.val()||{p1:0,p2:0};
     myScore = isHost ? sc.p1 : sc.p2;
@@ -251,9 +275,8 @@ function submitChoice(c){
   db.ref(`rooms/${roomId}/round`).update(updateData);
 }
 
-function calcResult(c1,c2){
+async function calcResult(c1,c2){
   log("✅開始計賽果 + 大合唱");
-  // 大合唱，增加保護，防止冇音頻時崩潰
   try{
     if(audioBlob1 && oppAudio1){
       const aMy = new Audio(URL.createObjectURL(audioBlob1));
@@ -269,7 +292,6 @@ function calcResult(c1,c2){
     win = "draw";
     log(`賽果:和局`);
   }
-  // 規則：rock(揼)贏scissors(剪)｜scissors(剪)贏paper(包)｜paper(包)贏rock(揼)
   else if(
     (c1 === "rock" && c2 === "scissors") ||
     (c1 === "scissors" && c2 === "paper") ||
@@ -282,7 +304,6 @@ function calcResult(c1,c2){
     log(`賽果:p2贏`);
   }
 
-  // 更新分數
   db.ref(`rooms/${roomId}/score`).once(snap=>{
     const s = snap.val();
     let np1=s.p1,np2=s.p2;
@@ -301,8 +322,12 @@ function calcResult(c1,c2){
         }
       }catch(e){log("⚠️勝利音頻播放錯誤："+e)}
 
+      // 每回合完結，房主清空音訊
       if(isHost){
-        setTimeout(()=>{
+        setTimeout(async ()=>{
+          await db.ref(`rooms/${roomId}/audio`).remove();
+          log("🧹【回合完結】清空本房音訊");
+          // 重置回合狀態
           db.ref(`rooms/${roomId}/round`).update({state:"reset",c1:null,c2:null})
         },1200)
       }
@@ -312,9 +337,15 @@ function calcResult(c1,c2){
 function resetRoundUI(){
   myChoice = null;
   lockSelect();
-  log("✅回合重置，等待下一輪，重新等雙方準備");
+  // 清空本機緩存嘅音頻變數，避免重用舊錄音
+  audioBlob1 = null;
+  audioBlob2 = null;
+  oppAudio1 = null;
+  oppAudio2 = null;
+  log("✅回合重置，本地音頻緩存已清空，等待下一輪錄音");
 }
 
+//錄音功能：3秒自動停止，轉base64存入firebase
 $("#recBtn1").onclick=async()=>{await startRec(1,$("#recBtn1"))}
 $("#recBtn2").onclick=async()=>{await startRec(2,$("#recBtn2"))}
 async function startRec(no,btn){
@@ -324,12 +355,28 @@ async function startRec(no,btn){
   log(`開始錄音${no}，3秒後自動停`);
   const chunks=[];
   rec.ondataavailable=e=>chunks.push(e.data);
-  rec.onstop=()=>{
+  rec.onstop=async ()=>{
     const b = new Blob(chunks,{type:"audio/webm"});
-    if(no===1) {audioBlob1=b;if(peerConn)peerConn.send({type:"audio1",blob:b})}
-    if(no===2) {audioBlob2=b;if(peerConn)peerConn.send({type:"audio2",blob:b})}
+    const base64Audio = await blobToBase64(b);
+    if(no===1) {
+      audioBlob1=b;
+      if(isHost){
+        await db.ref(`rooms/${roomId}/audio/p1/audio1`).set(base64Audio);
+      }else{
+        await db.ref(`rooms/${roomId}/audio/p2/audio1`).set(base64Audio);
+      }
+      log(`✅錄音1完成，上傳Firebase`);
+    }
+    if(no===2) {
+      audioBlob2=b;
+      if(isHost){
+        await db.ref(`rooms/${roomId}/audio/p1/audio2`).set(base64Audio);
+      }else{
+        await db.ref(`rooms/${roomId}/audio/p2/audio2`).set(base64Audio);
+      }
+      log(`✅錄音2完成，上傳Firebase`);
+    }
     btn.classList.remove("recording");
-    log(`✅錄音${no}完成，已發送對方`);
     stream.getTracks().forEach(t=>t.stop());
   }
   rec.start();
@@ -340,10 +387,15 @@ $("#playBtn2").onclick=()=>{if(audioBlob2)new Audio(URL.createObjectURL(audioBlo
 
 $("#readyBtn").onclick=()=>{
   myReady = !myReady;
-  db.ref(`rooms/${roomId}/players/${myName}/ready`).set(myReady);
+  playerRef.set({ready:myReady});
   log(`${myName} 設定準備狀態:${myReady}`);
 }
-$("#leaveBtn").onclick=()=>{location.reload()}
+$("#leaveBtn").onclick=()=>{
+  //手動離開時，先將ready設false
+  playerRef.update({ready:false});
+  log(`🚪手動離開，設定ready=false`);
+  location.reload();
+}
 </script>
 </body>
 </html>
