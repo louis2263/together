@@ -55,14 +55,12 @@ button:disabled{background:#999}
 </style>
 </head>
 <body>
-<div class="debug" id="debugLog">版本 v4.7 | 包=paper，剪=scissors，揼=rock | Firebase傳音頻 | 心跳檢測斷線 + 試聽錄音</div>
+<div class="debug" id="debugLog">版本 v4.8 | Base64音頻傳輸 | 包=paper，剪=scissors，揼=rock | Firebase | 試聽錄音</div>
 
-<!-- 預載圖片 -->
 <img id="imgRock" src="rock.jpg" style="display:none">
 <img id="imgScissors" src="scissors.jpg" style="display:none">
 <img id="imgPaper" src="paper.jpg" style="display:none">
 
-<!-- 首頁 開房/加入房 -->
 <div id="pageLobby" class="card">
   <div class="title-row" style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
     <img src="paper.jpg" alt="包" style="width:44px;height:44px;object-fit:contain">
@@ -76,9 +74,7 @@ button:disabled{background:#999}
   <button id="btnJoin">加入房間</button>
 </div>
 
-<!-- 遊戲等候 + 出拳頁 -->
 <div id="pageRoom" class="card" style="display:none">
-  <!-- 房號 + 等候狀態 -->
   <div class="wait-info">
     <div>🏠 房號：<span class="room-number" id="showRoomId"></span></div>
     <div id="waitStatusText" style="margin-top:8px;"></div>
@@ -87,14 +83,10 @@ button:disabled{background:#999}
   <p style="margin-bottom:12px">錄製完成自動上傳到Firebase，對方自動接收</p>
 
   <button id="recGame">🎙️ 錄包剪揼聲（大合唱）</button>
-  <div class="audio-row">
-    <button id="previewGame" disabled>🔊 試聽大合唱</button>
-  </div>
+  <button id="previewGame" disabled>🔊 試聽大合唱</button>
 
   <button id="recWin">🎙️ 錄勝利語音</button>
-  <div class="audio-row">
-    <button id="previewWin" disabled>🔊 試聽勝利語音</button>
-  </div>
+  <button id="previewWin" disabled>🔊 試聽勝利語音</button>
 
   <button id="btnReady">✅ 我準備好</button>
   <button id="btnLeave">🚪 離開房間</button>
@@ -119,7 +111,6 @@ button:disabled{background:#999}
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
-// Firebase 配置
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
   authDomain: "game-ad81e.firebaseapp.com",
@@ -143,8 +134,11 @@ let oppHand = null;
 let myScore = 0;
 let oppScore = 0;
 let heartbeatTimer;
-let localAudioGameUrl = null;
-let localAudioWinUrl = null;
+
+let localAudioGameBlob = null;
+let localAudioWinBlob = null;
+let remoteAudioGame = null;
+let remoteAudioWin = null;
 
 const debug = document.getElementById("debugLog");
 const pageLobby = document.getElementById("pageLobby");
@@ -173,7 +167,21 @@ function log(msg){
   debug.scrollTop = debug.scrollHeight;
 }
 
-// 開新房間
+// Blob 轉 Base64
+function blobToBase64(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+// Base64 轉翻 Audio
+async function base64ToAudio(base64Str){
+  const res = await fetch(base64Str);
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
 btnCreate.onclick = async ()=>{
   myName = playerNameInp.value.trim();
   if(!myName){alert("請輸入名字");return}
@@ -184,13 +192,12 @@ btnCreate.onclick = async ()=>{
   await roomRef.set({
     host:myName,
     round:"idle",
-    p1:{ready:false,hand:null,audioGame:null,audioWin:null},
-    p2:{ready:false,hand:null,audioGame:null,audioWin:null}
+    p1:{ready:false,hand:null,audioGameB64:null,audioWinB64:null,score:0},
+    p2:{ready:false,hand:null,audioGameB64:null,audioWinB64:null,score:0}
   });
   enterRoom();
 }
 
-// 加入房間
 btnJoin.onclick = async ()=>{
   myName = playerNameInp.value.trim();
   roomId = roomIdInp.value.trim();
@@ -213,13 +220,13 @@ function enterRoom(){
   showRoomId.textContent = roomId;
   playerRef = isHost ? roomRef.child("p1") : roomRef.child("p2");
   opponentRef = isHost ? roomRef.child("p2") : roomRef.child("p1");
-  log(`【開房】已清空本房舊音訊檔案`);
+  log(`【開房】已清空本房舊音訊`);
   heartbeatTimer = setInterval(()=>{
     playerRef.child("heartbeat").set(Date.now());
   },1500);
   log(`已註冊斷線監聽 + 心跳檢測`);
 
-  roomRef.on("value",snap=>{
+  roomRef.on("value",async snap=>{
     const d = snap.val();
     if(!d)return;
     const p1 = d.p1||{};
@@ -242,6 +249,19 @@ function enterRoom(){
       selRock.disabled = false;
       log("雙方準備完成，可以出拳！");
     }
+
+    // 讀取對方音頻 Base64
+    const oppAudioGameB64 = isHost ? p2.audioGameB64 : p1.audioGameB64;
+    const oppAudioWinB64 = isHost ? p2.audioWinB64 : p1.audioWinB64;
+    if(oppAudioGameB64 && oppAudioGameB64 !== remoteAudioGame){
+      remoteAudioGame = oppAudioGameB64;
+      log("✅收到對方【大合唱】錄音");
+    }
+    if(oppAudioWinB64 && oppAudioWinB64 !== remoteAudioWin){
+      remoteAudioWin = oppAudioWinB64;
+      log("✅收到對方【勝利語音】錄音");
+    }
+
     const h1 = p1.hand;
     const h2 = p2.hand;
     if(h1 && h2 && d.round==="fight"){
@@ -266,7 +286,7 @@ async function submitHand(handStr){
   log(`我揀咗：${handStr}`);
 }
 
-function calcResult(h1,h2,roomData){
+async function calcResult(h1,h2,roomData){
   let win = 0;
   if(h1===h2) win=0;
   else if(
@@ -276,14 +296,18 @@ function calcResult(h1,h2,roomData){
   ) win=1;
   else win=2;
   log(`賽果：P1:${h1} VS P2:${h2} | winner=${win}`);
-  let winnerAudio = null;
-  if(win===1) winnerAudio = roomData.p1.audioWin;
-  if(win===2) winnerAudio = roomData.p2.audioWin;
-  if(win===0) winnerAudio = roomData.p1.audioGame;
-  if(winnerAudio){
-    const audio = new Audio(winnerAudio);
+
+  let winnerB64 = null;
+  if(win===1) winnerB64 = roomData.p1.audioWinB64;
+  if(win===2) winnerB64 = roomData.p2.audioWinB64;
+  if(win===0) winnerB64 = roomData.p1.audioGameB64;
+
+  if(winnerB64){
+    const audioUrl = await base64ToAudio(winnerB64);
+    const audio = new Audio(audioUrl);
     audio.play().catch(e=>log("播放音頻失敗:"+e));
   }
+
   if(win===1){
     roomRef.child("p1/score").transaction(s=>(s||0)+1);
   }else if(win===2){
@@ -331,11 +355,12 @@ async function recordGameAudio(){
   recorderGame.ondataavailable=e=>chunks.push(e.data);
   recorderGame.onstop = async ()=>{
     const blob = new Blob(chunks,{type:"audio/webm"});
-    localAudioGameUrl = URL.createObjectURL(blob);
-    await playerRef.child("audioGame").set(localAudioGameUrl);
+    localAudioGameBlob = blob;
+    const b64 = await blobToBase64(blob);
+    await playerRef.child("audioGameB64").set(b64);
     previewGameBtn.disabled = false;
     btn.style.background="#2b78e4";
-    log("包剪揼錄音完成，已上傳，可試聽");
+    log("包剪揼錄音完成，Base64上傳Firebase，可試聽");
     streamGame.getTracks().forEach(t=>t.stop());
   }
   recorderGame.start();
@@ -350,11 +375,12 @@ async function recordWinAudio(){
   recorderWin.ondataavailable=e=>chunks.push(e.data);
   recorderWin.onstop = async ()=>{
     const blob = new Blob(chunks,{type:"audio/webm"});
-    localAudioWinUrl = URL.createObjectURL(blob);
-    await playerRef.child("audioWin").set(localAudioWinUrl);
+    localAudioWinBlob = blob;
+    const b64 = await blobToBase64(blob);
+    await playerRef.child("audioWinB64").set(b64);
     previewWinBtn.disabled = false;
     btn.style.background="#2b78e4";
-    log("勝利錄音完成，已上傳，可試聽");
+    log("勝利錄音完成，Base64上傳Firebase，可試聽");
     streamWin.getTracks().forEach(t=>t.stop());
   }
   recorderWin.start();
@@ -362,13 +388,15 @@ async function recordWinAudio(){
 }
 
 function playPreviewGame(){
-  if(!localAudioGameUrl)return;
-  const aud = new Audio(localAudioGameUrl);
+  if(!localAudioGameBlob)return;
+  const audUrl = URL.createObjectURL(localAudioGameBlob);
+  const aud = new Audio(audUrl);
   aud.play().catch(e=>log("試聽大合唱失敗："+e));
 }
 function playPreviewWin(){
-  if(!localAudioWinUrl)return;
-  const aud = new Audio(localAudioWinUrl);
+  if(!localAudioWinBlob)return;
+  const audUrl = URL.createObjectURL(localAudioWinBlob);
+  const aud = new Audio(audUrl);
   aud.play().catch(e=>log("試聽勝利語音失敗："+e));
 }
 </script>
