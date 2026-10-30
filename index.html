@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v4.3｜Firebase傳音頻｜斷線重置ready</title>
+<title>包剪揼多人對戰 v4.4｜斷線自動移除玩家</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -20,7 +20,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v4.3｜包=paper，剪=scissors，揼=rock｜Firebase傳音頻｜斷線重置ready</div>
+<div class="debug" id="debug">版本 v4.4｜包=paper，剪=scissors，揼=rock｜Firebase傳音頻｜斷線自動移除玩家</div>
 
 <div class="card" id="startPanel">
   <h2>✊✌️🖐️ 包剪揼多人對戰</h2>
@@ -160,9 +160,9 @@ function initRoom(){
   // 註冊玩家
   playerRef.set({ready:false});
 
-  // 🌟 重點：監聽斷線，斷線時自動將ready設為false
-  playerRef.onDisconnect().update({ready:false});
-  log("🔗 已註冊斷線監聽：斷線會自動設定ready=false");
+  // ✨重點更新：斷線時直接刪除玩家，等候區會自動消失呢個玩家
+  playerRef.onDisconnect().remove();
+  log("🔗 已註冊斷線監聽：斷線會直接移除玩家");
 
   // 監聽玩家列表
   roomRef.child("players").on("value",snap=>{
@@ -390,10 +390,10 @@ $("#readyBtn").onclick=()=>{
   playerRef.set({ready:myReady});
   log(`${myName} 設定準備狀態:${myReady}`);
 }
-$("#leaveBtn").onclick=()=>{
-  //手動離開時，先將ready設false
-  playerRef.update({ready:false});
-  log(`🚪手動離開，設定ready=false`);
+$("#leaveBtn").onclick=async ()=>{
+  //手動按離開：直接刪除自己嘅玩家紀錄
+  await playerRef.remove();
+  log(`🚪手動離開，移除玩家紀錄`);
   location.reload();
 }
 </script>
