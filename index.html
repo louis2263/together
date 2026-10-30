@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.6</title>
+<title>包剪揼多人對戰 v2.7</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
@@ -25,7 +25,7 @@ body{padding:16px;max-width:480px;margin:0 auto;background:#f7f9fc;}
 </head>
 <body>
 
-<div class="versionText">版本：v2.6｜包剪揼4位房號版【修復回合不同步｜無彈窗】</div>
+<div class="versionText">版本：v2.7｜包剪揼4位房號版【Firebase回合同步｜修復丟包問題】</div>
 <div class="debugWrap" id="debugLog">系統啟動中...</div>
 
 <div class="card" id="nameInputCard">
@@ -110,6 +110,8 @@ let isRecording = false;
 let roundReadyMyHand = null;
 let roundReadyRemoteHand = null;
 let roundLocked = false;
+let currentRoundNum = 0;
+let roundListener = null;
 
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
@@ -117,8 +119,8 @@ const firebaseConfig = {
   databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "game-ad81e",
   storageBucket: "game-ad81e.appspot.com",
-  messagingSenderId: "xxxxxxx",
-  appId: "xxxxxxx"
+  messagingSenderId: "1042114241122",
+  appId: "1:1042114241122:web:2f0839172f2588398c2787"
 };
 
 const debugLog = document.querySelector("#debugLog");
@@ -128,7 +130,7 @@ function log(msg){
   debugLog.scrollTop = debugLog.scrollHeight;
 }
 
-log("✅ v2.6 載入｜修復回合同步問題，移除彈窗");
+log("✅ v2.7 載入｜Firebase回合同步，解決P2P訊息丟包");
 
 const nameConfirmBtn = document.querySelector("#nameConfirmBtn");
 const nameInput = document.querySelector("#nameInput");
@@ -208,9 +210,14 @@ function bindAllOtherButtons(){
     peer.on("open", pid=>{
       hostPeerId = pid;
       log(`✅房主PeerID:${pid}`);
-      firebaseDB.ref(`rooms/${roomId}`).set({hostPeer:pid, players:{[myName]:{ready:false}}});
+      firebaseDB.ref(`rooms/${roomId}`).set({
+        hostPeer:pid,
+        currentRound:0,
+        players:{[myName]:{ready:false}}
+      });
       roomInfo.innerText = `房號：${roomId}\n將4位房號發送俾朋友`;
       listenRoom();
+      listenRoundChange();
     })
     peer.on("connection",c=>{
       log("🎉有玩家接入");
@@ -247,8 +254,21 @@ function bindAllOtherButtons(){
       bindConnEvents(conn, connStatus);
       firebaseDB.ref(`rooms/${roomId}/players/${myName}`).set({ready:false});
       listenRoom();
+      listenRoundChange();
     })
     peer.on("error",err=>log("❌Peer錯誤:"+err));
+  }
+
+  // 監聽Firebase回合數變化，兩邊都會觸發重置
+  function listenRoundChange(){
+    roundListener = firebaseDB.ref(`rooms/${roomId}/currentRound`).on("value",snap=>{
+      const newNum = snap.val();
+      if(newNum > currentRoundNum){
+        log(`🔁偵測到回合更新！舊:${currentRoundNum} → 新:${newNum}，執行重置回合`);
+        currentRoundNum = newNum;
+        resetRound();
+      }
+    })
   }
 
   function listenRoom(){
@@ -302,10 +322,6 @@ function bindAllOtherButtons(){
             remoteAudio2.currentTime=0;
             remoteAudio2.play().catch(e=>log("⚠️對手勝利音播放失敗:"+e.message));
           }
-          break;
-        case "ROUND_RESET":
-          log("🔁收到房主回合重置指令，準備下一鋪");
-          resetRound();
           break;
       }
     })
@@ -484,7 +500,6 @@ function bindAllOtherButtons(){
       resultType = "lose";
     }
 
-    // 移除舊有結果樣式
     resultBox.classList.remove("win","lose","draw");
     resultBox.classList.add(resultType);
     resultBox.style.display = "block";
@@ -504,13 +519,13 @@ function bindAllOtherButtons(){
       }
     }
 
-    // ✅重點：房主負責發送全房重置指令
+    // ✅房主直接寫入Firebase增加回合編號，兩邊同時偵測
     setTimeout(()=>{
       if(isHost){
-        sendMsg(conn, {type:"ROUND_RESET"});
-        log("📤房主發送回合重置指令給對手");
+        currentRoundNum +=1;
+        firebaseDB.ref(`rooms/${roomId}/currentRound`).set(currentRoundNum);
+        log(`📤房主更新Firebase回合數為:${currentRoundNum}`);
       }
-      resetRound();
     },1500);
   }
 
