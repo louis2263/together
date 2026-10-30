@@ -50,7 +50,7 @@ button:disabled img{opacity:0.35;pointer-events:none}
 </style>
 </head>
 <body>
-<div class="debug" id="debugLog">版本 v4.5 | 包=paper，剪=scissors，揼=rock | Firebase傳音頻 | 心跳檢測斷線</div>
+<div class="debug" id="debugLog">版本 v4.6 | 包=paper，剪=scissors，揼=rock | Firebase傳音頻 | 心跳檢測斷線</div>
 
 <!-- 預載圖片 -->
 <img id="imgRock" src="rock.jpg" style="display:none">
@@ -73,7 +73,7 @@ button:disabled img{opacity:0.35;pointer-events:none}
 
 <!-- 遊戲等候 + 出拳頁 -->
 <div id="pageRoom" class="card" style="display:none">
-  <!-- 【新增：房號 + 等候狀態】 -->
+  <!-- 房號 + 等候狀態 -->
   <div class="wait-info">
     <div>🏠 房號：<span class="room-number" id="showRoomId"></span></div>
     <div id="waitStatusText" style="margin-top:8px;"></div>
@@ -81,7 +81,6 @@ button:disabled img{opacity:0.35;pointer-events:none}
 
   <p style="margin-bottom:16px">錄製完成自動上傳到Firebase，對方自動接收</p>
 
-  <!-- 兩個錄音按鈕 -->
   <button id="recGame">🎙️ 錄包剪揼聲（大合唱）</button>
   <button id="recWin">🎙️ 錄勝利語音</button>
 
@@ -108,7 +107,7 @@ button:disabled img{opacity:0.35;pointer-events:none}
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
-// ========== Firebase 配置（貼返你自己嘅config） ==========
+// Firebase 配置
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
   authDomain: "game-ad81e.firebaseapp.com",
@@ -121,7 +120,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 全局變數
 let roomRef, playerRef, opponentRef;
 let myName = "";
 let roomId = "";
@@ -136,7 +134,6 @@ let heartbeatTimer;
 let myAudioWin = null;
 let myAudioGame = null;
 
-// DOM
 const debug = document.getElementById("debugLog");
 const pageLobby = document.getElementById("pageLobby");
 const pageRoom = document.getElementById("pageRoom");
@@ -153,7 +150,6 @@ const myScoreEl = document.getElementById("myScore");
 const oppScoreEl = document.getElementById("oppScore");
 const recGameBtn = document.getElementById("recGame");
 const recWinBtn = document.getElementById("recWin");
-// 新增DOM
 const showRoomId = document.getElementById("showRoomId");
 const waitStatusText = document.getElementById("waitStatusText");
 
@@ -163,7 +159,7 @@ function log(msg){
   debug.scrollTop = debug.scrollHeight;
 }
 
-// 開新房間
+// 開新房間【重點：唔寫 guest:null】
 btnCreate.onclick = async ()=>{
   myName = playerNameInp.value.trim();
   if(!myName){alert("請輸入名字");return}
@@ -173,7 +169,6 @@ btnCreate.onclick = async ()=>{
   roomRef = db.ref(`rooms/${roomId}`);
   await roomRef.set({
     host:myName,
-    guest:null,
     round:"idle",
     p1:{ready:false,hand:null,audioGame:null,audioWin:null},
     p2:{ready:false,hand:null,audioGame:null,audioWin:null}
@@ -181,7 +176,7 @@ btnCreate.onclick = async ()=>{
   enterRoom();
 }
 
-// 加入房間
+// 加入房間【重點：檢查 guest 有冇存在】
 btnJoin.onclick = async ()=>{
   myName = playerNameInp.value.trim();
   roomId = roomIdInp.value.trim();
@@ -190,7 +185,11 @@ btnJoin.onclick = async ()=>{
   roomRef = db.ref(`rooms/${roomId}`);
   const snap = await roomRef.once("value");
   const roomData = snap.val();
-  if(!roomData || roomData.guest !== null){alert("房間滿或不存在");return}
+  // 判斷：房間唔存在 或者 guest 已經有玩家
+  if(!roomData || roomData.guest){
+    alert("房間滿或不存在");
+    return;
+  }
   await roomRef.child("guest").set(myName);
   enterRoom();
 }
@@ -198,19 +197,15 @@ btnJoin.onclick = async ()=>{
 function enterRoom(){
   pageLobby.style.display = "none";
   pageRoom.style.display = "block";
-  // 顯示房號
   showRoomId.textContent = roomId;
-  // 玩家節點
   playerRef = isHost ? roomRef.child("p1") : roomRef.child("p2");
   opponentRef = isHost ? roomRef.child("p2") : roomRef.child("p1");
   log(`【開房】已清空本房舊音訊檔案`);
-  // 心跳偵測
   heartbeatTimer = setInterval(()=>{
     playerRef.child("heartbeat").set(Date.now());
   },1500);
   log(`已註冊斷線監聽 + 心跳檢測`);
 
-  // 監聽對手資料
   roomRef.on("value",snap=>{
     const d = snap.val();
     if(!d)return;
@@ -218,11 +213,9 @@ function enterRoom(){
     const p2 = d.p2||{};
     myReady = isHost ? p1.ready : p2.ready;
     oppReady = isHost ? p2.ready : p1.ready;
-    // log(`回合狀態:${d.round},c1:${p1.hand},c2:${p2.hand}`);
-    // 更新按鈕文字
     btnReady.textContent = myReady ? "✅ 已準備" : "✅ 我準備好";
 
-    // ====== 更新等候區狀態文字 ======
+    // 等候區文字
     let hostName = d.host;
     let guestName = d.guest || "等待玩家加入...";
     let hostReady = p1.ready ? "✅已準備" : "❌未準備";
@@ -231,14 +224,12 @@ function enterRoom(){
 `房主：${hostName} ${hostReady}<br>
 玩家：${guestName} ${guestReady}`;
 
-    // 雙方準備好 -> 開放揀手
     if(myReady && oppReady && d.round==="idle"){
       selPaper.disabled = false;
       selScissors.disabled = false;
       selRock.disabled = false;
       log("雙方準備完成，可以出拳！");
     }
-    // 兩邊都出咗拳
     const h1 = p1.hand;
     const h2 = p2.hand;
     if(h1 && h2 && d.round==="fight"){
@@ -246,11 +237,9 @@ function enterRoom(){
     }
     myScoreEl.textContent = isHost ? p1.score||0 : p2.score||0;
     oppScoreEl.textContent = isHost ? p2.score||0 : p1.score||0;
-    // log(`分數更新：我${myScoreEl.textContent}，對手${oppScoreEl.textContent}`);
   })
 }
 
-// 出拳選擇
 selPaper.onclick = ()=>submitHand("paper");
 selScissors.onclick = ()=>submitHand("scissors");
 selRock.onclick = ()=>submitHand("rock");
@@ -266,7 +255,7 @@ async function submitHand(handStr){
 }
 
 function calcResult(h1,h2,roomData){
-  let win = 0; //0和局,1=p1贏,2=p2贏
+  let win = 0;
   if(h1===h2) win=0;
   else if(
     (h1==="paper" && h2==="rock") ||
@@ -275,7 +264,6 @@ function calcResult(h1,h2,roomData){
   ) win=1;
   else win=2;
   log(`賽果：P1:${h1} VS P2:${h2} | winner=${win}`);
-  // 播放勝方錄音
   let winnerAudio = null;
   if(win===1) winnerAudio = roomData.p1.audioWin;
   if(win===2) winnerAudio = roomData.p2.audioWin;
@@ -284,13 +272,11 @@ function calcResult(h1,h2,roomData){
     const audio = new Audio(winnerAudio);
     audio.play().catch(e=>log("播放音頻失敗:"+e));
   }
-  // 更新分數
   if(win===1){
     roomRef.child("p1/score").transaction(s=>(s||0)+1);
   }else if(win===2){
     roomRef.child("p2/score").transaction(s=>(s||0)+1);
   }
-  // 等待幾秒重置下一輪
   setTimeout(async ()=>{
     await playerRef.update({hand:null,ready:false});
     await opponentRef.update({hand:null,ready:false});
@@ -299,12 +285,11 @@ function calcResult(h1,h2,roomData){
   },3500)
 }
 
-// 我準備好
 btnReady.onclick = async ()=>{
   await playerRef.child("ready").set(!myReady);
 }
 
-// 離開房間
+// 離開房間【重點：玩家離開時刪除guest欄位，唔寫null】
 btnLeave.onclick = async ()=>{
   clearInterval(heartbeatTimer);
   roomRef.off();
@@ -318,15 +303,12 @@ btnLeave.onclick = async ()=>{
   log("離開房間");
 }
 
-// ========== 錄音功能（3秒強制自動停止，按掣變紅）==========
 let recorderGame,recorderWin;
 let streamGame,streamWin;
 
-// 綁定錄音按鈕點擊事件
 recGameBtn.onclick = recordGameAudio;
 recWinBtn.onclick = recordWinAudio;
 
-// 錄包剪揼叫聲
 async function recordGameAudio(){
   const btn = document.getElementById("recGame");
   btn.style.background="red";
@@ -345,7 +327,6 @@ async function recordGameAudio(){
   recorderGame.start();
   setTimeout(()=>recorderGame.stop(),3000);
 }
-// 錄勝利語音
 async function recordWinAudio(){
   const btn = document.getElementById("recWin");
   btn.style.background="red";
