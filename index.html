@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v3.4｜修正對應：包=paper，剪=scissors，揼=rock</title>
+<title>包剪揼多人對戰 v3.5｜修正分數+音頻+回合重置</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -20,9 +20,9 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v3.4｜永久Debug｜包=paper，剪=scissors，揼=rock｜修復出拳同步bug</div>
+<div class="debug" id="debug">版本 v3.5｜包=paper，剪=scissors，揼=rock｜修復分數、音頻、回合重置</div>
 
-<!-- 第一頁：頁面輸入名字同房號，唔會彈窗 -->
+<!-- 第一頁：頁面輸入名字同房號 -->
 <div class="card" id="startPanel">
   <h2>✊✌️🖐️ 包剪揼多人對戰</h2>
   <input id="inputName" placeholder="輸入你嘅名字">
@@ -31,7 +31,7 @@ input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius
   <button id="btnJoinRoom">加入房間</button>
 </div>
 
-<!-- 遊戲主面板，一開始隱藏 -->
+<!-- 遊戲主面板 -->
 <div id="gamePanel" class="start-hide">
   <div class="card">
     <div class="info">房號：<span id="roomId"></span></div>
@@ -115,7 +115,7 @@ $("#btnCreateRoom").onclick = async ()=>{
   });
   enterGame();
 };
-// 入房【4位數校驗，無彈窗】
+// 入房
 $("#btnJoinRoom").onclick = ()=>{
   myName = $("#inputName").value.trim();
   roomId = $("#inputRoom").value.trim();
@@ -123,7 +123,6 @@ $("#btnJoinRoom").onclick = ()=>{
     log("❌ 請輸入名字");
     return;
   }
-  // 校驗房號必須係4個數字
   if(!/^\d{4}$/.test(roomId)){
     log("❌ 房號必須輸入4個數字！");
     return;
@@ -132,7 +131,6 @@ $("#btnJoinRoom").onclick = ()=>{
   log(`✅ 玩家，準備進房 ${roomId}`);
   enterGame();
 };
-// 切換去遊戲畫面
 function enterGame(){
   $("#startPanel").classList.add("start-hide");
   $("#gamePanel").classList.remove("start-hide");
@@ -189,7 +187,6 @@ function initRoom(){
     if(r.state==="waitingChoose"){
       unlockSelect();
     }
-    // 當c1同c2都有值，直接進入判局
     if(r.c1 && r.c2 && r.state !== "judge" && !roundLock){
       log("✅雙方已經出拳，進入賽果判斷");
       roundLock=true;
@@ -201,11 +198,14 @@ function initRoom(){
       roundLock=false;
     }
   })
+  // 監聽分數，實時更新UI（重點修復）
   roomRef.child("score").on("value",snap=>{
     const sc = snap.val()||{p1:0,p2:0};
-    myScore = sc.p1; oppScore = sc.p2;
+    myScore = isHost ? sc.p1 : sc.p2;
+    oppScore = isHost ? sc.p2 : sc.p1;
     $("#myScore").innerText = myScore;
     $("#oppScore").innerText = oppScore;
+    log(`📊分數更新：我${myScore}，對手${oppScore}`);
   })
 }
 
@@ -233,12 +233,10 @@ function lockSelect(){
   $("#selRock").disabled=true;
 }
 
-// 按鈕綁定：包=paper，剪=scissors，揼=rock
 $("#selPaper").onclick=()=>submitChoice("paper");
 $("#selScissors").onclick=()=>submitChoice("scissors");
 $("#selRock").onclick=()=>submitChoice("rock");
 
-// 直接寫入c1/c2，解決undefined問題
 function submitChoice(c){
   if(myChoice) return;
   myChoice = c;
@@ -255,40 +253,54 @@ function submitChoice(c){
 
 function calcResult(c1,c2){
   log("✅開始計賽果 + 大合唱");
-  if(audioBlob1 && oppAudio1){
-    const aMy = new Audio(URL.createObjectURL(audioBlob1));
-    const aOpp = new Audio(URL.createObjectURL(oppAudio1));
-    aMy.play(); aOpp.play();
-  }
+  // 大合唱，增加保護，防止冇音頻時崩潰
+  try{
+    if(audioBlob1 && oppAudio1){
+      const aMy = new Audio(URL.createObjectURL(audioBlob1));
+      const aOpp = new Audio(URL.createObjectURL(oppAudio1));
+      aMy.play(); aOpp.play();
+    }else{
+      log("ℹ️ 其中一方口令音頻未收到，跳過大合唱");
+    }
+  }catch(e){log("⚠️ 音頻播放錯誤："+e)}
+
   let win = null;
   if(c1 === c2) {
     win = "draw";
+    log(`賽果:和局`);
   }
-  // 包剪揼規則：揼(rock)贏剪(scissors)｜剪(scissors)贏包(paper)｜包(paper)贏揼(rock)
+  // 規則：rock(揼)贏scissors(剪)｜scissors(剪)贏paper(包)｜paper(包)贏rock(揼)
   else if(
     (c1 === "rock" && c2 === "scissors") ||
     (c1 === "scissors" && c2 === "paper") ||
     (c1 === "paper" && c2 === "rock")
   ){
     win = "p1";
+    log(`賽果:p1贏`);
   }else{
     win = "p2";
+    log(`賽果:p2贏`);
   }
-  log(`賽果:${win}`);
+
+  // 更新分數
   db.ref(`rooms/${roomId}/score`).once(snap=>{
     const s = snap.val();
     let np1=s.p1,np2=s.p2;
     if(win=="p1") np1++;
     if(win=="p2") np2++;
     db.ref(`rooms/${roomId}/score`).update({p1:np1,p2:np2});
+
     setTimeout(()=>{
-      if(win=="p1"){
-        const aud = new Audio(URL.createObjectURL(audioBlob2));
-        aud.play();
-      }else if(win=="p2"){
-        const aud = new Audio(URL.createObjectURL(oppAudio2));
-        aud.play();
-      }
+      try{
+        if(win=="p1" && audioBlob2){
+          const aud = new Audio(URL.createObjectURL(audioBlob2));
+          aud.play();
+        }else if(win=="p2" && oppAudio2){
+          const aud = new Audio(URL.createObjectURL(oppAudio2));
+          aud.play();
+        }
+      }catch(e){log("⚠️勝利音頻播放錯誤："+e)}
+
       if(isHost){
         setTimeout(()=>{
           db.ref(`rooms/${roomId}/round`).update({state:"reset",c1:null,c2:null})
@@ -300,7 +312,7 @@ function calcResult(c1,c2){
 function resetRoundUI(){
   myChoice = null;
   lockSelect();
-  log("✅回合重置，等待下一輪");
+  log("✅回合重置，等待下一輪，重新等雙方準備");
 }
 
 $("#recBtn1").onclick=async()=>{await startRec(1,$("#recBtn1"))}
