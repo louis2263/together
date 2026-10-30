@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.8.1</title>
+<title>包剪揼多人對戰 v2.9 無彈窗版</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -15,47 +15,58 @@ button.recording{background:#d03030}
 .info{font-size:17px;margin:8px 0}
 .ready-yes{color:#229922;font-weight:bold}
 .score{font-size:20px;text-align:center;margin-top:10px}
+input{width:100%;padding:14px;font-size:18px;border:1px solid #ccc;border-radius:8px;margin:6px 0}
+.start-hide{display:none}
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v2.8.1 | Firebase回合同步 + PeerJS音頻</div>
+<div class="debug" id="debug">版本 v2.9｜無彈窗｜Firebase回合同步 + PeerJS音頻</div>
 
-<div class="card">
-<h2>✊✌️🖐️ 包剪揼多人對戰</h2>
-<div class="info">房號：<span id="roomId"></span></div>
-<div class="info">連線狀態：<span id="connStatus">待連線</span></div>
+<!-- 第一頁：頁面輸入名字同房號，唔會彈窗 -->
+<div class="card" id="startPanel">
+  <h2>✊✌️🖐️ 包剪揼多人對戰</h2>
+  <input id="inputName" placeholder="輸入你嘅名字">
+  <input id="inputRoom" placeholder="房號（開新房間就留空）">
+  <button id="btnCreateRoom">開新房間</button>
+  <button id="btnJoinRoom">加入房間</button>
 </div>
 
-<div class="card">
-<h3>等候區</h3>
-<div id="playerList"></div>
+<!-- 遊戲主面板，一開始隱藏 -->
+<div id="gamePanel" class="start-hide">
+  <div class="card">
+    <div class="info">房號：<span id="roomId"></span></div>
+    <div class="info">連線狀態：<span id="connStatus">待連線</span></div>
+  </div>
+
+  <div class="card">
+    <h3>等候區</h3>
+    <div id="playerList"></div>
+  </div>
+
+  <div class="card">
+    <h3>錄音設定</h3>
+    <button id="recBtn1">開始錄音(包剪揼口令)</button>
+    <button id="playBtn1">試聽我的口令</button>
+    <button id="recBtn2">開始錄音(勝利語)</button>
+    <button id="playBtn2">試聽我的勝利語</button>
+    <p>錄製完成自動發送俾對方</p>
+    <button id="readyBtn">✅ 我準備好</button>
+    <button id="leaveBtn">🚪 離開房間</button>
+  </div>
+
+  <div class="card">
+    <h3>請選擇：包 / 剪 / 撚</h3>
+    <button id="selRock" disabled>✊ 包</button>
+    <button id="selScissors" disabled>✌️ 剪</button>
+    <button id="selPaper" disabled>🖐️ 撚</button>
+    <div class="score">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span> | 連贏:<span id="winStreak">0</span></div>
+  </div>
 </div>
 
-<div class="card">
-<h3>錄音設定</h3>
-<button id="recBtn1">開始錄音(包剪揼口令)</button>
-<button id="playBtn1">試聽我的口令</button>
-<button id="recBtn2">開始錄音(勝利語)</button>
-<button id="playBtn2">試聽我的勝利語</button>
-<p>錄製完成自動發送俾對方</p>
-<button id="readyBtn">✅ 我準備好</button>
-<button id="leaveBtn">🚪 離開房間</button>
-</div>
-
-<div class="card">
-<h3>請選擇：包 / 剪 / 撚</h3>
-<button id="selRock" disabled>✊ 包</button>
-<button id="selScissors" disabled>✌️ 剪</button>
-<button id="selPaper" disabled>🖐️ 撚</button>
-<div class="score">我分數:<span id="myScore">0</span> | 對手分數:<span id="oppScore">0</span> | 連贏:<span id="winStreak">0</span></div>
-</div>
-
-<!-- Firebase 8 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-database.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-// ========== Firebase Config 換返你自己嘅 ==========
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
   authDomain: "game-ad81e.firebaseapp.com",
@@ -66,7 +77,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 狀態
 let roomId = "";
 let myName = "";
 let isHost = false;
@@ -80,7 +90,6 @@ let myChoice = null;
 let myScore = 0, oppScore = 0, winStreak = 0;
 let roundLock = false;
 
-// DOM
 const $ = s=>document.querySelector(s);
 const debugEl = $("#debug");
 function log(txt){
@@ -89,28 +98,37 @@ function log(txt){
   debugEl.scrollTop = debugEl.scrollHeight;
 }
 
-// 開房 / 入房
-(async function(){
-  myName = prompt("輸入你名字：");
-  if(!myName) return;
-  const opt = confirm("按【確定】=開新房間｜【取消】=輸入房號入房");
-  if(opt){
-    roomId = String(Math.floor(Math.random()*9000)+1000);
-    isHost = true;
-    log(`房主，建立房號 ${roomId}`);
-    await db.ref(`rooms/${roomId}`).set({
-      players:{},
-      round:{state:"idle",c1:null,c2:null},
-      score:{p1:0,p2:0}
-    });
-  }else{
-    roomId = prompt("輸入4位房號：");
-    isHost = false;
-  }
+// 開房
+$("#btnCreateRoom").onclick = async ()=>{
+  myName = $("#inputName").value.trim();
+  if(!myName) return alert("請輸入名字");
+  roomId = String(Math.floor(Math.random()*9000)+1000);
+  isHost = true;
+  log(`房主，建立房號 ${roomId}`);
+  await db.ref(`rooms/${roomId}`).set({
+    players:{},
+    round:{state:"idle",c1:null,c2:null},
+    score:{p1:0,p2:0}
+  });
+  enterGame();
+};
+// 入房
+$("#btnJoinRoom").onclick = ()=>{
+  myName = $("#inputName").value.trim();
+  roomId = $("#inputRoom").value.trim();
+  if(!myName || !roomId) return alert("請填寫名字同房號");
+  isHost = false;
+  log(`玩家，準備進房 ${roomId}`);
+  enterGame();
+};
+// 切換去遊戲畫面
+function enterGame(){
+  $("#startPanel").classList.add("start-hide");
+  $("#gamePanel").classList.remove("start-hide");
   $("#roomId").innerText = roomId;
   initRoom();
   initPeer();
-})();
+}
 
 function initPeer(){
   peer = new Peer({debug:1});
@@ -121,6 +139,7 @@ function initPeer(){
     }else{
       db.ref(`rooms/${roomId}/peerHost`).once(snap=>{
         const hostPid = snap.val();
+        if(!hostPid) { log("搵唔到房主Peer"); return; }
         peerConn = peer.connect(hostPid);
         bindPeerConn();
       })
@@ -140,12 +159,9 @@ function bindPeerConn(){
   })
 }
 
-// 監聽房間狀態（核心同步）
 function initRoom(){
   const roomRef = db.ref(`rooms/${roomId}`);
-  // 加入玩家
   roomRef.child("players").child(myName).set({ready:false});
-  // 監聽玩家列表
   roomRef.child("players").on("value",snap=>{
     const pl = snap.val()||{};
     let html = "";
@@ -155,7 +171,6 @@ function initRoom(){
     $("#playerList").innerHTML = html;
     checkAllReady(pl);
   })
-  // 監聽回合狀態
   roomRef.child("round").on("value",snap=>{
     const r = snap.val();
     if(!r) return;
@@ -174,7 +189,6 @@ function initRoom(){
       roundLock=false;
     }
   })
-  // 監聽分數
   roomRef.child("score").on("value",snap=>{
     const sc = snap.val()||{p1:0,p2:0};
     myScore = sc.p1; oppScore = sc.p2;
@@ -183,7 +197,6 @@ function initRoom(){
   })
 }
 
-// 全部玩家準備好 → 啟動回合
 function checkAllReady(players){
   const names = Object.keys(players);
   if(names.length<2) return;
@@ -196,7 +209,6 @@ function checkAllReady(players){
   }
 }
 
-// 解鎖包剪撚按鈕
 function unlockSelect(){
   $("#selRock").disabled=false;
   $("#selScissors").disabled=false;
@@ -209,7 +221,6 @@ function lockSelect(){
   $("#selPaper").disabled=true;
 }
 
-// 出拳
 $("#selRock").onclick=()=>submitChoice("rock");
 $("#selScissors").onclick=()=>submitChoice("scissors");
 $("#selPaper").onclick=()=>submitChoice("paper");
@@ -227,7 +238,6 @@ function submitChoice(c){
   })
 }
 
-// 計賽果、大合唱、播勝利語音
 function calcResult(c1,c2){
   log("開始計賽果 + 大合唱");
   if(audioBlob1 && oppAudio1){
@@ -272,7 +282,6 @@ function resetRoundUI(){
   log("回合重置，等待下一輪");
 }
 
-// 錄音 3秒強制停止
 $("#recBtn1").onclick=async()=>{await startRec(1,$("#recBtn1"))}
 $("#recBtn2").onclick=async()=>{await startRec(2,$("#recBtn2"))}
 async function startRec(no,btn){
@@ -296,7 +305,6 @@ async function startRec(no,btn){
 $("#playBtn1").onclick=()=>{if(audioBlob1)new Audio(URL.createObjectURL(audioBlob1)).play()}
 $("#playBtn2").onclick=()=>{if(audioBlob2)new Audio(URL.createObjectURL(audioBlob2)).play()}
 
-// 準備按鈕
 $("#readyBtn").onclick=()=>{
   myReady = !myReady;
   db.ref(`rooms/${roomId}/players/${myName}/ready`).set(myReady);
