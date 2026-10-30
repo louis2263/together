@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包剪揼多人對戰 v2.8</title>
+<title>包剪揼多人對戰 v2.8.1</title>
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{padding:16px;background:#f4f4f4}
@@ -18,7 +18,7 @@ button.recording{background:#d03030}
 </style>
 </head>
 <body>
-<div class="debug" id="debug">版本 v2.8 | Firebase回合同步 + PeerJS音頻</div>
+<div class="debug" id="debug">版本 v2.8.1 | Firebase回合同步 + PeerJS音頻</div>
 
 <div class="card">
 <h2>✊✌️🖐️ 包剪揼多人對戰</h2>
@@ -89,7 +89,7 @@ function log(txt){
   debugEl.scrollTop = debugEl.scrollHeight;
 }
 
-// 開房 / 入房 （你原有4位房號邏輯）
+// 開房 / 入房
 (async function(){
   myName = prompt("輸入你名字：");
   if(!myName) return;
@@ -119,7 +119,7 @@ function initPeer(){
     if(isHost){
       db.ref(`rooms/${roomId}/peerHost`).set(pid);
     }else{
-      db.ref(`rooms/${roomId}/peerHost`).once("snap=>{
+      db.ref(`rooms/${roomId}/peerHost`).once(snap=>{
         const hostPid = snap.val();
         peerConn = peer.connect(hostPid);
         bindPeerConn();
@@ -155,7 +155,7 @@ function initRoom(){
     $("#playerList").innerHTML = html;
     checkAllReady(pl);
   })
-  // 監聽回合狀態（最重要！）
+  // 監聽回合狀態
   roomRef.child("round").on("value",snap=>{
     const r = snap.val();
     if(!r) return;
@@ -218,8 +218,7 @@ function submitChoice(c){
   myChoice = c;
   lockSelect();
   log(`我揀咗:${c}`);
-  // 寫入firebase回合
-  db.ref(`rooms/${roomId}/round`).once("snap=>{
+  db.ref(`rooms/${roomId}/round`).once(snap=>{
     const rd = snap.val();
     let newC1 = rd.c1, newC2 = rd.c2;
     if(isHost) newC1 = c; else newC2 = c;
@@ -231,13 +230,11 @@ function submitChoice(c){
 // 計賽果、大合唱、播勝利語音
 function calcResult(c1,c2){
   log("開始計賽果 + 大合唱");
-  // 大合唱：兩邊同時播放兩個口令
   if(audioBlob1 && oppAudio1){
     const aMy = new Audio(URL.createObjectURL(audioBlob1));
     const aOpp = new Audio(URL.createObjectURL(oppAudio1));
     aMy.play(); aOpp.play();
   }
-  // 判輸贏
   let win = null;
   if(c1===c2) win="draw";
   else if(
@@ -247,14 +244,12 @@ function calcResult(c1,c2){
   ) win="p1";
   else win="p2";
   log(`賽果:${win}`);
-  // 更新分數
-  db.ref(`rooms/${roomId}/score`).once("snap=>{
+  db.ref(`rooms/${roomId}/score`).once(snap=>{
     const s = snap.val();
     let np1=s.p1,np2=s.p2;
     if(win=="p1") np1++;
     if(win=="p2") np2++;
     db.ref(`rooms/${roomId}/score`).update({p1:np1,p2:np2});
-    // 播放勝利者語音
     setTimeout(()=>{
       if(win=="p1"){
         const aud = new Audio(URL.createObjectURL(audioBlob2));
@@ -263,7 +258,6 @@ function calcResult(c1,c2){
         const aud = new Audio(URL.createObjectURL(oppAudio2));
         aud.play();
       }
-      // 房主重置下一輪
       if(isHost){
         setTimeout(()=>{
           db.ref(`rooms/${roomId}/round`).update({state:"reset",c1:null,c2:null})
