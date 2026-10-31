@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>包剪揼多人遊戲 v6.1 | 加回已準備功能</title>
+    <title>包剪揼多人遊戲 v6.2｜無系統彈窗</title>
     <style>
         *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
         body{background:#f3f4f6;margin:0;padding:16px;color:#222}
@@ -16,54 +16,72 @@
         .btnBlue{background:#2b78e4}
         .btnRed{background:#dc3545}
         .btnGreen{background:#28a745}
+        .btnGrey{background:#6c757d}
         .handRow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:20px 0}
         .handBtn{background:#eee;color:#222;padding:12px;border-radius:12px;border:2px solid #aaa}
         .handBtn img{width:80px;height:auto}
+        input{width:100%;padding:14px;font-size:18px;border:2px solid #ccc;border-radius:12px;margin:8px 0;text-align:center}
+        .hide{display:none !important;}
     </style>
 </head>
 <body>
-<div class="debugBox" id="debug">版本 v6.1 | 多人包剪揼｜已準備機制｜錄音3秒自動停止｜存活大合唱</div>
+<div class="debugBox" id="debug">版本 v6.2 | 多人包剪揼｜無系統彈窗｜已準備機制｜錄音3秒自動停止｜存活大合唱</div>
 <div class="container">
-    <div class="roomInfo">
-        <h2>🏠 房號：<span id="roomIdDisplay"></span></h2>
-        <h3>📌 對戰模式：贏兩鋪</h3>
-        <div id="playerList"></div>
-        <div id="gameStatus">等待玩家準備...</div>
+    <!-- 初始選擇頁面 -->
+    <div id="startPage">
+        <h2 style="text-align:center">包剪揼多人遊戲</h2>
+        <input id="inputName" placeholder="輸入玩家名稱">
+        <button class="btnBlue" id="btnCreate">建立新房間</button>
+        <button class="btnGrey" id="btnJoin">加入房間</button>
+        <div id="joinExtra" class="hide">
+            <input id="inputRoomId" placeholder="輸入4位數房號">
+            <button class="btnBlue" id="btnConfirmJoin">確認加入</button>
+        </div>
     </div>
-    <div class="ruleBox">
-        <h3>📜 遊戲規則：</h3>
-        <p>1. 包（布）贏掱（石頭）<br>
-        2. 掱（石頭）贏剪（剪刀）<br>
-        3. 剪（剪刀）贏包（布）<br>
-        4. 雙方一樣就和局，唔計分<br>
-        5. 只剩兩種手勢：輸嗰類全部淘汰</p>
-    </div>
-    <p style="text-align:center">🎙️ 錄音：3秒自動停止，按掣變紅</p>
-    <button class="btnBlue" id="recChorusBtn">錄【大合唱】語音</button>
-    <button class="btnBlue" id="playChorusBtn">試聽大合唱</button>
-    <button class="btnBlue" id="recWinBtn">錄【勝利】語音</button>
-    <button class="btnBlue" id="playWinBtn">試聽勝利語音</button>
 
-    <button class="btnGreen" id="readyBtn">✅ 已準備</button>
-    <button class="btnRed" id="startGameBtn" style="display:none">🚀 房主：開始遊戲</button>
-    <button class="btnBlue" id="leaveBtn">🚪 離開房間</button>
+    <!-- 遊戲主頁面 -->
+    <div id="gamePage" class="hide">
+        <div class="roomInfo">
+            <h2>🏠 房號：<span id="roomIdDisplay"></span></h2>
+            <h3>📌 對戰模式：贏兩鋪</h3>
+            <div id="playerList"></div>
+            <div id="gameStatus">等待玩家準備...</div>
+        </div>
+        <div class="ruleBox">
+            <h3>📜 遊戲規則：</h3>
+            <p>1. 包（布）贏掱（石頭）<br>
+            2. 掱（石頭）贏剪（剪刀）<br>
+            3. 剪（剪刀）贏包（布）<br>
+            4. 雙方一樣就和局，唔計分<br>
+            5. 只剩兩種手勢：輸嗰類全部淘汰</p>
+        </div>
+        <p style="text-align:center">🎙️ 錄音：3秒自動停止，按掣變紅</p>
+        <button class="btnBlue" id="recChorusBtn">錄【大合唱】語音</button>
+        <button class="btnBlue" id="playChorusBtn">試聽大合唱</button>
+        <button class="btnBlue" id="recWinBtn">錄【勝利】語音</button>
+        <button class="btnBlue" id="playWinBtn">試聽勝利語音</button>
 
-    <h3 style="text-align:center;margin-top:24px">請選擇：包 / 剪 / 掱</h3>
-    <div class="handRow">
-        <button class="handBtn" data-hand="paper">
-            <img alt="包">
-            <div>包</div>
-        </button>
-        <button class="handBtn" data-hand="scissors">
-            <img alt="剪">
-            <div>剪</div>
-        </button>
-        <button class="handBtn" data-hand="rock">
-            <img alt="掱">
-            <div>掱</div>
-        </button>
+        <button class="btnGreen" id="readyBtn">✅ 已準備</button>
+        <button class="btnRed" id="startGameBtn" style="display:none">🚀 房主：開始遊戲</button>
+        <button class="btnBlue" id="leaveBtn">🚪 離開房間</button>
+
+        <h3 style="text-align:center;margin-top:24px">請選擇：包 / 剪 / 掱</h3>
+        <div class="handRow">
+            <button class="handBtn" data-hand="paper">
+                <img alt="包">
+                <div>包</div>
+            </button>
+            <button class="handBtn" data-hand="scissors">
+                <img alt="剪">
+                <div>剪</div>
+            </button>
+            <button class="handBtn" data-hand="rock">
+                <img alt="掱">
+                <div>掱</div>
+            </button>
+        </div>
+        <div id="scoreText" style="text-align:center;font-size:20px"></div>
     </div>
-    <div id="scoreText" style="text-align:center;font-size:20px"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -170,15 +188,16 @@ function watchPlayerList(){
 }
 // 心跳 + 建立房 / 入房
 async function initRoom(isCreate){
-    myName = prompt("輸入玩家名稱");
-    if(!myName) return;
+    // 切換畫面
+    document.getElementById("startPage").classList.add("hide");
+    document.getElementById("gamePage").classList.remove("hide");
+
     if(isCreate){
         roomId = String(Math.floor(Math.random()*9000)+1000);
         isHost = true;
         log(`🏠 房主，建立房號 ${roomId}`);
         await db.ref(`rooms/${roomId}`).set({gameState:"waiting"});
     }else{
-        roomId = prompt("輸入4位數房號");
         isHost = false;
         log(`🚪 進入房間 ${roomId}`);
     }
@@ -216,9 +235,33 @@ document.querySelectorAll(".handBtn").forEach(btn=>{
         log(`✊ 提交出拳：${hand}`);
     }
 })
-// 開啟房或者加入房
-const create = confirm("是否建立新房間？按取消就加入房間");
-initRoom(create);
+
+// ========== 頁面初始按鈕事件（無彈窗） ==========
+const btnCreate = document.getElementById("btnCreate");
+const btnJoin = document.getElementById("btnJoin");
+const btnConfirmJoin = document.getElementById("btnConfirmJoin");
+const joinExtra = document.getElementById("joinExtra");
+
+btnCreate.onclick = async ()=>{
+    myName = document.getElementById("inputName").value.trim();
+    if(!myName){
+        log("❌ 請輸入玩家名稱");
+        return;
+    }
+    initRoom(true);
+}
+btnJoin.onclick = ()=>{
+    joinExtra.classList.remove("hide");
+}
+btnConfirmJoin.onclick = async ()=>{
+    myName = document.getElementById("inputName").value.trim();
+    roomId = document.getElementById("inputRoomId").value.trim();
+    if(!myName || !roomId){
+        log("❌ 請輸入名稱同房號");
+        return;
+    }
+    initRoom(false);
+}
 </script>
 </body>
 </html>
