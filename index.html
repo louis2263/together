@@ -1,19 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>方包包包剪揼 V64 無黑邊修復</title>
 <style>
-/* 改呢個 class 就得 */
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
+body{background:#FFE66D;margin:0}
+.wrap1{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background:url('background01.jpg') no-repeat top center;background-size:100% auto;background-color:#FFE66D}
+.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 120px}
+/* V64 重點：房號 6659 橙色實心，無黑邊 */
 .room-orange{
-  font-size:54px;
-  font-weight:1000;
-  color:#FF7A00; /* 實心橙色 */
-  -webkit-text-stroke:0; /* 取消黑邊 */
-  text-shadow:none; /* 取消陰影裙邊 */
-  text-align:center;
-  margin:10px 0 16px;
-  letter-spacing:2px;
-  font-family:"Arial Black","PingFang HK","Noto Sans HK Black",sans-serif;
-  /* 用額外加粗實現實心厚重感，唔靠黑邊 */
-  transform:scaleY(1.05);
+  font-size:48px;font-weight:1000;color:#FF7A00;
+  -webkit-text-stroke:0px; /* 取消黑色裙邊 */
+  text-shadow:none; /* 取消陰影 */
+  text-align:center;margin:16px 0;letter-spacing:1px;
+  font-family:"Arial Black",sans-serif;
 }
+.card-black{background:#111;border-radius:22px;padding:14px;border:3px solid #111;margin-bottom:12px}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:14px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer}
+.mode-btn.selected{background:#FFD93D}
+.btn-red{background:#FF1A1A;color:#fff;border:3px solid #111;border-radius:999px;padding:13px;text-align:center;font-weight:1000;font-size:15px;width:100%;cursor:pointer}
+.btn-yellow{background:#FFD93D;color:#111;border:3px solid #111;border-radius:16px;padding:14px;text-align:center;font-weight:1000;font-size:18px;margin-top:8px;cursor:pointer}
+.btn-grey{background:#C4C4C4;color:#333;border:3px solid #111;border-radius:16px;padding:10px;text-align:center;font-weight:900;margin-top:8px}
+.input-card{position:absolute;left:16px;right:16px;bottom:20px;background:#111;border-radius:28px;padding:20px}
+.yellow{color:#FFE66D;font-weight:900;font-size:13px}
+.input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;margin-top:6px}
+#debugToggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+#debugPanel{position:fixed;bottom:0;left:0;right:0;max-height:60vh;background:rgba(20,20,20,.96);color:#0f0;border-top:3px solid #0f0;border-radius:18px 18px 0 0;padding:10px;z-index:99998;overflow:auto;display:none;font-family:monospace;font-size:12px}
+#debugPanel.open{display:block}
 </style>
+</head>
+<body>
+<div id="debugToggle" onclick="document.getElementById('debugPanel').classList.toggle('open')">🐛</div>
+<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V64 無黑邊</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="dbgLog"></div></div>
 
-<!-- HTML 部份 -->
-<div class="room-orange" id="roomNum">房號 6659</div>
+<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！準備好了嗎？</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間</div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box" placeholder="4位房號 例如 6659" maxlength="4" value="6659"></div></div></div>
+
+<div id="s2" style="display:none"><div class="wrap2">
+  <div class="card-black" style="display:flex;justify-content:space-between"><div><span style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 7px;font-weight:900">2</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div style="color:#fff;font-size:11px"><span id="pA">Louis</span>✅</div></div>
+  <div class="room-orange" id="roomNum">房號 6659</div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">遊戲玩法 / Game Mode</div><div class="mode-grid"><div class="mode-btn selected">一鋪定勝負</div><div class="mode-btn">贏兩鋪<br><span style="font-size:10px">(Best of 3)</span></div><div class="mode-btn">贏三鋪<br><span style="font-size:10px">(Best of 5)</span></div><div class="mode-btn">連贏兩鋪<br><span style="font-size:10px">(Win 2 in a row)</span></div></div></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 / Rock Paper Scissors Shoot</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">贏咗你會講咩 - 勝利宣言</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio></div>
+  <div class="btn-yellow">開始遊戲</div><div class="btn-grey">等所有人上傳2段音</div>
+</div></div>
+
+<script>
+let logEl=document.getElementById('dbgLog');function dlog(m){let t=new Date().toLocaleTimeString('zh-HK');logEl.innerHTML=`[${t}] ${m}<br>`+logEl.innerHTML}
+function createRoom(){let n=document.getElementById('nameInput').value||'Louis';let r=document.getElementById('roomInput').value||'6659';document.getElementById('roomNum').textContent='房號 '+r;dlog(`開房 ${r} 無黑邊橙色`);document.getElementById('s1').style.display='none';document.getElementById('s2').style.display='block'}
+function joinRoom(){let r=document.getElementById('roomInput').value||'6659';document.getElementById('roomNum').textContent='房號 '+r;document.getElementById('s1').style.display='none';document.getElementById('s2').style.display='block'}
+function toggleRec(t){dlog(`錄音${t} 3秒`)}
+dlog('V64 ready 房號6659 橙色實心無黑邊');
+</script>
+</body>
+</html>
