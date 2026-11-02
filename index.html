@@ -2,45 +2,111 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>方包包包剪揼</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>方包包包剪揼 V59 Debug</title>
 <style>
-body{
-  margin:0;
-  background:#FFE66D url('background01.jpg') no-repeat top center;
-  background-size:cover;
-  font-family:-apple-system, "PingFang HK", sans-serif;
-}
-.title{
-  font-size:46px; font-weight:1000; text-align:center; margin-top:22px;
-  color:#fff; -webkit-text-stroke:4px #111;
-  text-shadow:5px 5px 0 #111; letter-spacing:2px;
-}
-.sub{ text-align:center; margin:6px auto; background:#fff; border:2.5px solid #111; 
-  border-radius:999px; padding:4px 14px; font-weight:900; display:table; }
-.black-card{
-  background:#111; border-radius:26px; padding:16px; margin:16px;
-  border:3px solid #111; min-height:200px; color:#FFE66D;
-}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
+body{background:#FFE66D}
+.wrap{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background:url('background01.jpg') no-repeat top center;background-size:100% auto;background-color:#FFE66D}
+.black-card{position:absolute;left:16px;right:16px;bottom:20px;background:#111;border-radius:28px;padding:20px;min-height:300px}
+.yellow-text{color:#FFE66D;font-weight:900;font-size:14px;margin:8px 0 6px}
+.input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;font-size:16px}
+.btn-row{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;border:3px solid #111;border-radius:16px;padding:13px;text-align:center;font-weight:1000;cursor:pointer}
+.btn-yellow{background:#FFD93D;color:#111}.btn-green{background:#34C759;color:#111}.btn-red{background:#FF3B30;color:#fff}
+
+/* 第二版開始後嘅通用版面 */
+.screen{display:none;min-height:100vh;padding:0 16px 100px;max-width:480px;margin:0 auto}
+.screen.active{display:block;background:#FFE66D}
+.pill{background:#FFE66D;color:#111;border:2px solid #111;border-radius:999px;padding:3px 10px;font-weight:900;display:inline-block;font-size:12px}
+.roomNo{font-size:36px;font-weight:1000;color:#fff;-webkit-text-stroke:3px #111;text-shadow:4px 4px 0 #111;text-align:center;margin:10px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.hand-choice{background:#FFF9C4;border:3.5px solid #111;border-radius:18px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.hand-choice img{width:85%;height:85%;object-fit:contain}
+.hand-choice.selected{background:#FFD93D;outline:4px solid #111}
+.hand-label2{background:#111;color:#FFE66D;border-radius:999px;text-align:center;padding:4px;font-weight:900;margin-top:4px;font-size:12px}
+.wave{height:14px;background:#222;border-radius:10px;overflow:hidden;margin:8px 0}
+.countdown{font-size:36px;font-weight:1000;text-align:center;letter-spacing:6px}
+audio{width:100%;margin-top:6px}
+
+/* DEBUG 視窗 */
+#debugToggle{position:fixed;top:10px;right:10px;z-index:9999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
+#debugPanel{position:fixed;bottom:0;left:0;right:0;max-height:55vh;background:rgba(0,0,0,.92);color:#0f0;border-top:3px solid #0f0;border-radius:18px 18px 0 0;padding:12px;z-index:9998;overflow:auto;font-family:monospace;font-size:11px;display:none}
+#debugPanel.open{display:block}
+.dbg-row{display:flex;justify-content:space-between;border-bottom:1px dashed #333;padding:2px 0}
+.dbg-k{color:#FFE66D}.dbg-log{color:#0ff;white-space:pre-wrap;margin-top:6px}
 </style>
 </head>
 <body>
-  <div class="title">方包包包剪揼</div>
-  <div class="sub">Rock • Paper • Scissors • Party</div>
-  
-  <!-- 三隻手用返你repo嗰三張 -->
-  <div style="display:flex;justify-content:center;gap:10px;margin:20px">
-    <img src="rock.jpg" style="width:28%;border:3px solid #111;border-radius:18px">
-    <img src="paper.jpg" style="width:28%;border:3px solid #111;border-radius:18px">
-    <img src="scissors.jpg" style="width:28%;border:3px solid #111;border-radius:18px">
+<div id="debugToggle" onclick="toggleDebug()">🐛</div>
+<div id="debugPanel">
+  <div style="display:flex;justify-content:space-between"><b style="color:#0f0">🐛 DEBUG - V59</b><span><button onclick="clearLog()" style="background:#0f0;border:none;padding:2px 8px;border-radius:6px">清空</button> <button onclick="toggleDebug()" style="background:#FFE66D;border:none;padding:2px 8px;border-radius:6px">收起 X</button></span></div>
+  <div id="dbgInfo"></div>
+  <div id="dbgLog" class="dbg-log"></div>
+  <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+    <button onclick="dbgDump()" style="background:#222;color:#0f0;border:1px solid #0f0;border-radius:6px;padding:4px 8px">Dump</button>
+    <button onclick="dbgAddBot()" style="background:#222;color:#FFE66D;border:1px solid #FFE66D;border-radius:6px;padding:4px 8px">+1 Bot</button>
+    <button onclick="dbgForceChorus()" style="background:#222;color:#f0f;border:1px solid #f0f;border-radius:6px;padding:4px 8px">強制合唱</button>
+    <button onclick="dbgForceResult()" style="background:#222;color:#ff0;border:1px solid #ff0;border-radius:6px;padding:4px 8px">強制結果</button>
   </div>
+</div>
 
-  <div class="black-card">
-    <div style="color:#FFE66D;font-size:13px;font-weight:900">
-      與朋友一起對決！準備好了嗎？<br><br>
-      <span style="color:#FFE66D">輸入你個名</span>
-      <!-- 呢度之後放你input -->
+<!-- S1: 用你張 background01.jpg 做底，淨係得黑色輸入卡 -->
+<div id="s1" class="screen active" style="background:transparent;padding:0">
+  <div class="wrap" style="min-height:100vh">
+    <div class="black-card">
+      <div class="yellow-text">與朋友一起對決！準備好了嗎？</div>
+      <div class="yellow-text">輸入你個名</div>
+      <input id="nameInput" class="input-box" placeholder="Louis">
+      <div class="btn-row">
+        <div class="btn btn-yellow" onclick="createRoom()">開始房間</div>
+        <div class="btn btn-green" onclick="joinRoom()">進入房間</div>
+      </div>
+      <div class="yellow-text"># 房號</div>
+      <input id="roomInput" class="input-box" placeholder="4位房號 例如 4829" maxlength="4">
+      <div style="color:#666;font-size:10px;margin-top:10px;text-align:center">V59 Debug版 - 右上角🐛睇log</div>
     </div>
   </div>
-</body>
-</html>
+</div>
+
+<!-- S2: 房號+玩法+錄音 -->
+<div id="s2" class="screen">
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto;margin-top:10px"><span class="pill" id="readyPill">players ready</span><div id="playersReady" style="margin-top:6px;font-size:12px;color:#fff"></div></div>
+  <div class="roomNo" id="roomNo2">房號 4829</div>
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto"><div style="color:#FFE66D;font-weight:900">③ 遊戲玩法</div><div class="grid2" id="modeGrid" style="margin-top:8px"></div></div>
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto"><div style="color:#FFE66D">① 包剪揼 2.5秒 <span id="st1" class="pill">未錄</span></div><div class="btn btn-red" style="margin-top:6px" onclick="toggleRec(1)">● 錄音① 2.5秒</div><audio id="aud1" controls style="display:none"></audio></div>
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto"><div style="color:#FFE66D">② 勝利宣言 3秒 <span id="st2" class="pill">未錄</span></div><div class="btn btn-red" style="margin-top:6px" onclick="toggleRec(2)">● 錄音② 3秒</div><audio id="aud2" controls style="display:none"></audio></div>
+  <div class="btn btn-yellow" style="width:100%;margin-top:10px;padding:16px" onclick="startGame()">⑦ 開始遊戲</div><div class="btn" style="width:100%;margin-top:8px;background:#CFCFCF;border:3px solid #111" id="waitAudio">等所有人上傳2段音</div>
+</div>
+
+<!-- S3: 出拳+合唱 -->
+<div id="s3" class="screen">
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto;display:flex;justify-content:space-between;padding:8px 12px;font-size:12px"><span id="s3info"></span><span id="aliveInfo" style="color:#FFE66D"></span></div>
+  <div style="text-align:center;margin:8px 0"><span class="pill" id="roundInfo">第1輪</span></div>
+  <div class="grid3">
+    <div onclick="choose('包')"><div class="hand-choice" id="hBao"><img src="paper.jpg"></div><div class="hand-label2">包</div></div>
+    <div onclick="choose('剪')"><div class="hand-choice" id="hJian"><img src="scissors.jpg"></div><div class="hand-label2">剪</div></div>
+    <div onclick="choose('揼')"><div class="hand-choice" id="hBeng"><img src="rock.jpg"></div><div class="hand-label2">揼</div></div>
+  </div>
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto;background:#FFE66D;color:#111;text-align:center;margin-top:10px"><div id="countdown" class="countdown">3 2 1</div><div id="choiceLog" style="font-weight:900"></div><div id="choiceStatus" class="grid2" style="margin-top:8px"></div><div id="waitAll" style="font-weight:900;margin-top:6px;font-size:12px"></div></div>
+  <div id="chorusArea" class="black-card" style="position:relative;left:auto;right:auto;bottom:auto;display:none;text-align:center"><div id="chorusTitle" style="color:#FFE66D;font-weight:1000">5人大合唱播放中...</div><div class="wave"><div id="progress" style="height:100%;width:0%;background:#FFE66D"></div></div><div id="chorusWaves" class="grid2"></div></div>
+</div>
+
+<!-- S4: 結果 -->
+<div id="s4" class="screen">
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto;display:flex;justify-content:space-between;font-size:12px"><span id="rRoom"></span><span id="rTitle" style="color:#FFE66D"></span></div>
+  <div style="text-align:center"><span class="pill">大家出拳情況</span></div>
+  <div id="resultGrid" class="grid2" style="margin-top:8px"></div>
+  <div class="black-card" style="position:relative;left:auto;right:auto;bottom:auto;background:#FFE66D;color:#111;text-align:center"><div id="remainCount" style="font-size:24px;font-weight:1000"></div><div id="remainAvatars"></div><div style="background:#111;color:#fff;border-radius:12px;padding:8px;margin-top:6px"><div id="elimList" style="color:#FF3B30;font-weight:900"></div></div></div>
+  <div class="grid2" style="margin-top:10px"><div class="btn btn-green" onclick="nextRound()">▶ 下一輪</div><div class="btn btn-yellow" onclick="resetAll()">↺ 全新遊戲</div></div>
+</div>
+
+<script>
+let state={name:'Louis',room:'4829',mode:'一鋪定勝負',modes:['一鋪定勝負','贏兩鋪','贏三鋪','連贏兩鋪'],rec1Url:null,rec2Url:null,players:[],round:1,myChoice:null,log:[]}
+function dlog(m){let t=new Date().toLocaleTimeString();state.log.push('['+t+'] '+m);if(state.log.length>120)state.log.shift();renderDebug();console.log(m)}
+function renderDebug(){let alive=state.players.filter(p=>p.alive);let html='';html+='<div class=dbg-row><span class=dbg-k>房號</span><span>'+state.room+'</span></div>';html+='<div class=dbg-row><span class=dbg-k>玩法</span><span>'+state.mode+'</span></div>';html+='<div class=dbg-row><span class=dbg-k>回合</span><span>'+state.round+'</span></div>';html+='<div class=dbg-row><span class=dbg-k>我出拳</span><span>'+(state.myChoice||'未')+'</span></div>';html+='<div class=dbg-row><span class=dbg-k>錄音</span><span>'+(state.rec1Url?'①✅':'①❌')+' '+(state.rec2Url?'②✅':'②❌')+'</span></div>';html+='<div class=dbg-row><span class=dbg-k>存活</span><span>'+alive.length+'/'+state.players.length+'</span></div>';html+='<div class=dbg-row><span class=dbg-k>玩家</span><span>'+state.players.map(p=>p.name+':'+(p.choice||'-')+(p.alive?'🟢':'🔴')+' W'+p.wins).join(' | ')+'</span></div>';document.getElementById('dbgInfo').innerHTML=html;document.getElementById('dbgLog').textContent=state.log.slice(-25).reverse().join('\\n')}
+function toggleDebug(){document.getElementById('debugPanel').classList.toggle('open');renderDebug()}function clearLog(){state.log=[];renderDebug()}function dbgDump(){dlog('DUMP '+JSON.stringify(state,null,2))}function dbgForceChorus(){dlog('強制合唱');allChosenSequence()}function dbgForceResult(){dlog('強制結果');showResults()}function dbgAddBot(){state.players.push({name:'Bot'+(state.players.length+1),choice:null,alive:true,wins:0,streak:0});dlog('加Bot');renderS2();renderS3()}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');dlog('版面->'+id);renderDebug()}
+function createRoom(){state.name=document.getElementById('nameInput').value||'Louis';state.room=(Math.floor(1000+Math.random()*9000)).toString();initPlayers();show('s2');renderS2();dlog('開房 房號='+state.room+' 名='+state.name)}
+function joinRoom(){state.name=document.getElementById('nameInput').value||'Louis';let r=document.getElementById('roomInput').value;if(r)state.room=r;initPlayers();show('s2');renderS2();dlog('入房 房號='+state.room)}
+function initPlayers(){state.players=[{name:state.name+'(你)',choice:null,alive:true,wins:0,streak:0},{name:'玩家B',choice:null,alive:true,wins:0,streak:0},{name:'玩家C',choice:null,alive:true,wins:0,streak:0},{name:'玩家D',choice:null,alive:true,wins:0,streak:0},{name:'玩家E',choice:null,alive:true,wins:0,streak:
