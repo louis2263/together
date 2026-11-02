@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V68 背景修復 八人版</title>
+<title>方包包包剪揼 V70 每次新房號</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
@@ -22,6 +22,7 @@ body{background:#FFE66D;margin:0}
 .input-card{position:absolute;left:16px;right:16px;bottom:20px;background:#111;border-radius:28px;padding:20px}
 .yellow{color:#FFE66D;font-weight:900;font-size:13px}
 .input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;margin-top:6px}
+.input-box.newroom{background:#FFE66D;border-color:#FF7A00;color:#111;font-weight:1000;font-size:20px;text-align:center;letter-spacing:3px}
 .player-chip{display:inline-block;background:#FFE66D;color:#111;border-radius:999px;padding:3px 10px;margin:3px;font-weight:900;font-size:11px;border:2px solid #111}
 .player-chip.me{background:#34C759}
 #debugToggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -31,13 +32,13 @@ body{background:#FFE66D;margin:0}
 </head>
 <body>
 <div id="debugToggle" onclick="document.getElementById('debugPanel').classList.toggle('open')">🐛</div>
-<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V68 背景修復 八人版</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
+<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V70 每次新房號</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
 
-<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！最多8人派對！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間</div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box" value="6659" maxlength="4"></div></div></div>
+<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！每次自動新房號，支援多隊同時玩！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間<br><span style="font-size:10px">自動新號</span></div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間<br><span style="font-size:10px">輸入朋友房號</span></div></div><div class="yellow" style="margin-top:12px"># 房號 (開始房間會自動出新號)</div><input id="roomInput" class="input-box newroom" placeholder="例如 7284" maxlength="4"></div></div></div>
 
 <div id="s2" style="display:none"><div class="wrap2">
-  <div class="card-black"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div style="color:#aaa;font-size:10px">房號 6659 可8人</div></div><div id="plist" style="min-height:28px"></div></div>
-  <div class="room-orange" id="roomNum">房號 6659</div>
+  <div class="card-black"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div id="roomBadge" style="background:#FF7A00;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:900">房號 --</div></div><div id="plist" style="min-height:28px"></div></div>
+  <div class="room-orange" id="roomNum">房號 --</div>
   <div class="card-black"><div style="color:#FFE66D;font-weight:900">遊戲玩法 / Game Mode</div><div class="mode-grid"><div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div><div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪<br><span style="font-size:10px">(Best of 3)</span></div><div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪<br><span style="font-size:10px">(Best of 5)</span></div><div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪<br><span style="font-size:10px">(Win 2 in a row)</span></div></div></div>
   <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 / Rock Paper Scissors Shoot</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio></div>
   <div class="card-black"><div style="color:#FFE66D;font-weight:900">贏咗你會講咩 - 勝利宣言</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:28px">3</span> 錄音中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio></div>
@@ -59,20 +60,51 @@ const firebaseConfig = {
 };
 const logEl=document.getElementById('dbgLog'); const connEl=document.getElementById('connStatus');
 function dlog(m){let t=new Date().toLocaleTimeString('zh-HK');logEl.innerHTML=`[${t}] ${m}<br>`+logEl.innerHTML}
-let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ Firebase 已連線 - 支援8人派對 game-ad81e"; dlog("✅ Firebase 8人版連線成功"); }catch(e){ connEl.textContent="❌ Firebase 失敗"; dlog("❌ "+e); }
+let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ Firebase 已連線 - 每次新房號 多隊同玩"; dlog("✅ Firebase 新房號版連線成功"); }catch(e){ connEl.textContent="❌ Firebase 失敗"; dlog("❌ "+e); }
 let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
-let currentRoom="6659"; let currentName="Louis"; const MAX_PLAYERS=8;
+let currentRoom=""; let currentName="Louis"; const MAX_PLAYERS=8;
+function genNewRoom(){ return Math.floor(1000 + Math.random()*9000).toString(); }
+
 window.createRoom=async()=>{
-  currentName=document.getElementById('nameInput').value||'Louis'; currentRoom=document.getElementById('roomInput').value||'6659';
-  document.getElementById('roomNum').textContent='房號 '+currentRoom;
-  if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/players`)); const count=snap.val()?Object.keys(snap.val()).length:0; if(count>=MAX_PLAYERS){ alert("房已滿 8/8"); return; } await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); await set(ref(db,`rooms/${currentRoom}/mode`),'one'); listenRoom(currentRoom); }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`開房 ${currentRoom} ID=${myId} 八人模式`);
+  currentName=document.getElementById('nameInput').value||'Louis';
+  // 每次開始都出新號
+  let newRoom=genNewRoom();
+  // 確保唔撞已有人嘅房，最多試5次
+  if(db){
+    for(let i=0;i<5;i++){
+      const snap=await get(ref(db,`rooms/${newRoom}/players`));
+      if(!snap.val()) break;
+      newRoom=genNewRoom();
+    }
+  }
+  currentRoom=newRoom;
+  document.getElementById('roomInput').value=newRoom;
+  document.getElementById('roomNum').textContent='房號 '+newRoom;
+  document.getElementById('roomBadge').textContent='房號 '+newRoom;
+  if(db){
+    await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()});
+    await set(ref(db,`rooms/${currentRoom}/mode`),'one');
+    listenRoom(currentRoom);
+  }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
+  dlog(`開新房 ${newRoom} ID=${myId} 每次新號`);
 }
 window.joinRoom=async()=>{
-  currentName=document.getElementById('nameInput').value||'Louis'; currentRoom=document.getElementById('roomInput').value||'6659';
+  currentName=document.getElementById('nameInput').value||'Louis';
+  let inputRoom=document.getElementById('roomInput').value.trim();
+  if(!inputRoom || inputRoom.length!=4){ alert("請輸入朋友畀你嘅4位房號，例如 7284"); return; }
+  currentRoom=inputRoom;
   document.getElementById('roomNum').textContent='房號 '+currentRoom;
-  if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/players`)); const count=snap.val()?Object.keys(snap.val()).length:0; if(count>=MAX_PLAYERS){ alert("房已滿 8/8"); return; } await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); listenRoom(currentRoom); }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`入房 ${currentRoom} 八人模式`);
+  document.getElementById('roomBadge').textContent='房號 '+currentRoom;
+  if(db){
+    const snap=await get(ref(db,`rooms/${currentRoom}/players`));
+    const count=snap.val()?Object.keys(snap.val()).length:0;
+    if(count>=MAX_PLAYERS){ alert(`房號 ${currentRoom} 已滿 8/8`); return; }
+    await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()});
+    listenRoom(currentRoom);
+  }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
+  dlog(`入房 ${currentRoom} 分隊對戰`);
 }
 function listenRoom(room){
   if(!db) return;
@@ -81,28 +113,28 @@ function listenRoom(room){
     document.getElementById('pcount').textContent=`${count}/${MAX_PLAYERS}`;
     let html=ids.map(id=>{ let p=players[id]; let isMe=id==myId; let audStatus=(p.aud1&&p.aud2)?'🎙️✅':'🎙️'; return `<span class="player-chip ${isMe?'me':''}">${p.name}${isMe?'(我)':''} ${audStatus}</span>`; }).join('');
     document.getElementById('plist').innerHTML=html||'<span style="color:#666;font-size:11px">等緊朋友入房...</span>';
-    document.getElementById('waitBtn').textContent=`等所有人上傳2段音 (${count}/${MAX_PLAYERS})`;
-    dlog(`真實連線 ${count}/8: ${Object.values(players).map(p=>p.name).join(',')}`);
-    if(count>=2){ document.getElementById('waitBtn').style.background='#FFE66D'; document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 可以開始 (${count}/${MAX_PLAYERS})`; }
+    document.getElementById('waitBtn').textContent=`等所有人上傳2段音 (${count}/${MAX_PLAYERS}) 房${room}`;
+    dlog(`房${room} 真實連線 ${count}/8: ${Object.values(players).map(p=>p.name).join(',')}`);
+    if(count>=2){ document.getElementById('waitBtn').style.background='#FFE66D'; document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 房${room} 可以開始`; }
   });
   onValue(ref(db,`rooms/${room}/mode`),snap=>{ let mode=snap.val(); if(mode){ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>{b.classList.toggle('selected',b.dataset.mode==mode)}); } });
 }
-window.setMode=async(el)=>{ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); let mode=el.dataset.mode; dlog(`玩法->${mode}`); if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),mode); } }
+window.setMode=async(el)=>{ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); let mode=el.dataset.mode; dlog(`房${currentRoom} 玩法->${mode}`); if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),mode); } }
 let mr,chunks=[],countTimer;
 window.toggleRec=async(t)=>{
   let btn=document.getElementById('btn'+t); let countBox=document.getElementById('count'+t); let numEl=document.getElementById('num'+t); let st=document.getElementById('st'+t);
-  if(btn.classList.contains('recording')) return; dlog(`錄音${t}開始 3秒`);
+  if(btn.classList.contains('recording')) return; dlog(`錄音${t}開始 3秒 房${currentRoom}`);
   try{
     let s=await navigator.mediaDevices.getUserMedia({audio:true}); chunks=[];mr=new MediaRecorder(s);
     mr.ondataavailable=e=>chunks.push(e.data);
-    mr.onstop=async()=>{ let url=URL.createObjectURL(new Blob(chunks)); document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block'; st.textContent='已錄 ✅';st.style.background='#34C759'; btn.textContent='✅ 已錄製';btn.style.background='#34C759';btn.style.color='#111'; btn.classList.remove('recording');countBox.style.display='none'; dlog(`錄音${t}完成 3秒`); s.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer); if(db){ await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}); } let a=document.getElementById('st1').textContent.includes('已錄'); let b=document.getElementById('st2').textContent.includes('已錄'); if(a&&b){ document.getElementById('waitBtn').textContent='✅ 我已準備好 等其他人'; document.getElementById('waitBtn').style.background='#34C759'; } };
+    mr.onstop=async()=>{ let url=URL.createObjectURL(new Blob(chunks)); document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block'; st.textContent='已錄 ✅';st.style.background='#34C759'; btn.textContent='✅ 已錄製';btn.style.background='#34C759';btn.style.color='#111'; btn.classList.remove('recording');countBox.style.display='none'; dlog(`房${currentRoom} 錄音${t}完成 3秒`); s.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer); if(db){ await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}); } let a=document.getElementById('st1').textContent.includes('已錄'); let b=document.getElementById('st2').textContent.includes('已錄'); if(a&&b){ document.getElementById('waitBtn').textContent=`✅ 我已準備好 房${currentRoom} 等其他人`; document.getElementById('waitBtn').style.background='#34C759'; } };
     mr.start(); let sec=3; btn.classList.add('recording');btn.innerHTML=`🔴 正在錄音...`;countBox.style.display='block';numEl.textContent=sec; dlog(`正在錄音 ${sec}...`);
     countTimer=setInterval(()=>{sec--;if(sec>0){numEl.textContent=sec;btn.innerHTML=`🔴 錄音中... ${sec}`;dlog(`倒數 ${sec}`)}else{clearInterval(countTimer);numEl.textContent='✔';btn.innerHTML=`處理中...`;if(mr.state=='recording') mr.stop();}},1000);
     setTimeout(()=>{if(mr.state=='recording') mr.stop()},3200);
   }catch(e){dlog(`錄音失敗 ${e}`)}
 }
-window.startGame=()=>{dlog(`開始遊戲 房號${currentRoom} ${document.getElementById('pcount').textContent}人`); alert(`房號 ${currentRoom} ${document.getElementById('pcount').textContent} 開始派對對決！`)}
-dlog('V68 背景修復版 ready 第一頁background01 第二頁background02');
+window.startGame=()=>{dlog(`開始遊戲 房${currentRoom} ${document.getElementById('pcount').textContent}人`); alert(`房號 ${currentRoom} ${document.getElementById('pcount').textContent} 開始對決！`)}
+dlog('V70 每次新房號版 ready 支援多隊同玩 第一頁background01');
 </script>
 </body>
 </html>
