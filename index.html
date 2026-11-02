@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V70 每次新房號</title>
+<title>方包包包剪揼 V72 高清音質</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
 .wrap1{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background01.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto}
-.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 140px}
+.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 160px}
 .card-black{background:#111;border-radius:22px;padding:14px;border:3px solid #111;margin-bottom:12px}
-.room-orange{font-size:48px;font-weight:1000;color:#FF7A00;text-align:center;margin:16px 0;letter-spacing:1px;-webkit-text-stroke:0;text-shadow:none;font-family:"Arial Black",sans-serif}
+.room-orange{font-size:42px;font-weight:1000;color:#FF7A00;text-align:center;margin:12px 0;letter-spacing:1px;-webkit-text-stroke:0;text-shadow:none;font-family:"Arial Black",sans-serif}
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:14px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer}
+.mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:12px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer}
 .mode-btn.selected{background:#FFD93D;outline:3px solid #111}
 .btn-red{background:#FF1A1A;color:#fff;border:3px solid #111;border-radius:999px;padding:13px;text-align:center;font-weight:1000;font-size:15px;width:100%;cursor:pointer;transition:0.2s}
 .btn-red.recording{background:#fff;color:#FF1A1A;animation:pulse 0.6s infinite}
@@ -25,6 +25,8 @@ body{background:#FFE66D;margin:0}
 .input-box.newroom{background:#FFE66D;border-color:#FF7A00;color:#111;font-weight:1000;font-size:20px;text-align:center;letter-spacing:3px}
 .player-chip{display:inline-block;background:#FFE66D;color:#111;border-radius:999px;padding:3px 10px;margin:3px;font-weight:900;font-size:11px;border:2px solid #111}
 .player-chip.me{background:#34C759}
+.audio-remote{background:#222;border-radius:14px;padding:8px;margin-top:8px;border:2px dashed #FFD93D}
+.hint-clear{color:#FFD93D;font-size:10px;margin-top:6px;text-align:center;font-weight:700}
 #debugToggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #debugPanel{position:fixed;bottom:0;left:0;right:0;max-height:60vh;background:rgba(20,20,20,.96);color:#0f0;border-top:3px solid #0f0;border-radius:18px 18px 0 0;padding:10px;z-index:99998;overflow:auto;display:none;font-family:monospace;font-size:12px}
 #debugPanel.open{display:block}
@@ -32,17 +34,19 @@ body{background:#FFE66D;margin:0}
 </head>
 <body>
 <div id="debugToggle" onclick="document.getElementById('debugPanel').classList.toggle('open')">🐛</div>
-<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V70 每次新房號</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
+<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V72 高清音質 48kHz 128kbps</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
 
-<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！每次自動新房號，支援多隊同時玩！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間<br><span style="font-size:10px">自動新號</span></div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間<br><span style="font-size:10px">輸入朋友房號</span></div></div><div class="yellow" style="margin-top:12px"># 房號 (開始房間會自動出新號)</div><input id="roomInput" class="input-box newroom" placeholder="例如 7284" maxlength="4"></div></div></div>
+<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">高清錄音版！每次自動新房號，真聲音互傳！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間<br><span style="font-size:10px">自動新號</span></div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4"></div></div></div>
 
 <div id="s2" style="display:none"><div class="wrap2">
-  <div class="card-black"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div id="roomBadge" style="background:#FF7A00;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:900">房號 --</div></div><div id="plist" style="min-height:28px"></div></div>
+  <div class="card-black"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div id="roomBadge" style="background:#FF7A00;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:900">房號 --</div></div><div id="plist"></div></div>
   <div class="room-orange" id="roomNum">房號 --</div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">遊戲玩法 / Game Mode</div><div class="mode-grid"><div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div><div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪<br><span style="font-size:10px">(Best of 3)</span></div><div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪<br><span style="font-size:10px">(Best of 5)</span></div><div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪<br><span style="font-size:10px">(Win 2 in a row)</span></div></div></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 / Rock Paper Scissors Shoot</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">贏咗你會講咩 - 勝利宣言</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:28px">3</span> 錄音中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio></div>
-  <div class="btn-yellow" onclick="startGame()">開始遊戲</div><div id="waitBtn" class="btn-grey">等所有人上傳2段音 (1/8)</div>
+  
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 / Rock Paper Scissors Shoot</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 - 高清</div><div class="hint-clear">💡 手機離口15cm，安靜環境，大聲講包剪揼！</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox1"></div></div>
+
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">贏咗你會講咩 - 勝利宣言</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 - 高清</div><div class="hint-clear">💡 貼近講，唔好有風聲，勝利宣言要Chur！</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox2"></div></div>
+
+  <div class="btn-yellow" onclick="startGame()">開始遊戲 - 聽晒對面高清把聲</div><div id="waitBtn" class="btn-grey">等所有人上傳2段音 (1/8)</div>
 </div></div>
 
 <script type="module">
@@ -60,51 +64,25 @@ const firebaseConfig = {
 };
 const logEl=document.getElementById('dbgLog'); const connEl=document.getElementById('connStatus');
 function dlog(m){let t=new Date().toLocaleTimeString('zh-HK');logEl.innerHTML=`[${t}] ${m}<br>`+logEl.innerHTML}
-let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ Firebase 已連線 - 每次新房號 多隊同玩"; dlog("✅ Firebase 新房號版連線成功"); }catch(e){ connEl.textContent="❌ Firebase 失敗"; dlog("❌ "+e); }
+let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ Firebase 已連線 - V72 高清48kHz 128kbps"; dlog("✅ V72 高清音質連線成功 48kHz 128kbps Opus"); }catch(e){ connEl.textContent="❌ Firebase 失敗"; dlog("❌ "+e); }
 let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
 let currentRoom=""; let currentName="Louis"; const MAX_PLAYERS=8;
 function genNewRoom(){ return Math.floor(1000 + Math.random()*9000).toString(); }
+function blobToBase64(blob){ return new Promise(r=>{ let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); }); }
 
 window.createRoom=async()=>{
   currentName=document.getElementById('nameInput').value||'Louis';
-  // 每次開始都出新號
-  let newRoom=genNewRoom();
-  // 確保唔撞已有人嘅房，最多試5次
-  if(db){
-    for(let i=0;i<5;i++){
-      const snap=await get(ref(db,`rooms/${newRoom}/players`));
-      if(!snap.val()) break;
-      newRoom=genNewRoom();
-    }
-  }
-  currentRoom=newRoom;
-  document.getElementById('roomInput').value=newRoom;
-  document.getElementById('roomNum').textContent='房號 '+newRoom;
-  document.getElementById('roomBadge').textContent='房號 '+newRoom;
-  if(db){
-    await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()});
-    await set(ref(db,`rooms/${currentRoom}/mode`),'one');
-    listenRoom(currentRoom);
-  }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
-  dlog(`開新房 ${newRoom} ID=${myId} 每次新號`);
+  let newRoom=genNewRoom(); if(db){ for(let i=0;i<5;i++){ const snap=await get(ref(db,`rooms/${newRoom}/players`)); if(!snap.val()) break; newRoom=genNewRoom(); } }
+  currentRoom=newRoom; document.getElementById('roomInput').value=newRoom; document.getElementById('roomNum').textContent='房號 '+newRoom; document.getElementById('roomBadge').textContent='房號 '+newRoom;
+  if(db){ await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); await set(ref(db,`rooms/${currentRoom}/mode`),'one'); listenRoom(currentRoom); listenAudio(currentRoom); }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`開新房 ${newRoom} 高清音質`);
 }
 window.joinRoom=async()=>{
-  currentName=document.getElementById('nameInput').value||'Louis';
-  let inputRoom=document.getElementById('roomInput').value.trim();
-  if(!inputRoom || inputRoom.length!=4){ alert("請輸入朋友畀你嘅4位房號，例如 7284"); return; }
-  currentRoom=inputRoom;
-  document.getElementById('roomNum').textContent='房號 '+currentRoom;
-  document.getElementById('roomBadge').textContent='房號 '+currentRoom;
-  if(db){
-    const snap=await get(ref(db,`rooms/${currentRoom}/players`));
-    const count=snap.val()?Object.keys(snap.val()).length:0;
-    if(count>=MAX_PLAYERS){ alert(`房號 ${currentRoom} 已滿 8/8`); return; }
-    await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()});
-    listenRoom(currentRoom);
-  }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
-  dlog(`入房 ${currentRoom} 分隊對戰`);
+  currentName=document.getElementById('nameInput').value||'Louis'; let inputRoom=document.getElementById('roomInput').value.trim();
+  if(!inputRoom || inputRoom.length!=4){ alert("請輸入朋友房號4位數"); return; }
+  currentRoom=inputRoom; document.getElementById('roomNum').textContent='房號 '+currentRoom; document.getElementById('roomBadge').textContent='房號 '+currentRoom;
+  if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/players`)); const count=snap.val()?Object.keys(snap.val()).length:0; if(count>=MAX_PLAYERS){ alert(`房號 ${currentRoom} 已滿`); return; } await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); listenRoom(currentRoom); listenAudio(currentRoom); }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`入房 ${currentRoom} 高清音質`);
 }
 function listenRoom(room){
   if(!db) return;
@@ -112,29 +90,63 @@ function listenRoom(room){
     let players=snap.val()||{}; let ids=Object.keys(players); let count=ids.length;
     document.getElementById('pcount').textContent=`${count}/${MAX_PLAYERS}`;
     let html=ids.map(id=>{ let p=players[id]; let isMe=id==myId; let audStatus=(p.aud1&&p.aud2)?'🎙️✅':'🎙️'; return `<span class="player-chip ${isMe?'me':''}">${p.name}${isMe?'(我)':''} ${audStatus}</span>`; }).join('');
-    document.getElementById('plist').innerHTML=html||'<span style="color:#666;font-size:11px">等緊朋友入房...</span>';
-    document.getElementById('waitBtn').textContent=`等所有人上傳2段音 (${count}/${MAX_PLAYERS}) 房${room}`;
-    dlog(`房${room} 真實連線 ${count}/8: ${Object.values(players).map(p=>p.name).join(',')}`);
-    if(count>=2){ document.getElementById('waitBtn').style.background='#FFE66D'; document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 房${room} 可以開始`; }
+    document.getElementById('plist').innerHTML=html||'<span style="color:#666;font-size:11px">等緊朋友...</span>';
+    document.getElementById('waitBtn').textContent=`等所有人高清音 (${count}/${MAX_PLAYERS}) 房${room}`;
+    if(count>=2){ document.getElementById('waitBtn').style.background='#FFE66D'; document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 房${room} 高清互傳OK`; }
   });
   onValue(ref(db,`rooms/${room}/mode`),snap=>{ let mode=snap.val(); if(mode){ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>{b.classList.toggle('selected',b.dataset.mode==mode)}); } });
 }
-window.setMode=async(el)=>{ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); let mode=el.dataset.mode; dlog(`房${currentRoom} 玩法->${mode}`); if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),mode); } }
+function listenAudio(room){
+  if(!db) return;
+  onValue(ref(db,`rooms/${room}/audios`),snap=>{
+    let audios=snap.val()||{}; let box1=document.getElementById('remoteBox1'); let box2=document.getElementById('remoteBox2'); box1.innerHTML=''; box2.innerHTML='';
+    Object.keys(audios).forEach(key=>{ if(key.startsWith(myId)) return; let data=audios[key]; let type=key.split('_')[1]; let playerName=data.name||'對面'; let url=data.b64; let html=`<div class="audio-remote"><div style="color:#FFD93D;font-size:11px;font-weight:900">🔊 ${playerName} 高清把聲 - ${type=='aud1'?'包剪揼':'勝利宣言'}</div><audio controls src="${url}" style="width:100%;margin-top:6px"></audio></div>`; if(type=='aud1') box1.innerHTML+=html; else box2.innerHTML+=html; dlog(`收到 ${playerName} 高清聲音 ${type}`); });
+  });
+}
+window.setMode=async(el)=>{ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); let mode=el.dataset.mode; if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),mode); } }
 let mr,chunks=[],countTimer;
 window.toggleRec=async(t)=>{
   let btn=document.getElementById('btn'+t); let countBox=document.getElementById('count'+t); let numEl=document.getElementById('num'+t); let st=document.getElementById('st'+t);
-  if(btn.classList.contains('recording')) return; dlog(`錄音${t}開始 3秒 房${currentRoom}`);
+  if(btn.classList.contains('recording')) return; dlog(`高清錄音${t}開始 3秒 48kHz 128kbps`);
   try{
-    let s=await navigator.mediaDevices.getUserMedia({audio:true}); chunks=[];mr=new MediaRecorder(s);
-    mr.ondataavailable=e=>chunks.push(e.data);
-    mr.onstop=async()=>{ let url=URL.createObjectURL(new Blob(chunks)); document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block'; st.textContent='已錄 ✅';st.style.background='#34C759'; btn.textContent='✅ 已錄製';btn.style.background='#34C759';btn.style.color='#111'; btn.classList.remove('recording');countBox.style.display='none'; dlog(`房${currentRoom} 錄音${t}完成 3秒`); s.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer); if(db){ await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}); } let a=document.getElementById('st1').textContent.includes('已錄'); let b=document.getElementById('st2').textContent.includes('已錄'); if(a&&b){ document.getElementById('waitBtn').textContent=`✅ 我已準備好 房${currentRoom} 等其他人`; document.getElementById('waitBtn').style.background='#34C759'; } };
-    mr.start(); let sec=3; btn.classList.add('recording');btn.innerHTML=`🔴 正在錄音...`;countBox.style.display='block';numEl.textContent=sec; dlog(`正在錄音 ${sec}...`);
-    countTimer=setInterval(()=>{sec--;if(sec>0){numEl.textContent=sec;btn.innerHTML=`🔴 錄音中... ${sec}`;dlog(`倒數 ${sec}`)}else{clearInterval(countTimer);numEl.textContent='✔';btn.innerHTML=`處理中...`;if(mr.state=='recording') mr.stop();}},1000);
+    let stream=await navigator.mediaDevices.getUserMedia({
+      audio:{
+        echoCancellation:false,
+        noiseSuppression:false,
+        autoGainControl:false,
+        sampleRate:48000,
+        channelCount:1
+      }
+    });
+    chunks=[]; 
+    let options={mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:128000};
+    if(!MediaRecorder.isTypeSupported(options.mimeType)){ options={mimeType:'audio/webm', audioBitsPerSecond:128000}; }
+    mr=new MediaRecorder(stream, options);
+    dlog(`錄音器格式 ${mr.mimeType} ${options.audioBitsPerSecond/1000}kbps`);
+    mr.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
+    mr.onstop=async()=>{
+      let blob=new Blob(chunks,{type:mr.mimeType});
+      let url=URL.createObjectURL(blob);
+      document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block';
+      st.textContent='高清已錄 ✅';st.style.background='#34C759'; btn.textContent='✅ 高清已錄製 已傳送';btn.style.background='#34C759';btn.style.color='#111'; btn.classList.remove('recording');countBox.style.display='none';
+      dlog(`房${currentRoom} 高清錄音${t}完成 大小 ${Math.round(blob.size/1024)}KB`);
+      let b64=await blobToBase64(blob);
+      if(db){
+        await set(ref(db,`rooms/${currentRoom}/audios/${myId}_aud${t}`),{name:currentName,b64:b64,time:Date.now()});
+        await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true});
+        dlog(`✅ 高清聲音已上傳 房${currentRoom}`);
+      }
+      stream.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer);
+      let a=document.getElementById('st1').textContent.includes('已錄'); let b=document.getElementById('st2').textContent.includes('已錄');
+      if(a&&b){ document.getElementById('waitBtn').textContent=`✅ 高清已傳送 房${currentRoom}`; document.getElementById('waitBtn').style.background='#34C759'; }
+    };
+    mr.start(100); let sec=3; btn.classList.add('recording');btn.innerHTML=`🔴 高清錄音中... 貼近口`;countBox.style.display='block';numEl.textContent=sec; dlog(`高清正在錄音 ${sec}...`);
+    countTimer=setInterval(()=>{sec--;if(sec>0){numEl.textContent=sec;btn.innerHTML=`🔴 高清錄音中 ${sec}...大聲啲`;dlog(`倒數 ${sec}`)}else{clearInterval(countTimer);numEl.textContent='✔';btn.innerHTML=`處理中...`;if(mr.state=='recording') mr.stop();}},1000);
     setTimeout(()=>{if(mr.state=='recording') mr.stop()},3200);
-  }catch(e){dlog(`錄音失敗 ${e}`)}
+  }catch(e){dlog(`高清錄音失敗 ${e}`); alert("要開麥克風權限: "+e)}
 }
-window.startGame=()=>{dlog(`開始遊戲 房${currentRoom} ${document.getElementById('pcount').textContent}人`); alert(`房號 ${currentRoom} ${document.getElementById('pcount').textContent} 開始對決！`)}
-dlog('V70 每次新房號版 ready 支援多隊同玩 第一頁background01');
+window.startGame=()=>{dlog(`開始遊戲 房${currentRoom} 高清`); alert(`房號 ${currentRoom} 開始！高清大合唱！`)}
+dlog('V72 高清音質版 ready 48kHz 128kbps 關降噪 第一頁background01');
 </script>
 </body>
 </html>
