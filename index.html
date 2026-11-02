@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V67 八人版 房號6659</title>
+<title>方包包包剪揼 V68 背景修復 八人版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
-.wrap1,.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 140px}
+.wrap1{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background01.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto}
+.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 140px}
 .card-black{background:#111;border-radius:22px;padding:14px;border:3px solid #111;margin-bottom:12px}
 .room-orange{font-size:48px;font-weight:1000;color:#FF7A00;text-align:center;margin:16px 0;letter-spacing:1px;-webkit-text-stroke:0;text-shadow:none;font-family:"Arial Black",sans-serif}
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
@@ -30,15 +31,12 @@ body{background:#FFE66D;margin:0}
 </head>
 <body>
 <div id="debugToggle" onclick="document.getElementById('debugPanel').classList.toggle('open')">🐛</div>
-<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V67 八人版</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
+<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V68 背景修復 八人版</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
 
 <div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！最多8人派對！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間</div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box" value="6659" maxlength="4"></div></div></div>
 
 <div id="s2" style="display:none"><div class="wrap2">
-  <div class="card-black">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div style="color:#aaa;font-size:10px">房號 6659 可8人</div></div>
-    <div id="plist" style="min-height:28px"></div>
-  </div>
+  <div class="card-black"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div style="color:#aaa;font-size:10px">房號 6659 可8人</div></div><div id="plist" style="min-height:28px"></div></div>
   <div class="room-orange" id="roomNum">房號 6659</div>
   <div class="card-black"><div style="color:#FFE66D;font-weight:900">遊戲玩法 / Game Mode</div><div class="mode-grid"><div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div><div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪<br><span style="font-size:10px">(Best of 3)</span></div><div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪<br><span style="font-size:10px">(Best of 5)</span></div><div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪<br><span style="font-size:10px">(Win 2 in a row)</span></div></div></div>
   <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 / Rock Paper Scissors Shoot</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio></div>
@@ -49,7 +47,6 @@ body{background:#FFE66D;margin:0}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
   authDomain: "game-ad81e.firebaseapp.com",
@@ -60,113 +57,52 @@ const firebaseConfig = {
   appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
   measurementId: "G-GSWSWK4WEL"
 };
-
 const logEl=document.getElementById('dbgLog'); const connEl=document.getElementById('connStatus');
 function dlog(m){let t=new Date().toLocaleTimeString('zh-HK');logEl.innerHTML=`[${t}] ${m}<br>`+logEl.innerHTML}
-
-let db;
-try{
-  const app=initializeApp(firebaseConfig);
-  db=getDatabase(app);
-  connEl.textContent="✅ Firebase 已連線 - 支援8人派對 game-ad81e";
-  dlog("✅ Firebase 8人版連線成功");
-}catch(e){ connEl.textContent="❌ Firebase 失敗"; dlog("❌ "+e); }
-
-let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6);
-localStorage.setItem('myId',myId);
-let currentRoom="6659"; let currentName="Louis";
-const MAX_PLAYERS=8;
-
+let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ Firebase 已連線 - 支援8人派對 game-ad81e"; dlog("✅ Firebase 8人版連線成功"); }catch(e){ connEl.textContent="❌ Firebase 失敗"; dlog("❌ "+e); }
+let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
+let currentRoom="6659"; let currentName="Louis"; const MAX_PLAYERS=8;
 window.createRoom=async()=>{
-  currentName=document.getElementById('nameInput').value||'Louis';
-  currentRoom=document.getElementById('roomInput').value||'6659';
+  currentName=document.getElementById('nameInput').value||'Louis'; currentRoom=document.getElementById('roomInput').value||'6659';
   document.getElementById('roomNum').textContent='房號 '+currentRoom;
-  if(db){
-    const snap=await get(ref(db,`rooms/${currentRoom}/players`));
-    const count=snap.val()?Object.keys(snap.val()).length:0;
-    if(count>=MAX_PLAYERS){ alert("房已滿 8/8"); return; }
-    await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()});
-    await set(ref(db,`rooms/${currentRoom}/mode`),'one');
-    listenRoom(currentRoom);
-  }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
-  dlog(`開房 ${currentRoom} ID=${myId} 八人模式`);
+  if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/players`)); const count=snap.val()?Object.keys(snap.val()).length:0; if(count>=MAX_PLAYERS){ alert("房已滿 8/8"); return; } await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); await set(ref(db,`rooms/${currentRoom}/mode`),'one'); listenRoom(currentRoom); }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`開房 ${currentRoom} ID=${myId} 八人模式`);
 }
 window.joinRoom=async()=>{
-  currentName=document.getElementById('nameInput').value||'Louis';
-  currentRoom=document.getElementById('roomInput').value||'6659';
+  currentName=document.getElementById('nameInput').value||'Louis'; currentRoom=document.getElementById('roomInput').value||'6659';
   document.getElementById('roomNum').textContent='房號 '+currentRoom;
-  if(db){
-    const snap=await get(ref(db,`rooms/${currentRoom}/players`));
-    const count=snap.val()?Object.keys(snap.val()).length:0;
-    if(count>=MAX_PLAYERS){ alert("房已滿 8/8，入唔到"); return; }
-    await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()});
-    listenRoom(currentRoom);
-  }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
-  dlog(`入房 ${currentRoom} 八人模式`);
+  if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/players`)); const count=snap.val()?Object.keys(snap.val()).length:0; if(count>=MAX_PLAYERS){ alert("房已滿 8/8"); return; } await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); listenRoom(currentRoom); }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`入房 ${currentRoom} 八人模式`);
 }
 function listenRoom(room){
   if(!db) return;
   onValue(ref(db,`rooms/${room}/players`),snap=>{
-    let players=snap.val()||{};
-    let ids=Object.keys(players);
-    let count=ids.length;
+    let players=snap.val()||{}; let ids=Object.keys(players); let count=ids.length;
     document.getElementById('pcount').textContent=`${count}/${MAX_PLAYERS}`;
-    let html=ids.map(id=>{
-      let p=players[id];
-      let isMe=id==myId;
-      let audStatus=(p.aud1&&p.aud2)?'🎙️✅':'🎙️';
-      return `<span class="player-chip ${isMe?'me':''}">${p.name}${isMe?'(我)':''} ${audStatus}</span>`;
-    }).join('');
+    let html=ids.map(id=>{ let p=players[id]; let isMe=id==myId; let audStatus=(p.aud1&&p.aud2)?'🎙️✅':'🎙️'; return `<span class="player-chip ${isMe?'me':''}">${p.name}${isMe?'(我)':''} ${audStatus}</span>`; }).join('');
     document.getElementById('plist').innerHTML=html||'<span style="color:#666;font-size:11px">等緊朋友入房...</span>';
     document.getElementById('waitBtn').textContent=`等所有人上傳2段音 (${count}/${MAX_PLAYERS})`;
     dlog(`真實連線 ${count}/8: ${Object.values(players).map(p=>p.name).join(',')}`);
-    if(count>=2){
-      document.getElementById('waitBtn').style.background='#FFE66D';
-      document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 可以開始 (${count}/${MAX_PLAYERS})`;
-    }
-    if(count>=MAX_PLAYERS){
-      dlog(`房已滿 8/8`);
-    }
+    if(count>=2){ document.getElementById('waitBtn').style.background='#FFE66D'; document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 可以開始 (${count}/${MAX_PLAYERS})`; }
   });
-  onValue(ref(db,`rooms/${room}/mode`),snap=>{
-    let mode=snap.val();
-    if(mode){ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>{b.classList.toggle('selected',b.dataset.mode==mode)}); }
-  });
+  onValue(ref(db,`rooms/${room}/mode`),snap=>{ let mode=snap.val(); if(mode){ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>{b.classList.toggle('selected',b.dataset.mode==mode)}); } });
 }
-window.setMode=async(el)=>{
-  document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected');
-  let mode=el.dataset.mode; dlog(`玩法->${mode}`);
-  if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),mode); }
-}
+window.setMode=async(el)=>{ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); let mode=el.dataset.mode; dlog(`玩法->${mode}`); if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),mode); } }
 let mr,chunks=[],countTimer;
 window.toggleRec=async(t)=>{
   let btn=document.getElementById('btn'+t); let countBox=document.getElementById('count'+t); let numEl=document.getElementById('num'+t); let st=document.getElementById('st'+t);
-  if(btn.classList.contains('recording')) return;
-  dlog(`錄音${t}開始 3秒`);
+  if(btn.classList.contains('recording')) return; dlog(`錄音${t}開始 3秒`);
   try{
-    let s=await navigator.mediaDevices.getUserMedia({audio:true});
-    chunks=[];mr=new MediaRecorder(s);
+    let s=await navigator.mediaDevices.getUserMedia({audio:true}); chunks=[];mr=new MediaRecorder(s);
     mr.ondataavailable=e=>chunks.push(e.data);
-    mr.onstop=async()=>{
-      let url=URL.createObjectURL(new Blob(chunks));
-      document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block';
-      st.textContent='已錄 ✅';st.style.background='#34C759';
-      btn.textContent='✅ 已錄製';btn.style.background='#34C759';btn.style.color='#111';
-      btn.classList.remove('recording');countBox.style.display='none';
-      dlog(`錄音${t}完成 3秒`); s.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer);
-      if(db){ await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}); }
-      let a=document.getElementById('st1').textContent.includes('已錄'); let b=document.getElementById('st2').textContent.includes('已錄');
-      if(a&&b){ document.getElementById('waitBtn').textContent='✅ 我已準備好 等其他人'; document.getElementById('waitBtn').style.background='#34C759'; }
-    };
+    mr.onstop=async()=>{ let url=URL.createObjectURL(new Blob(chunks)); document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block'; st.textContent='已錄 ✅';st.style.background='#34C759'; btn.textContent='✅ 已錄製';btn.style.background='#34C759';btn.style.color='#111'; btn.classList.remove('recording');countBox.style.display='none'; dlog(`錄音${t}完成 3秒`); s.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer); if(db){ await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}); } let a=document.getElementById('st1').textContent.includes('已錄'); let b=document.getElementById('st2').textContent.includes('已錄'); if(a&&b){ document.getElementById('waitBtn').textContent='✅ 我已準備好 等其他人'; document.getElementById('waitBtn').style.background='#34C759'; } };
     mr.start(); let sec=3; btn.classList.add('recording');btn.innerHTML=`🔴 正在錄音...`;countBox.style.display='block';numEl.textContent=sec; dlog(`正在錄音 ${sec}...`);
     countTimer=setInterval(()=>{sec--;if(sec>0){numEl.textContent=sec;btn.innerHTML=`🔴 錄音中... ${sec}`;dlog(`倒數 ${sec}`)}else{clearInterval(countTimer);numEl.textContent='✔';btn.innerHTML=`處理中...`;if(mr.state=='recording') mr.stop();}},1000);
     setTimeout(()=>{if(mr.state=='recording') mr.stop()},3200);
   }catch(e){dlog(`錄音失敗 ${e}`)}
 }
 window.startGame=()=>{dlog(`開始遊戲 房號${currentRoom} ${document.getElementById('pcount').textContent}人`); alert(`房號 ${currentRoom} ${document.getElementById('pcount').textContent} 開始派對對決！`)}
-dlog('V67 八人派對版 ready 房號6659 橙色無黑邊');
+dlog('V68 背景修復版 ready 第一頁background01 第二頁background02');
 </script>
 </body>
 </html>
