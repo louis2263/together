@@ -3,114 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V87 V72高清底+全清</title>
+<title>方包包包剪揼 V75 第二頁4模式+第三頁大合唱逐拳</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
 .wrap1{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background01.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto}
-.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 200px}
-.wrap3,.wrap4{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background03.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 160px}
+.wrap2{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background02.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 160px}
+.wrap3{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-image:url('background03.jpg');background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 140px}
 .card-black{background:#111;border-radius:22px;padding:14px;border:3px solid #111;margin-bottom:12px}
-.room-orange{font-size:42px;font-weight:1000;color:#FF7A00;text-align:center;margin:12px 0;font-family:"Arial Black",sans-serif}
+.room-orange{font-size:42px;font-weight:1000;color:#FF7A00;text-align:center;margin:12px 0;letter-spacing:1px;-webkit-text-stroke:0;text-shadow:none;font-family:"Arial Black",sans-serif}
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:12px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer}
-.mode-btn.selected{background:#FFD93D;outline:3px solid #111}
-.btn-red{background:#FF1A1A;color:#fff;border:3px solid #111;border-radius:999px;padding:13px;text-align:center;font-weight:1000;font-size:15px;width:100%;cursor:pointer;transition:0.2s;position:relative;overflow:hidden}
-.btn-red.recording{background:#fff;color:#FF1A1A;animation:pulse 0.6s infinite, flashBg 0.3s infinite;transform:scale(1.03);box-shadow:0 0 20px #FF0000;border-color:#fff}
+.mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:12px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer;transition:0.2s}
+.mode-btn.selected{background:#FFD93D;outline:3px solid #111;transform:scale(1.03)}
+.btn-red{background:#FF1A1A;color:#fff;border:3px solid #111;border-radius:999px;padding:13px;text-align:center;font-weight:1000;font-size:15px;width:100%;cursor:pointer}
+.btn-red.recording{background:#fff;color:#FF1A1A;animation:pulse 0.6s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,26,26,.7)}70%{box-shadow:0 0 0 12px rgba(255,26,26,0)}100%{box-shadow:0 0 0 0 rgba(255,26,26,0)}}
-@keyframes flashBg{0%{background:#FF1A1A}50%{background:#FF5555}100%{background:#FF1A1A}}
-.countdown{font-size:28px;font-weight:1000;margin-left:8px;animation:countBounce 0.9s infinite;display:inline-block}
-@keyframes countBounce{0%{transform:scale(1)}50%{transform:scale(1.5)}100%{transform:scale(1)}}
 .btn-yellow{background:#FFD93D;color:#111;border:3px solid #111;border-radius:16px;padding:14px;text-align:center;font-weight:1000;font-size:18px;margin-top:8px;cursor:pointer}
-.btn-grey{background:#C4C4C4;color:#333;border:3px solid #111;border-radius:16px;padding:10px;text-align:center;font-weight:900;margin-top:8px}
-.input-card{position:absolute;left:16px;right:16px;bottom:70px;background:#111;border-radius:28px;padding:20px}
+.btn-green{background:#34C759;color:#fff;border:3px solid #111;border-radius:999px;padding:14px;text-align:center;font-weight:1000;font-size:18px;cursor:pointer}
+.input-card{position:absolute;left:16px;right:16px;bottom:20px;background:#111;border-radius:28px;padding:20px}
 .yellow{color:#FFE66D;font-weight:900;font-size:13px}
-.input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;margin-top:6px;font-size:16px}
+.input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;margin-top:6px}
 .input-box.newroom{background:#FFE66D;border-color:#FF7A00;color:#111;font-weight:1000;font-size:20px;text-align:center;letter-spacing:3px}
-.player-chip{display:inline-block;background:#FFE66D;color:#111;border-radius:999px;padding:3px 10px;margin:3px;font-weight:900;font-size:11px;border:2px solid #111}
-.player-chip.me{background:#34C759}
-.audio-remote{background:#222;border-radius:14px;padding:8px;margin-top:8px;border:2px dashed #FFD93D}
-.hint-clear{color:#FFD93D;font-size:10px;margin-top:6px;text-align:center;font-weight:700}
-
-/* V87 Debug蟲蟲 - 可收放 15行滾動 可控大細 */
-.debug-worm-handle{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:44px;background:#111;border-top:3px solid #34C759;display:flex;align-items:center;gap:10px;padding:0 14px;z-index:1000;cursor:pointer}
-.debug-worm-handle.recording{border-top-color:#FF1A1A;background:#300}
-.debug-dot{width:10px;height:10px;background:#34C759;border-radius:50%;animation:blink 1s infinite;flex-shrink:0}
-.debug-worm-handle.recording .debug-dot{background:#FF1A1A;animation:blinkFast 0.2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-@keyframes blinkFast{0%,100%{opacity:1;transform:scale(1.5)}50%{opacity:0.2;transform:scale(1)}}
-.worm{flex:1;height:6px;background:linear-gradient(90deg,#34C759,#FFE66D);border-radius:99px}
-.worm.recording{background:linear-gradient(90deg,#FF0000,#FF9999);height:8px;animation:growRec 3s linear forwards}
-@keyframes growRec{0%{width:0}100%{width:100%}}
-.handle-text{color:#FFE66D;font-size:11px;font-weight:900}
-.debug-panel{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(20,20,20,.97);border:3px solid #34C759;border-bottom:none;border-radius:18px 18px 0 0;z-index:999;display:none;flex-direction:column}
-.debug-panel.open{display:flex}
-.debug-panel-header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #222}
-.debug-controls{display:flex;gap:6px}
-.debug-controls button{background:#222;color:#fff;border:1px solid #444;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:900;cursor:pointer}
-.debug-logs{height:260px;overflow-y:auto;padding:8px 14px;font-family:monospace;font-size:11px;line-height:1.5;color:#0f0;white-space:pre-wrap;word-break:break-all}
-.debug-logs.small{height:150px}
-.debug-logs.large{height:400px}
-.debug-logs .line{padding:2px 0;border-bottom:1px dashed #1a1a1a}
-
-/* 第四版用 */
-.hands-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.hand-box{background:#fff;border:4px solid #111;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
-.hand-box.selected{background:#FFD93D;transform:scale(1.05);box-shadow:0 8px 0 #111;border-color:#FF7A00}
-.hand-box img{width:88%;height:88%;object-fit:contain}
-.hand-name-pill{background:#111;color:#FFE66D;border-radius:999px;padding:8px;text-align:center;font-weight:1000;font-size:20px;margin-top:8px;border:3px solid #111}
-.choice-log-card{background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px}
-.chorus-box{background:#111;border-radius:22px;padding:24px;border:3px solid #FFD93D;text-align:center;margin-bottom:12px}
+.result-top-bar{background:#111;border-radius:18px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border:3px solid #111;margin-bottom:10px}
+.result-title{background:#FFE66D;border:3px solid #111;border-radius:999px;padding:6px 18px;font-weight:1000;font-size:18px;text-align:center;margin:0 auto 12px;display:block;width:fit-content}
 .hand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hand-card{background:#1A1A1A;border-radius:18px;padding:10px;text-align:center;border:2px solid #333}
-.victory-box{background:#FFD93D;border:4px solid #111;border-radius:24px;padding:20px;text-align:center}
+.hand-card{background:#1A1A1A;border-radius:18px;padding:10px;text-align:center;border:2px solid #333;opacity:0;transform:translateY(20px) scale(0.9);transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+.hand-card.show{opacity:1;transform:translateY(0) scale(1)}
+.hand-emoji{font-size:56px;line-height:1}
+.hand-label{background:#FFE66D;border-radius:999px;padding:3px 12px;font-weight:1000;font-size:13px;margin-top:6px;display:inline-block;border:2px solid #111}
+.circle-A{background:#111;color:#fff;border-radius:50%;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-weight:1000;border:3px solid #FFE66D;margin:0 4px}
+.elim-list{color:#FF5555;font-weight:1000;font-size:16px}
+.chorus-box{background:#111;border-radius:22px;padding:24px;border:3px solid #FFD93D;text-align:center;margin-bottom:12px;animation:chorusPulse 1s infinite}
+@keyframes chorusPulse{0%{box-shadow:0 0 0 0 rgba(255,217,61,.6)}70%{box-shadow:0 0 0 15px rgba(255,217,61,0)}100%{box-shadow:0 0 0 0 rgba(255,217,61,0)}}
+#debugToggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#debugPanel{position:fixed;bottom:0;left:0;right:0;max-height:55vh;background:rgba(20,20,20,.96);color:#0f0;border-top:3px solid #0f0;border-radius:18px 18px 0 0;padding:10px;z-index:99998;overflow:auto;display:none;font-family:monospace;font-size:11px}
+#debugPanel.open{display:block}
 </style>
 </head>
 <body>
+<div id="debugToggle" onclick="document.getElementById('debugPanel').classList.toggle('open')">🐛</div>
+<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V75 第二頁4模式+大合唱逐拳</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D"></div><div id="dbgLog"></div></div>
 
-<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">V87 高清48kHz 128kbps底 + Firebase+手機全清 + Debug蟲蟲15行</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="例如：Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間<br><span style="font-size:10px">自動新號</span></div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4"></div></div></div>
+<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！每次自動新房號！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間</div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4"></div></div></div>
 
 <div id="s2" style="display:none"><div class="wrap2">
-  <div class="card-black"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players ready:</span></div><div id="roomBadge" style="background:#FF7A00;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:900">房號 --</div></div><div id="plist"></div></div>
   <div class="room-orange" id="roomNum">房號 --</div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 / Rock Paper Scissors Shoot</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)"><span id="txt1">🔴 錄音 3秒 - 高清</span></div><div class="hint-clear">💡 手機離口15cm，安靜環境，大聲講包剪揼！</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox1"></div></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">贏咗你會講咩 - 勝利宣言 (最終勝利者先播)</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)"><span id="txt2">🔴 錄音 3秒 - 高清</span></div><div class="hint-clear">💡 貼近講，唔好有風聲，勝利宣言要Chur！</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox2"></div></div>
-  <div class="btn-yellow" onclick="goToChoice()">錄完 → 進入出拳頁</div><div id="waitBtn" class="btn-grey">等所有人上傳2段音 (1/8)</div>
-  <div style="height:60px"></div>
+
+  <!-- 加返4個模式 -->
+  <div class="card-black">
+    <div style="color:#FFE66D;font-weight:900">遊戲玩法 / Game Mode</div>
+    <div class="mode-grid">
+      <div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div>
+      <div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪<br><span style="font-size:10px">(Best of 3)</span></div>
+      <div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪<br><span style="font-size:10px">(Best of 5)</span></div>
+      <div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪<br><span style="font-size:10px">(Win 2 in a row)</span></div>
+    </div>
+  </div>
+
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 - 高清</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio></div>
+
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">勝利宣言</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 - 高清</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio></div>
+
+  <div class="btn-yellow" onclick="goResult()">開始遊戲 → 大合唱</div>
+  <div id="waitBtn" class="btn-grey" style="background:#111;color:#FFE66D;border:3px solid #FFE66D;text-align:center;padding:8px;border-radius:12px;margin-top:8px;font-weight:900">1人已連線 房--</div>
 </div></div>
 
 <div id="s3" style="display:none"><div class="wrap3">
-<div style="background:#FFE66D;border:4px solid #111;border-radius:28px;padding:14px;text-align:center"><div style="font-size:42px;font-weight:1000;color:#fff;-webkit-text-stroke:4px #111">房號 <span id="rRoom3">--</span></div></div>
-<div style="background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px;text-align:center;font-weight:1000;font-size:26px;margin:14px 0">第<span id="rRound3">1</span>輪 - 請出拳</div>
-<div class="hands-row">
-<div onclick="chooseHand('paper')"><div class="hand-box" id="hand-paper"><img src="paper.jpg"></div><div class="hand-name-pill">包</div></div>
-<div onclick="chooseHand('scissors')"><div class="hand-box" id="hand-scissors"><img src="scissors.jpg"></div><div class="hand-name-pill">剪</div></div>
-<div onclick="chooseHand('rock')"><div class="hand-box" id="hand-rock"><img src="rock.jpg"></div><div class="hand-name-pill">揼</div></div>
-</div>
-<div class="choice-log-card"><div style="font-weight:1000">Choice log：<span id="choiceLogMain">你未揀</span></div><div id="choiceLogList" style="margin-top:8px"></div></div>
-<div class="btn-yellow" onclick="goToChorus()">直接去大合唱 →</div>
+  <div class="result-top-bar"><div style="color:#fff;font-weight:900">房號 <span id="rRoom" style="color:#FFE66D">--</span></div><div style="color:#FFE66D;font-weight:1000;font-size:16px">第<span id="rRound">1</span>輪結果 - 包剪揼大對決</div></div>
+  <div id="chorusStage" class="chorus-box">
+    <div style="color:#FFE66D;font-weight:1000;font-size:22px" id="chorusTitle">🔊 大合唱準備中...</div>
+    <div style="color:#fff;font-size:13px;margin-top:8px" id="chorusSub">收集緊大家把聲...</div>
+    <div id="chorusPlayer" style="margin-top:12px"></div>
+    <div style="color:#FFD93D;font-size:12px;margin-top:10px" id="chorusProgress">等待大合唱完成才顯示出拳...</div>
+  </div>
+  <div id="handsStage" style="display:none">
+    <div class="result-title">大家出拳情況</div>
+    <div class="card-black"><div class="hand-grid" id="handsGrid"></div></div>
+  </div>
+  <div id="remainStage" style="display:none">
+    <div class="card-black" style="text-align:center">
+      <div style="color:#FFE66D">剩餘人數</div>
+      <div style="font-size:28px;font-weight:1000;color:#FFE66D;margin:4px 0">剩餘 <span id="remainCount">2</span>人 <span id="remainIcons"></span></div>
+      <div id="remainNames" style="margin:6px 0"></div>
+      <div style="background:#111;border-radius:16px;padding:10px;margin-top:10px;text-align:left;border:2px solid #333">
+        <div style="color:#FFE66D;font-weight:900">+ 淘汰名單</div>
+        <div id="eliminatedList" class="elim-list"></div>
+        <div style="background:#FFF8DC;border:2px dashed #111;border-radius:10px;padding:6px;margin-top:8px;color:#111;font-weight:900;font-size:12px">💡 勝者: 包勝揼, 揼勝剪, 剪勝包</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <div class="btn-green" style="flex:1" onclick="nextRound()">▶ 下一輪</div>
+      <div class="btn-yellow" style="flex:1" onclick="location.reload()">↺ 全新遊戲</div>
+    </div>
+  </div>
 </div></div>
-
-<div id="s4" style="display:none"><div class="wrap4">
-<div id="chorusStage" class="chorus-box"><div style="color:#FFE66D;font-weight:1000;font-size:22px">🔊 大合唱：包剪揼！(手機暫存互相傳)</div><div id="chorusPlayer" style="margin-top:12px"></div></div>
-<div id="handsStage" style="display:none"><div class="card-black"><div class="hand-grid" id="handsGrid"></div></div></div>
-<div id="remainStage" style="display:none">
-<div class="card-black" style="text-align:center"><div style="color:#FFE66D">剩餘人數</div><div style="font-size:24px;font-weight:1000;color:#FFE66D">剩餘 <span id="remainCount">1</span>人</div><div id="remainNames"></div><div id="eliminatedList" style="color:#FF5555;font-weight:1000;margin-top:8px"></div></div>
-<div id="victoryStage" style="display:none;margin-top:12px"><div class="victory-box"><div style="font-size:28px;font-weight:1000">🏆 最終勝利者</div><div id="winnerName" style="font-size:24px;font-weight:1000;margin:8px 0">--</div><div id="victoryPlayer" style="margin-top:10px"></div><div style="font-size:11px;margin-top:8px" id="finalCleanupLog">播完勝利宣言 3秒後自動全清 Firebase + 手機...</div></div></div>
-<div style="display:flex;gap:10px;margin-top:12px"><div id="nextBtn" style="flex:1;background:#34C759;color:#fff;border:3px solid #111;border-radius:999px;padding:14px;text-align:center;font-weight:1000" onclick="nextRound()">▶ 下一輪</div><div class="btn-yellow" style="flex:1" onclick="finalCleanupAndReload()">↺ 結束並全清</div></div>
-</div>
-</div></div>
-
-<!-- Debug蟲蟲面板 -->
-<div class="debug-panel" id="debugPanel">
-<div class="debug-panel-header"><span>🐛 Debug V87 高清48kHz - 15行滾動 (互相傳→暫存→最終全清)</span><div class="debug-controls"><button onclick="changeSize('small')">細(8行)</button><button onclick="changeSize('mid')">中(15行)</button><button onclick="changeSize('large')">大(25行)</button><button onclick="clearLogs()">清</button><button onclick="toggleDebug()">✕ 收埋</button></div></div>
-<div class="debug-logs" id="debugLogs"></div>
-</div>
-<div class="debug-worm-handle" id="debugHandle" onclick="toggleDebug()"><div class="debug-dot" id="debugDot"></div><div class="worm" id="worm"></div><div class="handle-text" id="handleText">🐛 㩒出 Debug (15行可滾動) - 空白名 + 3秒閃動</div></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
 const firebaseConfig = {
   apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
   authDomain: "game-ad81e.firebaseapp.com",
@@ -121,75 +111,69 @@ const firebaseConfig = {
   appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
   measurementId: "G-GSWSWK4WEL"
 };
-
-// --- Debug蟲蟲 15行可滾動 ---
-let logs=[];
-function renderLogs(){ let c=document.getElementById('debugLogs'); c.innerHTML=logs.map(l=>'<div class="line">'+l+'</div>').join(''); }
-function addLog(m){ let t=new Date().toLocaleTimeString('zh-HK',{hour12:false}); let line='['+t+'] '+m; logs.unshift(line); if(logs.length>100) logs.pop(); renderLogs(); document.getElementById('handleText').textContent=m; }
-window.toggleDebug=()=>{ let p=document.getElementById('debugPanel'); p.classList.toggle('open'); };
-window.changeSize=(s)=>{ let el=document.getElementById('debugLogs'); el.classList.remove('small','large'); if(s=='small') el.classList.add('small'); if(s=='large') el.classList.add('large'); };
-window.clearLogs=()=>{ logs=[]; renderLogs(); addLog('已清Debug'); };
-function dlog(m){ addLog(m); }
-
-let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); dlog("✅ V87 Firebase已連 高清48kHz 128kbps + 全清機制"); }catch(e){ dlog("❌ Firebase失敗 "+e); }
+const logEl=document.getElementById('dbgLog'); const connEl=document.getElementById('connStatus');
+function dlog(m){let t=new Date().toLocaleTimeString('zh-HK');logEl.innerHTML=`[${t}] ${m}<br>`+logEl.innerHTML}
+let db; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ V75 第二頁4模式+大合唱逐拳"; dlog("✅ V75 連線成功"); }catch(e){ dlog("❌ "+e); }
 let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
-let currentRoom=""; let currentName=""; let roundNum=1; let selectedMode="one"; let myChoice=""; 
-let localAudios={}; let audioUrls=[]; const MAX_PLAYERS=8;
+let currentRoom=""; let currentName="Louis"; let roundNum=1; let selectedMode="one";
 function genNewRoom(){ return Math.floor(1000 + Math.random()*9000).toString(); }
-function imgForChoice(c){ if(c=='paper') return 'paper.jpg'; if(c=='scissors') return 'scissors.jpg'; if(c=='rock') return 'rock.jpg'; return 'rock.jpg'; }
-function labelForChoice(c){ if(c=='paper') return '包'; if(c=='scissors') return '剪'; if(c=='rock') return '揼'; return c; }
 function blobToBase64(blob){ return new Promise(r=>{ let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); }); }
 
-// --- 手機取消機制 V87 ---
-function createSafeUrl(blob){ let url=URL.createObjectURL(blob); audioUrls.push(url); dlog("📱 手機暫存Blob URL: "+url.substring(0,30)); return url; }
-function clearPhoneAudios(){
-  dlog("🧹 開始清手機暫存...");
-  audioUrls.forEach(u=>{ try{ URL.revokeObjectURL(u); dlog("  - 已revoke "+u.substring(0,20)); }catch(e){} });
-  audioUrls=[]; localAudios={};
-  document.querySelectorAll('audio').forEach(a=>{ try{ a.pause(); a.src=''; a.removeAttribute('src'); a.load(); }catch(e){} });
-  dlog("✅ 手機暫存已全清 Blob+base64+audio.src");
-}
-// --- Firebase取消機制 V87 ---
-async function clearFirebaseAudios(type){
-  if(!db || !currentRoom) return;
-  try{
-    if(type=='all'){ await remove(ref(db,`rooms/${currentRoom}`)); dlog("✅ Firebase已全清 rooms/"+currentRoom+" => null"); }
-    else{ let snap=await get(ref(db,`rooms/${currentRoom}/audios`)); let data=snap.val()||{}; for(let k of Object.keys(data)){ if(type=='aud1' && k.includes('_aud1') || type=='all') await remove(ref(db,`rooms/${currentRoom}/audios/${k}`)); } dlog("✅ Firebase已清 audios type="+type); }
-  }catch(e){ dlog("❌ Firebase清失敗 "+e); }
-}
-
 window.createRoom=async()=>{
-  let inputName=document.getElementById('nameInput').value.trim();
-  if(!inputName){ alert("請輸入你個名，例如：Louis"); return; }
-  currentName=inputName;
+  currentName=document.getElementById('nameInput').value||'Louis';
   let newRoom=genNewRoom(); if(db){ for(let i=0;i<5;i++){ const snap=await get(ref(db,`rooms/${newRoom}/players`)); if(!snap.val()) break; newRoom=genNewRoom(); } }
-  currentRoom=newRoom; document.getElementById('roomInput').value=newRoom; document.getElementById('roomNum').textContent='房號 '+newRoom; document.getElementById('roomBadge').textContent='房號 '+newRoom; document.getElementById('rRoom3').textContent=newRoom;
-  if(db){ await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); await set(ref(db,`rooms/${currentRoom}/mode`),'one'); await set(ref(db,`rooms/${currentRoom}/createdAt`),Date.now()); listenRoom(currentRoom); listenAudio(currentRoom); }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`✅ 開新房 ${newRoom} 玩家:${currentName} 高清+全清機制`);
+  currentRoom=newRoom; document.getElementById('roomInput').value=newRoom; document.getElementById('roomNum').textContent='房號 '+newRoom; document.getElementById('waitBtn').textContent=`1人已連線 房${newRoom} 模式:${selectedMode}`;
+  if(db){ await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); await set(ref(db,`rooms/${currentRoom}/mode`),selectedMode); listenRoom(currentRoom); }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
 }
 window.joinRoom=async()=>{
-  let inputName=document.getElementById('nameInput').value.trim();
-  if(!inputName){ alert("請輸入你個名"); return; }
-  currentName=inputName;
-  let inputRoom=document.getElementById('roomInput').value.trim();
-  if(!inputRoom || inputRoom.length!=4){ alert("請輸入朋友房號4位數"); return; }
-  currentRoom=inputRoom; document.getElementById('roomNum').textContent='房號 '+currentRoom; document.getElementById('roomBadge').textContent='房號 '+currentRoom; document.getElementById('rRoom3').textContent=currentRoom;
-  if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/players`)); const count=snap.val()?Object.keys(snap.val()).length:0; if(count>=MAX_PLAYERS){ alert(`房號 ${currentRoom} 已滿`); return; } await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); listenRoom(currentRoom); listenAudio(currentRoom); }
-  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; dlog(`✅ 入房 ${currentRoom} 玩家:${currentName}`);
+  currentName=document.getElementById('nameInput').value||'Louis'; let inputRoom=document.getElementById('roomInput').value.trim();
+  if(!inputRoom){ alert("請輸入房號"); return; } currentRoom=inputRoom; document.getElementById('roomNum').textContent='房號 '+currentRoom;
+  if(db){ await set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}); listenRoom(currentRoom); }
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
 }
-function listenRoom(room){
-  if(!db) return;
-  onValue(ref(db,`rooms/${room}/players`),snap=>{
-    let players=snap.val()||{}; let ids=Object.keys(players); let count=ids.length;
-    document.getElementById('pcount').textContent=`${count}/${MAX_PLAYERS}`;
-    let html=ids.map(id=>{ let p=players[id]; let isMe=id==myId; let audStatus=(p.aud1&&p.aud2)?'🎙️✅':'🎙️'; return `<span class="player-chip ${isMe?'me':''}">${p.name}${isMe?'(我)':''} ${audStatus}</span>`; }).join('');
-    document.getElementById('plist').innerHTML=html||'<span style="color:#666;font-size:11px">等緊朋友...</span>';
-    document.getElementById('waitBtn').textContent=`等所有人高清音 (${count}/${MAX_PLAYERS}) 房${room}`;
-    if(count>=2){ document.getElementById('waitBtn').style.background='#FFE66D'; document.getElementById('waitBtn').textContent=`✅ ${count}人已連線 房${room} 高清互傳OK`; }
-  });
+function listenRoom(room){ if(!db) return; onValue(ref(db,`rooms/${room}/players`),snap=>{ let c=Object.keys(snap.val()||{}).length; document.getElementById('waitBtn').textContent=`${c}人已連線 房${room} 模式:${selectedMode}`; }); onValue(ref(db,`rooms/${room}/mode`),snap=>{ let m=snap.val(); if(m){ selectedMode=m; document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>{b.classList.toggle('selected',b.dataset.mode==m)}); document.getElementById('waitBtn').textContent=document.getElementById('waitBtn').textContent.replace(/模式:.*/,`模式:${m}`); } }); }
+window.setMode=async(el)=>{
+  document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); selectedMode=el.dataset.mode;
+  dlog(`玩法->${selectedMode} 房${currentRoom}`); if(db && currentRoom){ await set(ref(db,`rooms/${currentRoom}/mode`),selectedMode); document.getElementById('waitBtn').textContent=document.getElementById('waitBtn').textContent.replace(/模式:.*/,`模式:${selectedMode}`); }
 }
-function listenAudio(room){
-  if(!db) return;
-  onValue(ref(db,`rooms/${room}/audios`),snap=>{
-    let audios=snap.val()||{}; let box1=document.getElementById('remoteBox1'); let box2=document.getElementById('remoteBox2'); box1.innerHTML=''; box2.innerHTML='';
-    Object.keys(audios).forEach(key=>{ if(key.startsWith(myId)) return; let data=audios[key]; let type=key.split('_')[1]; let playerName=data.name||'對面'; let url=data.b64; let html=`<div class="audio-remote"><div style="color:#FFD93D;font-size:11px;font-weight:900">🔊 ${playerName} 高清把聲 - ${type=='
+
+let mr,chunks=[],countTimer;
+window.toggleRec=async(t)=>{
+  let btn=document.getElementById('btn'+t); let countBox=document.getElementById('count'+t); let numEl=document.getElementById('num'+t); let st=document.getElementById('st'+t);
+  if(btn.classList.contains('recording')) return;
+  try{
+    let stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:48000,channelCount:1}});
+    chunks=[]; let opts={mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:128000}; if(!MediaRecorder.isTypeSupported(opts.mimeType)) opts={mimeType:'audio/webm', audioBitsPerSecond:128000};
+    mr=new MediaRecorder(stream, opts); mr.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
+    mr.onstop=async()=>{ let blob=new Blob(chunks,{type:mr.mimeType}); let url=URL.createObjectURL(blob); document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block'; st.textContent='高清已錄 ✅'; st.style.background='#34C759'; btn.textContent='✅ 已錄製'; btn.style.background='#34C759'; btn.style.color='#111'; btn.classList.remove('recording'); countBox.style.display='none'; let b64=await blobToBase64(blob); if(db){ await set(ref(db,`rooms/${currentRoom}/audios/${myId}_aud${t}`),{name:currentName,b64:b64}); await update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}); } stream.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer); };
+    mr.start(100); let sec=3; btn.classList.add('recording'); btn.innerHTML=`🔴 高清錄音中...`; countBox.style.display='block'; numEl.textContent=sec;
+    countTimer=setInterval(()=>{sec--; if(sec>0){numEl.textContent=sec; btn.innerHTML=`🔴 高清錄音中 ${sec}`;}else{clearInterval(countTimer); numEl.textContent='✔'; btn.innerHTML=`處理中...`; if(mr.state=='recording') mr.stop();}},1000); setTimeout(()=>{if(mr.state=='recording') mr.stop()},3200);
+  }catch(e){dlog(e)}
+}
+
+window.goResult=async()=>{
+  if(!currentRoom) currentRoom=document.getElementById('roomInput').value||'2562';
+  document.getElementById('rRoom').textContent=currentRoom; document.getElementById('rRound').textContent=roundNum;
+  document.getElementById('s2').style.display='none'; document.getElementById('s3').style.display='block';
+  document.getElementById('chorusStage').style.display='block'; document.getElementById('handsStage').style.display='none'; document.getElementById('remainStage').style.display='none';
+  let audiosData={}; if(db){ const snap=await get(ref(db,`rooms/${currentRoom}/audios`)); audiosData=snap.val()||{}; }
+  let audioList=Object.values(audiosData); if(audioList.length==0) audioList=[{name:currentName,b64:''}];
+  let chorusTitle=document.getElementById('chorusTitle'); let chorusSub=document.getElementById('chorusSub'); let chorusPlayer=document.getElementById('chorusPlayer'); let progress=document.getElementById('chorusProgress');
+  chorusTitle.textContent='🔊 大合唱進行中...'; chorusSub.textContent=`收集到 ${audioList.length} 段高清聲音，必定播完才顯示出拳 | 模式:${selectedMode}`;
+  let idx=0; async function playNext(){ if(idx>=audioList.length){ chorusTitle.textContent='✅ 大合唱完成！'; progress.textContent='即將逐拳顯示...'; setTimeout(showHandsSequentially, 800); return; } let item=audioList[idx]; progress.textContent=`大合唱 ${idx+1}/${audioList.length} : ${item.name} 播放中...`; chorusPlayer.innerHTML=`<div style="color:#FFD93D;font-weight:900">▶ ${item.name} - 播放中 ${idx+1}/${audioList.length}</div><audio id="chorusAudio" controls autoplay src="${item.b64}" style="width:100%;margin-top:8px"></audio>`; let a=document.getElementById('chorusAudio'); if(a && item.b64){ a.onended=()=>{ idx++; setTimeout(playNext, 400); }; a.onerror=()=>{ idx++; setTimeout(playNext, 400); }; try{ await a.play(); }catch(e){ idx++; setTimeout(playNext, 800); } }else{ idx++; setTimeout(playNext, 800); } } playNext();
+}
+function showHandsSequentially(){
+  document.getElementById('chorusStage').style.display='none'; document.getElementById('handsStage').style.display='block';
+  let choices=['rock','paper','scissors']; let choiceMap={rock:'揼',paper:'包',scissors:'剪'}; let emojiMap={rock:'👊',paper:'🖐️',scissors:'✌️'};
+  let demoNames=[currentName,'Player B','Player C','Player D']; let results=demoNames.map(n=>({name:n,choice:choices[Math.floor(Math.random()*3)]}));
+  let types=new Set(results.map(r=>r.choice)); let winningType=null;
+  if(types.size==2){ if(types.has('rock')&&types.has('scissors')) winningType='rock'; if(types.has('scissors')&&types.has('paper')) winningType='scissors'; if(types.has('paper')&&types.has('rock')) winningType='paper'; }
+  let grid=document.getElementById('handsGrid'); grid.innerHTML='';
+  results.forEach((r,i)=>{ let div=document.createElement('div'); div.className='hand-card'; div.id='card-'+i; let isWinner = winningType ? r.choice==winningType : true; let winText = isWinner ? '🏆勝' : '❌淘汰'; div.innerHTML=`<div style="color:#FFE66D;font-weight:900;font-size:13px">${r.name} ${winText}</div><div class="hand-emoji">${emojiMap[r.choice]}</div><div class="hand-label">出 ${choiceMap[r.choice]}</div>`; grid.appendChild(div); });
+  results.forEach((r,i)=>{ setTimeout(()=>{ let card=document.getElementById('card-'+i); if(card){ card.classList.add('show'); } if(i==results.length-1){ setTimeout(()=>showRemain(results, winningType), 800); } }, i*700); });
+}
+function showRemain(results, winningType){
+  let remaining=[]; let eliminated=[]; results.forEach(r=>{ let isWinner = winningType ? r.choice==winningType : true; if(isWinner) remaining.push(r.name); else eliminated.push(r.name); });
+  if(new Set(results.map(r=>r.choice)).size!=2){ remaining=results.map(r=>r.name); eliminated=[]; }
+  document.getElementById('remainCount').textContent=remaining.length; document.getElementById('remainIcons').innerHTML=remaining.map(n=>`<span class="circle-A">${n[0]}</span>`).join(''); document.getElementById('remainNames').innerHTML=remaining.map(n=>`<span class="player-chip" style="background:#34C759">${n}</span>`).join(''); document.getEleme
