@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V88 高清修復可運行版</title>
+<title>方包包包剪揼 V89 空白名修復版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
@@ -24,12 +24,13 @@ body{background:#FFE66D;margin:0}
 .input-card{position:absolute;left:16px;right:16px;bottom:70px;background:#111;border-radius:28px;padding:20px}
 .yellow{color:#FFE66D;font-weight:900;font-size:13px}
 .input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;margin-top:6px;font-size:16px}
+.input-box::placeholder{color:#888}
 .input-box.newroom{background:#FFE66D;border-color:#FF7A00;color:#111;font-weight:1000;font-size:20px;text-align:center;letter-spacing:3px}
+.input-box.newroom::placeholder{color:#8a6d00}
 .player-chip{display:inline-block;background:#FFE66D;color:#111;border-radius:999px;padding:3px 10px;margin:3px;font-weight:900;font-size:11px;border:2px solid #111}
 .player-chip.me{background:#34C759}
 .audio-remote{background:#222;border-radius:14px;padding:8px;margin-top:8px;border:2px dashed #FFD93D}
 .hint-clear{color:#FFD93D;font-size:10px;margin-top:6px;text-align:center;font-weight:700}
-/* Debug蟲蟲 15行 */
 .debug-handle{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:44px;background:#111;border-top:3px solid #34C759;display:flex;align-items:center;gap:10px;padding:0 14px;z-index:1000;cursor:pointer}
 .debug-handle.rec{border-top-color:#FF1A1A;background:#300}
 .debug-dot{width:10px;height:10px;background:#34C759;border-radius:50%;animation:blink 1s infinite}
@@ -49,7 +50,6 @@ body{background:#FFE66D;margin:0}
 .hand-box.selected{background:#FFD93D;transform:scale(1.05)}
 .hand-box img{width:88%;height:88%;object-fit:contain}
 .hand-name-pill{background:#111;color:#FFE66D;border-radius:999px;padding:8px;text-align:center;font-weight:1000;font-size:20px;margin-top:8px;border:3px solid #111}
-.choice-log-card{background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px}
 .chorus-box{background:#111;border-radius:22px;padding:24px;border:3px solid #FFD93D;text-align:center;margin-bottom:12px}
 .hand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hand-card{background:#1A1A1A;border-radius:18px;padding:10px;text-align:center;border:2px solid #333}
@@ -58,13 +58,16 @@ body{background:#FFE66D;margin:0}
 </head>
 <body>
 
-<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">V88 修復可運行版 - V72高清底+全清機制</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="例如：Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間<br><span style="font-size:10px">自動新號</span></div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4"></div></div></div>
+<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">V89 真空白名 + V72高清48kHz + 全清機制</div><div class="yellow" style="margin-top:10px">輸入你個名</div>
+<!-- V89重點：真正空白，Sample係placeholder -->
+<input id="nameInput" class="input-box" placeholder="例如：Louis" value="" autocomplete="off" autocorrect="off" spellcheck="false" onfocus="this.select()">
+<div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間<br><span style="font-size:10px">自動新號</span></div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4" value=""></div></div></div>
 
 <div id="s2" style="display:none"><div class="wrap2">
   <div class="card-black"><div style="display:flex;justify-content:space-between"><div><span id="pcount" style="background:#FFD93D;color:#111;border-radius:6px;padding:2px 8px;font-weight:900">1/8</span> <span style="color:#FFE66D;font-weight:900;font-size:12px">players</span></div><div id="roomBadge" style="background:#FF7A00;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:900">房號 --</div></div><div id="plist"></div></div>
   <div class="room-orange" id="roomNum">房號 --</div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 - 高清</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:32px">3</span> <span id="txtCount1">高清錄音中...</span></div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox1"></div></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">勝利宣言 - 最終勝利者先播</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>勝利宣言</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 - 高清</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:32px">3</span> <span id="txtCount2">高清錄音中...</span></div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox2"></div></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 - 高清</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:32px">3</span> <span>高清錄音中...</span></div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox1"></div></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">勝利宣言 - 最終勝利者先播</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>勝利宣言</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 - 高清</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:32px">3</span> <span>高清錄音中...</span></div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio><div id="remoteBox2"></div></div>
   <div class="btn-yellow" onclick="goToChoice()">錄完 → 進入出拳頁</div><div id="waitBtn" class="btn-grey">等所有人上傳2段音 (1/8)</div>
   <div style="height:80px"></div>
 </div></div>
@@ -77,7 +80,7 @@ body{background:#FFE66D;margin:0}
 <div onclick="chooseHand('scissors')"><div class="hand-box" id="hand-scissors"><img src="scissors.jpg"></div><div class="hand-name-pill">剪</div></div>
 <div onclick="chooseHand('rock')"><div class="hand-box" id="hand-rock"><img src="rock.jpg"></div><div class="hand-name-pill">揼</div></div>
 </div>
-<div class="choice-log-card"><div style="font-weight:1000">Choice log：<span id="choiceLogMain">你未揀</span></div><div id="choiceLogList" style="margin-top:8px"></div></div>
+<div class="choice-log-card" style="background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px"><div style="font-weight:1000">Choice log：<span id="choiceLogMain">你未揀</span></div><div id="choiceLogList" style="margin-top:8px"></div></div>
 <div class="btn-yellow" onclick="goToChorus()">直接去大合唱 →</div>
 </div></div>
 
@@ -91,43 +94,44 @@ body{background:#FFE66D;margin:0}
 </div>
 </div></div>
 
-<div class="debug-panel" id="debugPanel"><div class="debug-head"><span>🐛 Debug 15行可滾動 - V72高清+全清</span><div style="display:flex;gap:6px"><button onclick="changeSize('small')">細</button><button onclick="changeSize('mid')">中</button><button onclick="changeSize('large')">大</button><button onclick="clearLogs()">清</button><button onclick="toggleDebug()">✕ 收埋</button></div></div><div class="debug-logs" id="debugLogs"></div></div>
+<div class="debug-panel" id="debugPanel"><div class="debug-head"><span>🐛 Debug 15行可滾動 - 空白名+3秒閃動+全清</span><div style="display:flex;gap:6px"><button onclick="changeSize('small')">細</button><button onclick="changeSize('mid')">中</button><button onclick="changeSize('large')">大</button><button onclick="clearLogs()">清</button><button onclick="toggleDebug()">✕ 收埋</button></div></div><div class="debug-logs" id="debugLogs"></div></div>
 <div class="debug-handle" id="debugHandle" onclick="toggleDebug()"><div class="debug-dot"></div><div class="worm" id="worm"></div><div class="handle-text" id="handleText">🐛 㩒出 Debug (15行) - 空白名+倒數閃動</div></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
-// 保證一定有定義，就算Firebase未load都入到房
 let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
 let currentRoom=""; let currentName=""; let roundNum=1; let selectedMode="one"; let myChoice=""; let localAudios={}; let audioUrls=[]; let db=null; let logs=[];
 function renderLogs(){ let c=document.getElementById('debugLogs'); c.innerHTML=logs.map(l=>'<div style="padding:2px 0;border-bottom:1px dashed #1a1a1a">'+l+'</div>').join(''); }
-function dlog(m){ let t=new Date().toLocaleTimeString('zh-HK',{hour12:false}); logs.unshift('['+t+'] '+m); if(logs.length>100) logs.pop(); renderLogs(); document.getElementById('handleText').textContent=m; console.log(m); }
+function dlog(m){ let t=new Date().toLocaleTimeString('zh-HK',{hour12:false}); logs.unshift('['+t+'] '+m); if(logs.length>100) logs.pop(); renderLogs(); document.getElementById('handleText').textContent=m; }
 window.toggleDebug=()=>{ document.getElementById('debugPanel').classList.toggle('open'); };
 window.changeSize=(s)=>{ let el=document.getElementById('debugLogs'); el.classList.remove('small','large'); if(s=='small') el.classList.add('small'); if(s=='large') el.classList.add('large'); };
 window.clearLogs=()=>{ logs=[]; renderLogs(); dlog('已清Debug'); };
-
 function genNewRoom(){ return Math.floor(1000 + Math.random()*9000).toString(); }
 function imgForChoice(c){ if(c=='paper') return 'paper.jpg'; if(c=='scissors') return 'scissors.jpg'; if(c=='rock') return 'rock.jpg'; return 'rock.jpg'; }
 function labelForChoice(c){ if(c=='paper') return '包'; if(c=='scissors') return '剪'; if(c=='rock') return '揼'; return c; }
 function blobToBase64(blob){ return new Promise(r=>{ let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); }); }
 function createSafeUrl(blob){ let url=URL.createObjectURL(blob); audioUrls.push(url); return url; }
-// 手機取消機制
 function clearPhoneAudios(){ dlog('🧹 清手機 Blob+base64'); audioUrls.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} }); audioUrls=[]; localAudios={}; document.querySelectorAll('audio').forEach(a=>{ try{ a.pause(); a.src=''; a.removeAttribute('src'); a.load(); }catch(e){} }); }
-// Firebase取消機制
-function clearFirebaseAll(){ if(!db||!currentRoom) return; db.ref('rooms/'+currentRoom).remove().then(()=>{ dlog('✅ Firebase已全清 rooms/'+currentRoom+' => null'); }).catch(e=>{ dlog('❌ Firebase清失敗 '+e); }); }
+function clearFirebaseAll(){ if(!db||!currentRoom) return; db.ref('rooms/'+currentRoom).remove().then(()=>{ dlog('✅ Firebase已全清 rooms/'+currentRoom+' => null'); }); }
+
+// V89 強制空白名
+window.addEventListener('load',()=>{
+  let ni=document.getElementById('nameInput'); ni.value=''; ni.setAttribute('value',''); dlog('✅ V89 名稱欄已強制空白，Sample：例如：Louis');
+});
 
 window.createRoom=()=>{
   let n=document.getElementById('nameInput').value.trim();
-  if(!n){ alert('請輸入你個名，例如：Louis'); return; }
+  if(!n){ alert('請輸入你個名，例如：Louis'); document.getElementById('nameInput').focus(); return; }
   currentName=n; currentRoom=genNewRoom();
   document.getElementById('roomInput').value=currentRoom; document.getElementById('roomNum').textContent='房號 '+currentRoom; document.getElementById('roomBadge').textContent='房號 '+currentRoom; document.getElementById('rRoom3').textContent=currentRoom;
   document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
   dlog('✅ 已開房 '+currentRoom+' 玩家:'+currentName);
-  if(db){ db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName,ready:true,joined:Date.now()}); db.ref('rooms/'+currentRoom+'/mode').set('one'); db.ref('rooms/'+currentRoom+'/createdAt').set(Date.now()); listenRoom(currentRoom); listenAudio(currentRoom); }
+  if(db){ db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName,ready:true,joined:Date.now()}); db.ref('rooms/'+currentRoom+'/mode').set('one'); }
 };
 window.joinRoom=()=>{
   let n=document.getElementById('nameInput').value.trim();
-  if(!n){ alert('請輸入你個名'); return; }
+  if(!n){ alert('請輸入你個名'); document.getElementById('nameInput').focus(); return; }
   currentName=n; let r=document.getElementById('roomInput').value.trim();
   if(!r||r.length!=4){ alert('請輸入朋友房號4位數'); return; }
   currentRoom=r; document.getElementById('roomNum').textContent='房號 '+currentRoom; document.getElementById('roomBadge').textContent='房號 '+currentRoom; document.getElementById('rRoom3').textContent=currentRoom;
@@ -135,23 +139,8 @@ window.joinRoom=()=>{
   dlog('✅ 已加入房號 '+currentRoom+' 玩家:'+currentName);
   if(db){ db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName,ready:true,joined:Date.now()}); listenRoom(currentRoom); listenAudio(currentRoom); }
 };
-function listenRoom(room){
-  if(!db) return;
-  db.ref('rooms/'+room+'/players').on('value',snap=>{
-    let players=snap.val()||{}; let ids=Object.keys(players); let count=ids.length;
-    document.getElementById('pcount').textContent=count+'/8';
-    let html=ids.map(id=>{ let p=players[id]; let isMe=id==myId; let aud=(p.aud1&&p.aud2)?'🎙️✅':'🎙️'; return '<span class="player-chip '+(isMe?'me':'')+'">'+p.name+(isMe?'(我)':'')+' '+aud+'</span>'; }).join('');
-    document.getElementById('plist').innerHTML=html||'等緊朋友...';
-    document.getElementById('waitBtn').textContent='等所有人高清音 ('+count+'/8) 房'+room;
-  });
-}
-function listenAudio(room){
-  if(!db) return;
-  db.ref('rooms/'+room+'/audios').on('value',snap=>{
-    let audios=snap.val()||{}; let box1=document.getElementById('remoteBox1'); let box2=document.getElementById('remoteBox2'); box1.innerHTML=''; box2.innerHTML='';
-    Object.keys(audios).forEach(key=>{ if(key.startsWith(myId)) return; let data=audios[key]; let type=key.split('_')[1]; let name=data.name||'對面'; let url=data.b64; let html='<div class="audio-remote"><div style="color:#FFD93D;font-size:11px">🔊 '+name+' 高清 - '+(type=='aud1'?'包剪揼':'勝利宣言')+'</div><audio controls src="'+url+'" style="width:100%;margin-top:6px"></audio></div>'; if(type=='aud1') box1.innerHTML+=html; else box2.innerHTML+=html; dlog('收到 '+name+' 高清 '+type); });
-  });
-}
+function listenRoom(room){ if(!db) return; db.ref('rooms/'+room+'/players').on('value',snap=>{ let players=snap.val()||{}; let ids=Object.keys(players); document.getElementById('pcount').textContent=ids.length+'/8'; let html=ids.map(id=>{ let p=players[id]; let isMe=id==myId; return '<span class="player-chip '+(isMe?'me':'')+'">'+p.name+(isMe?'(我)':'')+'</span>'; }).join(''); document.getElementById('plist').innerHTML=html||'等緊朋友...'; }); }
+function listenAudio(room){ if(!db) return; db.ref('rooms/'+room+'/audios').on('value',snap=>{ let audios=snap.val()||{}; let box1=document.getElementById('remoteBox1'); let box2=document.getElementById('remoteBox2'); box1.innerHTML=''; box2.innerHTML=''; Object.keys(audios).forEach(key=>{ if(key.startsWith(myId)) return; let data=audios[key]; let type=key.split('_')[1]; let name=data.name||'對面'; let url=data.b64; let html='<div class="audio-remote"><div style="color:#FFD93D;font-size:11px">🔊 '+name+' 高清 - '+(type=='aud1'?'包剪揼':'勝利宣言')+'</div><audio controls src="'+url+'" style="width:100%;margin-top:6px"></audio></div>'; if(type=='aud1') box1.innerHTML+=html; else box2.innerHTML+=html; }); }); }
 let mr,chunks=[],countTimer;
 window.toggleRec=async(t)=>{
   if(!currentName){ let n=document.getElementById('nameInput').value.trim(); if(!n){ alert('請先輸入你個名'); return; } currentName=n; }
@@ -163,7 +152,7 @@ window.toggleRec=async(t)=>{
     chunks=[]; let options={mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:128000}; if(!MediaRecorder.isTypeSupported(options.mimeType)) options={mimeType:'audio/webm', audioBitsPerSecond:128000};
     mr=new MediaRecorder(stream, options); mr.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
     let sec=3; btn.classList.add('recording'); document.getElementById('debugHandle').classList.add('rec'); document.getElementById('worm').classList.add('rec');
-    countBox.style.display='block'; numEl.textContent=sec; document.getElementById('txtCount'+t).textContent='高清錄音中...';
+    countBox.style.display='block'; numEl.textContent=sec;
     countTimer=setInterval(()=>{ sec--; if(sec>0){ numEl.textContent=sec; dlog('倒數 '+sec); }else{ clearInterval(countTimer); } },1000);
     mr.onstop=async()=>{
       clearInterval(countTimer); btn.classList.remove('recording'); document.getElementById('debugHandle').classList.remove('rec'); document.getElementById('worm').classList.remove('rec'); countBox.style.display='none';
@@ -178,4 +167,5 @@ window.toggleRec=async(t)=>{
     mr.start(100); setTimeout(()=>{ if(mr.state=='recording') mr.stop(); },3200);
   }catch(e){ dlog('錄音失敗 '+e); alert('要開麥克風權限: '+e); btn.classList.remove('recording'); document.getElementById('debugHandle').classList.remove('rec'); }
 };
-window.goToChoice=()=>{ document.getElementById('s2').style.display='none'; document.getElementById('s3').style.display='block'; document.getElementById('choiceLogList').innerHTML='<div class="player-chip me">'+current
+window.goToChoice=()=>{ document.getElementById('s2').style.display='none'; document.getElementById('s3').style.display='block'; document.getElementById('choiceLogList').innerHTML='<div class="player-chip me">'+currentName+'(你) 未揀</div>'; dlog('進入出拳頁 房'+currentRoom); };
+w
