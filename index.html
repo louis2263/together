@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V78 穩定可㩒版</title>
+<title>方包包包剪揼 V82 最終勝利者播宣言後全清</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
@@ -17,8 +17,6 @@ body{background:#FFE66D;margin:0}
 .mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:12px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer}
 .mode-btn.selected{background:#FFD93D;outline:3px solid #111}
 .btn-red{background:#FF1A1A;color:#fff;border:3px solid #111;border-radius:999px;padding:13px;text-align:center;font-weight:1000;font-size:15px;width:100%;cursor:pointer}
-.btn-red.recording{background:#fff;color:#FF1A1A;animation:pulse 0.6s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,26,26,.7)}70%{box-shadow:0 0 0 12px rgba(255,26,26,0)}100%{box-shadow:0 0 0 0 rgba(255,26,26,0)}}
 .btn-yellow{background:#FFD93D;color:#111;border:3px solid #111;border-radius:16px;padding:14px;text-align:center;font-weight:1000;font-size:18px;margin-top:8px;cursor:pointer}
 .input-card{position:absolute;left:16px;right:16px;bottom:20px;background:#111;border-radius:28px;padding:20px}
 .yellow{color:#FFE66D;font-weight:900;font-size:13px}
@@ -26,170 +24,209 @@ body{background:#FFE66D;margin:0}
 .input-box.newroom{background:#FFE66D;border-color:#FF7A00;color:#111;font-weight:1000;font-size:20px;text-align:center;letter-spacing:3px}
 .top-info-card{background:#FFE66D;border:4px solid #111;border-radius:28px;padding:14px 16px;text-align:center}
 .room-big{font-size:42px;font-weight:1000;color:#fff;-webkit-text-stroke:4px #111;line-height:1}
-.info-row{display:flex;gap:8px;margin-top:8px;justify-content:center}
-.info-pill{background:#111;color:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:900}
 .round-title{background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px;text-align:center;font-weight:1000;font-size:26px;margin:14px 0}
 .hands-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .hand-box{background:#fff;border:4px solid #111;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
 .hand-box.selected{background:#FFD93D;transform:scale(1.05);box-shadow:0 8px 0 #111;border-color:#FF7A00}
 .hand-box img{width:88%;height:88%;object-fit:contain}
 .hand-name-pill{background:#111;color:#FFE66D;border-radius:999px;padding:8px;text-align:center;font-weight:1000;font-size:20px;margin-top:8px;border:3px solid #111}
-.countdown-card{background:#FFE66D;border:4px solid #111;border-radius:20px;padding:10px;display:flex;justify-content:space-around;font-weight:1000;font-size:38px;margin:14px 0}
 .choice-log-card{background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px}
 .player-log{display:inline-flex;align-items:center;gap:6px;background:#111;color:#fff;border-radius:999px;padding:6px 12px;margin:4px;font-size:13px;font-weight:900}
-.dot{width:14px;height:14px;border-radius:50%;background:#FFE66D;display:inline-block}
-.dot.done{background:#34C759}
-.dot.wait{background:#FFE66D}
-.result-top-bar{background:#111;border-radius:18px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border:3px solid #111;margin-bottom:10px}
-.result-title{background:#FFE66D;border:3px solid #111;border-radius:999px;padding:6px 18px;font-weight:1000;font-size:18px;text-align:center;margin:0 auto 12px;display:block;width:fit-content}
+.chorus-box{background:#111;border-radius:22px;padding:24px;border:3px solid #FFD93D;text-align:center;margin-bottom:12px}
 .hand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hand-card{background:#1A1A1A;border-radius:18px;padding:10px;text-align:center;border:2px solid #333}
-.chorus-box{background:#111;border-radius:22px;padding:24px;border:3px solid #FFD93D;text-align:center;margin-bottom:12px}
-#debugToggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#debugPanel{position:fixed;bottom:0;left:0;right:0;max-height:55vh;background:rgba(20,20,20,.96);color:#0f0;border-top:3px solid #0f0;border-radius:18px 18px 0 0;padding:10px;z-index:99998;overflow:auto;display:none;font-family:monospace;font-size:11px}
-#debugPanel.open{display:block}
+.victory-box{background:#FFD93D;border:4px solid #111;border-radius:24px;padding:20px;text-align:center;animation:pop 0.6s}
+@keyframes pop{0%{transform:scale(0.8)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
-<div id="debugToggle" onclick="document.getElementById('debugPanel').classList.toggle('open')">🐛</div>
-<div id="debugPanel"><div style="display:flex;justify-content:space-between"><b>🐛 DEBUG V78 一定有反應版</b><button onclick="this.parentElement.parentElement.classList.remove('open')" style="background:#FFE66D;border:none;padding:4px 10px;border-radius:8px">X</button></div><div id="connStatus" style="color:#FFD93D">準備中...</div><div id="dbgLog"></div></div>
 
-<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！每次自動新房號！</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" value="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間</div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4"></div></div></div>
+<div id="s1" style="display:block"><div class="wrap1"><div class="input-card"><div class="yellow">V82 最終版：互相傳音訊→手機暫存→勝利者播宣言→全清房間</div><div class="yellow" style="margin-top:10px">輸入你個名</div><input id="nameInput" class="input-box" value="Louis"><div style="display:flex;gap:10px;margin-top:12px"><div class="mode-btn" style="flex:1;background:#FFD93D" onclick="createRoom()">開始房間</div><div class="mode-btn" style="flex:1;background:#34C759" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="自動新號" maxlength="4"><div id="status1" style="color:#0f0;font-size:11px;margin-top:8px">✅ V82 已就緒，房間玩完自動變 null</div></div></div></div>
 
 <div id="s2" style="display:none"><div class="wrap2">
   <div class="room-orange" id="roomNum">房號 --</div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">遊戲玩法 / Game Mode</div><div class="mode-grid"><div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div><div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪<br><span style="font-size:10px">(Best of 3)</span></div><div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪<br><span style="font-size:10px">(Best of 5)</span></div><div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪<br><span style="font-size:10px">(Win 2 in a row)</span></div></div></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>請講：包剪揼！</span><span id="st1" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 - 高清</div><div id="count1" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num1" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">勝利宣言</div><div style="display:flex;justify-content:space-between;color:#fff;font-size:11px;margin:8px 0"><span>錄低你的勝利宣言！</span><span id="st2" style="background:#FFE66D;color:#111;border-radius:999px;padding:2px 8px">狀態：未錄</span></div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 - 高清</div><div id="count2" style="display:none;text-align:center;color:#FF7A00;font-weight:1000;margin-top:8px"><span id="num2" style="font-size:28px">3</span> 高清錄音中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">玩法</div><div class="mode-grid"><div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div><div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪</div><div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪</div><div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪</div></div></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 (互相傳，手機暫存)</div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 包剪揼</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio><div id="st1" style="color:#FFE66D;font-size:11px;margin-top:4px">未錄</div></div>
+  <div class="card-black"><div style="color:#FFE66D;font-weight:900">勝利宣言 (最終勝利者先播)</div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 勝利宣言</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio><div id="st2" style="color:#FFE66D;font-size:11px;margin-top:4px">未錄，最終勝利先播</div></div>
   <div class="btn-yellow" onclick="goToChoice()">錄完 → 進入出拳頁</div>
-  <div id="waitBtn" style="background:#111;color:#FFE66D;border:3px solid #FFE66D;text-align:center;padding:8px;border-radius:12px;margin-top:8px;font-weight:900">1人已連線</div>
+  <div id="waitBtn" style="background:#111;color:#FFE66D;border:3px solid #FFE66D;text-align:center;padding:8px;border-radius:12px;margin-top:8px;font-weight:900">V82 互相傳音訊模式</div>
 </div></div>
 
 <div id="s3" style="display:none"><div class="wrap3">
-  <div class="top-info-card"><div class="room-big">房號 <span id="rRoom3">--</span></div><div class="info-row"><div class="info-pill">玩法：<span id="rMode3">一鋪定勝負</span></div><div class="info-pill">存活：<span id="rAlive3">你</span></div></div></div>
+  <div class="top-info-card"><div class="room-big">房號 <span id="rRoom3">--</span></div></div>
   <div class="round-title">第<span id="rRound3">1</span>輪 - 請出拳</div>
   <div class="hands-row">
-    <div onclick="chooseHand('paper')"><div class="hand-box" id="hand-paper"><img src="paper.jpg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/10870/10870974.png'"></div><div class="hand-name-pill">包</div></div>
-    <div onclick="chooseHand('scissors')"><div class="hand-box" id="hand-scissors"><img src="scissors.jpg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/10870/10871040.png'"></div><div class="hand-name-pill">剪</div></div>
-    <div onclick="chooseHand('rock')"><div class="hand-box" id="hand-rock"><img src="rock.jpg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/10870/10870995.png'"></div><div class="hand-name-pill">揼</div></div>
+    <div onclick="chooseHand('paper')"><div class="hand-box" id="hand-paper"><img src="paper.jpg"></div><div class="hand-name-pill">包</div></div>
+    <div onclick="chooseHand('scissors')"><div class="hand-box" id="hand-scissors"><img src="scissors.jpg"></div><div class="hand-name-pill">剪</div></div>
+    <div onclick="chooseHand('rock')"><div class="hand-box" id="hand-rock"><img src="rock.jpg"></div><div class="hand-name-pill">揼</div></div>
   </div>
-  <div class="countdown-card" id="countCard"><span>0</span><span>0</span><span>1</span><span>0</span></div>
-  <div class="choice-log-card"><div style="font-weight:1000;font-size:20px">Choice log：<span id="choiceLogMain">你未揀</span></div><div id="choiceLogList" style="margin-top:8px"></div></div>
-  <div id="syncStatus" style="text-align:center;color:#111;font-weight:900;margin-top:10px;font-size:12px">等待所有選手選擇好，就同步進入第四頁大合唱...</div>
-  <div class="btn-yellow" onclick="goToChorus()" style="margin-top:12px">測試：直接去大合唱 →</div>
+  <div class="choice-log-card"><div style="font-weight:1000">Choice log：<span id="choiceLogMain">你未揀</span></div><div id="choiceLogList" style="margin-top:8px"></div></div>
+  <div class="btn-yellow" onclick="goToChorus()">測試去大合唱 →</div>
 </div></div>
 
 <div id="s4" style="display:none"><div class="wrap4">
-  <div class="result-top-bar"><div style="color:#fff;font-weight:900">房號 <span id="rRoom4" style="color:#FFE66D">--</span></div><div style="color:#FFE66D;font-weight:1000;font-size:16px">第<span id="rRound4">1</span>輪結果</div></div>
-  <div id="chorusStage" class="chorus-box"><div style="color:#FFE66D;font-weight:1000;font-size:22px" id="chorusTitle">🔊 大合唱進行中...</div><div style="color:#fff;font-size:13px;margin-top:8px" id="chorusSub">收集緊大家把聲...</div><div id="chorusPlayer" style="margin-top:12px"></div><div style="color:#FFD93D;font-size:12px;margin-top:10px" id="chorusProgress">必定播完才顯示出拳...</div></div>
-  <div id="handsStage" style="display:none"><div class="result-title">大家出拳情況</div><div class="card-black"><div class="hand-grid" id="handsGrid"></div></div></div>
-  <div id="remainStage" style="display:none"><div class="card-black" style="text-align:center"><div style="color:#FFE66D">剩餘人數</div><div style="font-size:24px;font-weight:1000;color:#FFE66D">剩餘 <span id="remainCount">1</span>人</div><div id="remainNames"></div><div style="background:#111;border-radius:16px;padding:10px;margin-top:10px;text-align:left;border:2px solid #333"><div style="color:#FFE66D;font-weight:900">+ 淘汰名單</div><div id="eliminatedList" style="color:#FF5555;font-weight:1000"></div></div></div><div style="display:flex;gap:10px;margin-top:12px"><div class="btn-green" style="flex:1;background:#34C759;color:#fff;border:3px solid #111;border-radius:999px;padding:14px;text-align:center;font-weight:1000" onclick="nextRound()">▶ 下一輪</div><div class="btn-yellow" style="flex:1" onclick="location.reload()">↺ 全新遊戲</div></div></div>
+  <div id="chorusStage" class="chorus-box"><div style="color:#FFE66D;font-weight:1000;font-size:22px" id="chorusTitle">🔊 大合唱：包剪揼！</div><div id="chorusPlayer" style="margin-top:12px"></div><div style="color:#FFD93D;font-size:12px;margin-top:10px" id="chorusProgress">互相傳緊音訊，手機暫存播放中...</div></div>
+  <div id="handsStage" style="display:none"><div style="background:#FFE66D;border:3px solid #111;border-radius:999px;padding:6px 18px;font-weight:1000;text-align:center;margin:0 auto 12px;width:fit-content">大家出拳情況</div><div class="card-black"><div class="hand-grid" id="handsGrid"></div></div></div>
+  <div id="remainStage" style="display:none">
+    <div class="card-black" style="text-align:center"><div style="color:#FFE66D">剩餘人數</div><div style="font-size:24px;font-weight:1000;color:#FFE66D">剩餘 <span id="remainCount">1</span>人</div><div id="remainNames"></div><div id="eliminatedList" style="color:#FF5555;font-weight:1000;margin-top:8px"></div></div>
+    <div id="victoryStage" style="display:none;margin-top:12px"><div class="victory-box"><div style="font-size:28px;font-weight:1000">🏆 最終勝利者</div><div id="winnerName" style="font-size:24px;font-weight:1000;margin:8px 0">--</div><div style="color:#111">播放勝利宣言...</div><div id="victoryPlayer" style="margin-top:10px"></div><div style="font-size:11px;margin-top:8px" id="finalCleanupLog">播完 3秒後自動全清房間 + 手機音訊...</div></div></div>
+    <div style="display:flex;gap:10px;margin-top:12px"><div id="nextBtn" style="flex:1;background:#34C759;color:#fff;border:3px solid #111;border-radius:999px;padding:14px;text-align:center;font-weight:1000" onclick="nextRound()">▶ 下一輪</div><div class="btn-yellow" style="flex:1" onclick="finalCleanupAndReload()">↺ 結束並全清</div></div>
+  </div>
 </div></div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
-  authDomain: "game-ad81e.firebaseapp.com",
-  databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "game-ad81e",
-  storageBucket: "game-ad81e.firebasestorage.app",
-  messagingSenderId: "524468263754",
-  appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
-  measurementId: "G-GSWSWK4WEL"
-};
-const logEl=document.getElementById('dbgLog'); const connEl=document.getElementById('connStatus');
-function dlog(m){let t=new Date().toLocaleTimeString('zh-HK'); if(logEl){logEl.innerHTML=`[${t}] ${m}<br>`+logEl.innerHTML} console.log(m);}
-let db=null; try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); connEl.textContent="✅ Firebase 已連線 V78 可㩒版"; dlog("✅ V78 連線成功"); }catch(e){ connEl.textContent="⚠️ Firebase 離線，但本機模式可用"; dlog("⚠️ Firebase失敗，改本地模式 "+e); }
-
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script>
 let myId = localStorage.getItem('myId') || 'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
-let currentRoom=""; let currentName="Louis"; let roundNum=1; let selectedMode="one"; let myChoice=""; let localPlayers={};
+let currentRoom=""; let currentName="Louis"; let roundNum=1; let selectedMode="one"; let myChoice=""; 
+let localAudios={}; // 手機暫存 {aud1: base64, aud2: base64}
+let audioUrls=[]; // 追蹤 Blob URL 用嚟 revoke
+let db=null;
+try{
+  const firebaseConfig = { apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0", authDomain: "game-ad81e.firebaseapp.com", databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "game-ad81e" };
+  firebase.initializeApp(firebaseConfig); db=firebase.database();
+  document.getElementById('status1').textContent='✅ Firebase 已連，V82 互相傳音訊 + 最終全清';
+}catch(e){ document.getElementById('status1').textContent='⚠️ 離線，本機暫存模式'; }
 
 function genNewRoom(){ return Math.floor(1000 + Math.random()*9000).toString(); }
-function blobToBase64(blob){ return new Promise(r=>{ let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); }); }
 function modeText(m){ if(m=='one') return '一鋪定勝負'; if(m=='best3') return '贏兩鋪'; if(m=='best5') return '贏三鋪'; if(m=='win2') return '連贏兩鋪'; return m; }
 function imgForChoice(c){ if(c=='paper') return 'paper.jpg'; if(c=='scissors') return 'scissors.jpg'; if(c=='rock') return 'rock.jpg'; return 'rock.jpg'; }
 function labelForChoice(c){ if(c=='paper') return '包'; if(c=='scissors') return '剪'; if(c=='rock') return '揼'; return c; }
+function createSafeUrl(blob){ let url=URL.createObjectURL(blob); audioUrls.push(url); return url; }
+function clearPhoneAudios(){
+  audioUrls.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} });
+  audioUrls=[]; localAudios={};
+  document.querySelectorAll('audio').forEach(a=>{ try{ a.pause(); a.src=''; a.removeAttribute('src'); a.load(); }catch(e){} });
+  console.log('✅ 手機暫存音訊已清');
+}
+function blobToBase64(blob){ return new Promise(r=>{ let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); }); }
 
-window.createRoom=()=>{
-  try{
-    currentName=document.getElementById('nameInput').value||'Louis';
-    currentRoom=genNewRoom();
-    document.getElementById('roomInput').value=currentRoom;
-    document.getElementById('roomNum').textContent='房號 '+currentRoom;
-    localPlayers={}; localPlayers[myId]={name:currentName, choice:''};
-    document.getElementById('waitBtn').textContent=`房號 ${currentRoom} 本地模式 已連線`;
-    dlog(`本機開房 ${currentRoom} 名稱 ${currentName}`);
-    if(db){ set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}).catch(e=>dlog('Firebase寫入失敗但不影響 '+e)); set(ref(db,`rooms/${currentRoom}/mode`),selectedMode).catch(()=>{}); }
-    document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
-  }catch(e){ alert('開房失敗 '+e); dlog('開房失敗 '+e); }
+function createRoom(){
+  currentName=document.getElementById('nameInput').value||'Louis';
+  currentRoom=genNewRoom();
+  document.getElementById('roomInput').value=currentRoom;
+  document.getElementById('roomNum').textContent='房號 '+currentRoom;
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
+  if(db){ db.ref('rooms/'+currentRoom).set({createdAt:Date.now(), mode:selectedMode}); db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName, joined:Date.now()}); }
 }
-window.joinRoom=()=>{
-  try{
-    currentName=document.getElementById('nameInput').value||'Louis';
-    let inputRoom=document.getElementById('roomInput').value.trim();
-    if(!inputRoom){ alert("請輸入房號"); return; }
-    currentRoom=inputRoom;
-    document.getElementById('roomNum').textContent='房號 '+currentRoom;
-    localPlayers[myId]={name:currentName, choice:''};
-    dlog(`入房 ${currentRoom}`);
-    if(db){ set(ref(db,`rooms/${currentRoom}/players/${myId}`),{name:currentName,ready:true,joined:Date.now()}).catch(()=>{}); }
-    document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
-  }catch(e){ alert('入房失敗 '+e); }
+function joinRoom(){
+  currentName=document.getElementById('nameInput').value||'Louis';
+  let inputRoom=document.getElementById('roomInput').value.trim(); if(!inputRoom){ alert("請輸入房號"); return; }
+  currentRoom=inputRoom; document.getElementById('roomNum').textContent='房號 '+currentRoom;
+  document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block';
+  if(db){ db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName, joined:Date.now()}); }
 }
-window.setMode=(el)=>{
-  document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected'); selectedMode=el.dataset.mode;
-  dlog(`玩法->${selectedMode}`);
-  if(db && currentRoom){ set(ref(db,`rooms/${currentRoom}/mode`),selectedMode).catch(()=>{}); }
-  let wait=document.getElementById('waitBtn'); if(wait) wait.textContent=`房號 ${currentRoom} 模式:${modeText(selectedMode)}`;
-}
+function setMode(el){ document.querySelectorAll('.mode-grid .mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); selectedMode=el.dataset.mode; if(db && currentRoom){ db.ref('rooms/'+currentRoom+'/mode').set(selectedMode); } }
 
-let mr,chunks=[],countTimer;
-window.toggleRec=async(t)=>{
+let mr,chunks=[];
+async function toggleRec(t){
+  let btn=document.getElementById('btn'+t); let st=document.getElementById('st'+t);
   try{
-    let btn=document.getElementById('btn'+t); let countBox=document.getElementById('count'+t); let numEl=document.getElementById('num'+t); let st=document.getElementById('st'+t);
-    if(btn.classList.contains('recording')) return;
     let stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:48000,channelCount:1}});
-    chunks=[]; let opts={mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:128000}; if(!MediaRecorder.isTypeSupported(opts.mimeType)) opts={mimeType:'audio/webm', audioBitsPerSecond:128000};
+    chunks=[]; let opts={mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:64000}; if(!MediaRecorder.isTypeSupported(opts.mimeType)) opts={mimeType:'audio/webm', audioBitsPerSecond:64000};
     mr=new MediaRecorder(stream, opts); mr.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
-    mr.onstop=async()=>{ let blob=new Blob(chunks,{type:mr.mimeType}); let url=URL.createObjectURL(blob); let a=document.getElementById('aud'+t); a.src=url; a.style.display='block'; st.textContent='高清已錄 ✅'; st.style.background='#34C759'; btn.textContent='✅ 已錄製'; btn.style.background='#34C759'; btn.style.color='#111'; btn.classList.remove('recording'); countBox.style.display='none'; let b64=await blobToBase64(blob); localPlayers[myId]._aud=b64; if(db){ set(ref(db,`rooms/${currentRoom}/audios/${myId}_aud${t}`),{name:currentName,b64:b64}).catch(()=>{}); update(ref(db,`rooms/${currentRoom}/players/${myId}`),{[t==1?'aud1':'aud2']:true}).catch(()=>{}); } stream.getTracks().forEach(tr=>tr.stop()); clearInterval(countTimer); dlog(`錄音${t}完成 ${Math.round(blob.size/1024)}KB`); };
-    mr.start(100); let sec=3; btn.classList.add('recording'); btn.innerHTML=`🔴 高清錄音中...`; countBox.style.display='block'; numEl.textContent=sec;
-    countTimer=setInterval(()=>{sec--; if(sec>0){numEl.textContent=sec; btn.innerHTML=`🔴 高清錄音中 ${sec}`;}else{clearInterval(countTimer); numEl.textContent='✔'; btn.innerHTML=`處理中...`; if(mr.state=='recording') mr.stop();}},1000); setTimeout(()=>{if(mr.state=='recording') mr.stop()},3200);
-  }catch(e){ alert('要開麥克風權限'); dlog('錄音失敗 '+e); }
+    mr.onstop=async()=>{
+      let blob=new Blob(chunks,{type:mr.mimeType}); let url=createSafeUrl(blob); document.getElementById('aud'+t).src=url; document.getElementById('aud'+t).style.display='block'; st.textContent='✅ 已錄 (手機暫存 + 互相傳)';
+      let b64=await blobToBase64(blob); localAudios['aud'+t]=b64;
+      // 互相傳：短暫上 Firebase，手機都有份
+      if(db && currentRoom){ db.ref('rooms/'+currentRoom+'/audios/'+myId+'_aud'+t).set({name:currentName,b64:b64, ts:Date.now()}); }
+      stream.getTracks().forEach(tr=>tr.stop());
+    };
+    mr.start(100); setTimeout(()=>{ if(mr.state=='recording') mr.stop(); },3100);
+  }catch(e){ alert('要開麥克風權限'); }
 }
 
-window.goToChoice=()=>{
-  try{
-    if(!currentRoom) currentRoom=document.getElementById('roomInput').value||genNewRoom();
-    document.getElementById('rRoom3').textContent=currentRoom;
-    document.getElementById('rMode3').textContent=modeText(selectedMode);
-    document.getElementById('rRound3').textContent=roundNum;
-    document.getElementById('rAlive3').textContent=currentName;
-    document.getElementById('s2').style.display='none';
-    document.getElementById('s3').style.display='block';
-    updateChoiceLogLocal();
-    if(db){
-      get(ref(db,`rooms/${currentRoom}/players`)).then(snap=>{
-        let players=snap.val()||localPlayers;
-        updateChoiceLog(players);
-        onValue(ref(db,`rooms/${currentRoom}/players`),s=>{ updateChoiceLog(s.val()||localPlayers); });
-      }).catch(()=>{ updateChoiceLogLocal(); });
-    }
-    dlog(`進入第三頁 出拳頁 房${currentRoom} 一定有反應`);
-  }catch(e){ alert('跳轉失敗 '+e); }
+function goToChoice(){
+  if(!currentRoom) currentRoom=document.getElementById('roomInput').value||genNewRoom();
+  document.getElementById('rRoom3').textContent=currentRoom; document.getElementById('rRound3').textContent=roundNum;
+  document.getElementById('s2').style.display='none'; document.getElementById('s3').style.display='block';
+  if(db){ db.ref('rooms/'+currentRoom+'/players').on('value', snap=>{ let players=snap.val()||{}; let listEl=document.getElementById('choiceLogList'); listEl.innerHTML=''; Object.keys(players).forEach(pid=>{ let p=players[pid]; listEl.innerHTML+='<div class="player-log">'+p.name+' '+(p.choice?'已揀 '+labelForChoice(p.choice):'未揀')+'</div>'; }); }); }
+}
+function chooseHand(choice){
+  if(myChoice) return; myChoice=choice; document.querySelectorAll('.hand-box').forEach(b=>b.classList.remove('selected')); document.getElementById('hand-'+choice).classList.add('selected');
+  document.getElementById('choiceLogMain').textContent='你已揀 '+labelForChoice(choice);
+  if(db && currentRoom){ db.ref('rooms/'+currentRoom+'/players/'+myId+'/choice').set(choice); }
+  else setTimeout(()=>goToChorus(),1000);
+}
+function goToChorus(){
+  document.getElementById('s3').style.display='none'; document.getElementById('s4').style.display='block';
+  document.getElementById('chorusStage').style.display='block'; document.getElementById('handsStage').style.display='none'; document.getElementById('remainStage').style.display='none';
+  // 大合唱：播包剪揼 (aud1) - 互相傳嚟嘅音訊，手機暫存播放
+  let audioList=[];
+  if(db && currentRoom){
+    db.ref('rooms/'+currentRoom+'/audios').once('value').then(snap=>{
+      let data=snap.val()||{}; Object.values(data).forEach(v=>{ if(v.b64 && v.b64.includes('aud1') || Object.keys(data).some(k=>k.includes('_aud1'))){} });
+      // 簡化：攞所有 aud1
+      Object.keys(data).forEach(k=>{ if(k.includes('_aud1')) audioList.push(data[k]); });
+      if(audioList.length==0) audioList=[{name:currentName,b64:localAudios['aud1']||''}];
+      playChorus(audioList);
+    });
+  }else{ audioList=[{name:currentName,b64:localAudios['aud1']||''}]; playChorus(audioList); }
+}
+function playChorus(audioList){
+  let chorusPlayer=document.getElementById('chorusPlayer'); let idx=0;
+  function playNext(){
+    if(idx>=audioList.length){ setTimeout(showHandsSequentially,600); return; }
+    let item=audioList[idx]; chorusPlayer.innerHTML='<div style="color:#FFD93D">▶ '+item.name+' 包剪揼</div><audio id="chorusAudio" controls autoplay src="'+(item.b64||'')+'" style="width:100%;margin-top:8px"></audio>';
+    let a=document.getElementById('chorusAudio'); if(a && item.b64){ a.onended=()=>{ idx++; playNext(); }; a.play().catch(()=>{ idx++; playNext(); }); }else{ idx++; playNext(); }
+  }
+  playNext();
+}
+let lastRemaining=[];
+function showHandsSequentially(){
+  document.getElementById('chorusStage').style.display='none'; document.getElementById('handsStage').style.display='block';
+  let results=[];
+  if(db && currentRoom){
+    db.ref('rooms/'+currentRoom+'/players').once('value').then(snap=>{
+      let players=snap.val()||{}; Object.values(players).forEach(p=>{ results.push({name:p.name,choice:p.choice||myChoice||'rock', id:p.name}); }); renderHands(results);
+    });
+  }else{ results=[{name:currentName,choice:myChoice||'rock'}]; renderHands(results); }
+}
+function renderHands(results){
+  let types=new Set(results.map(r=>r.choice)); let winningType=null;
+  if(types.size==2){ if(types.has('rock')&&types.has('scissors')) winningType='rock'; if(types.has('scissors')&&types.has('paper')) winningType='scissors'; if(types.has('paper')&&types.has('rock')) winningType='paper'; }
+  let grid=document.getElementById('handsGrid'); grid.innerHTML='';
+  results.forEach(r=>{ let div=document.createElement('div'); div.className='hand-card'; div.innerHTML='<div style="color:#FFE66D">'+r.name+'</div><img src="'+imgForChoice(r.choice)+'" style="width:70%;margin:8px auto;display:block"><div style="background:#FFE66D;border-radius:999px;padding:2px 10px;font-weight:1000;border:2px solid #111">出 '+labelForChoice(r.choice)+'</div>'; grid.appendChild(div); });
+  setTimeout(()=>showRemain(results, winningType),800);
+}
+function showRemain(results, winningType){
+  let remaining=[]; let eliminated=[]; results.forEach(r=>{ let isWinner = winningType ? r.choice==winningType : true; if(isWinner) remaining.push(r); else eliminated.push(r); });
+  if(new Set(results.map(r=>r.choice)).size!=2){ remaining=results; eliminated=[]; }
+  lastRemaining=remaining;
+  document.getElementById('remainCount').textContent=remaining.length;
+  document.getElementById('remainNames').innerHTML=remaining.map(n=>'<span style="display:inline-block;background:#34C759;color:#fff;border-radius:999px;padding:4px 10px;margin:2px;font-weight:900">'+n.name+'</span>').join('');
+  document.getElementById('eliminatedList').innerHTML= eliminated.length? eliminated.map(e=>e.name).join(', ')+' 已淘汰' : '本輪平手';
+  document.getElementById('remainStage').style.display='block';
+
+  // 判斷最終勝利者：得返1人 = 最終勝利者
+  if(remaining.length==1){
+    document.getElementById('nextBtn').style.display='none';
+    document.getElementById('victoryStage').style.display='block';
+    document.getElementById('winnerName').textContent=remaining[0].name+' 🎉';
+    playFinalVictory(remaining[0]);
+  }else{
+    document.getElementById('nextBtn').style.display='block';
+    document.getElementById('victoryStage').style.display='none';
+  }
 }
 
-function updateChoiceLogLocal(){
-  let listEl=document.getElementById('choiceLogList');
-  let mainEl=document.getElementById('choiceLogMain');
-  listEl.innerHTML=`<div class="player-log"><span class="dot ${myChoice?'done':'wait'}"></span> ${currentName}(你) ${myChoice?`已揀 ${labelForChoice(myChoice)}`:'未揀'}</div>`;
-  mainEl.textContent=myChoice?`你已揀 ${labelForChoice(myChoice)}`:'你未揀';
-  document.getElementById('countCard').innerHTML=`<span>${myChoice?1:0}</span><span>0</span><span>1</span><span>${myChoice?1:0}</span>`;
+function playFinalVictory(winner){
+  // 攞勝利者嘅 aud2 勝利宣言，手機暫存 + Firebase互相傳嚟嘅
+  let victoryB64 = localAudios['aud2'] || '';
+  if(db && currentRoom){
+    db.ref('rooms/'+currentRoom+'/audios').once('value').then(snap=>{
+      let data=snap.val()||{}; 
+      // 搵winner個 aud2
+      Object.keys(data).forEach(k=>{ if(k.includes(winner.name) || data[k].name==winner.name){ if(k.includes('_aud2')) victoryB64=data[k].b64; } });
+      // 如果winner係自己，用自己手機暫存嗰個
+      if(winner.name==currentName && localAudios['aud2']) victoryB64=localAudios['aud2'];
+      playVictoryAudio(victoryB64, winner.name);
+    });
+  }else{
+    playVictoryAudio(victoryB64, winner.name);
+  }
 }
-function updateChoiceLog(players){
-  if(!players) return updateChoiceLogLocal();
-  let listEl=document.getElementById('choiceLogList');
-  let mainEl=document.getElementById('choiceLogMain');
-  listEl.innerHTML=''; let allChosen=true; 
+function playVictoryAudio(b64, winnerName){
+  let vp=document.getElementById('victoryPlayer');
+  if(b64){
+    vp.inner
