@@ -2,488 +2,148 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>多人包剪揼｜同步大合唱</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>包剪揼多人遊戲</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-body{background:#1a1a1a;color:#fff;padding:14px}
-.card{background:#2b2b2b;border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid #444}
-h3{margin-bottom:8px;color:#ffdd44}
-button{padding:11px 14px;font-size:15px;border-radius:10px;border:none;margin:4px;cursor:pointer}
-.btn-red{background:#d62828;color:#fff}
-.btn-yellow{background:#ffdd44;color:#111;font-weight:bold}
-.btn-green{background:#2a9d8f;color:#fff}
-.btn-disabled{background:#555;color:#999;cursor:not-allowed}
-input{width:100%;padding:12px;font-size:16px;background:#333;color:#fff;border:1px solid #555;border-radius:10px;margin:6px 0}
-#debug{background:#050505;color:#4f4;padding:10px;margin-top:12px;min-height:180px;font-family:monospace;font-size:12px;white-space:pre-wrap;border-radius:8px}
-.player-item{padding:6px 4px;border-bottom:#444 1px solid;font-size:14px}
-.offline{color:#ff6666}
-.spectator{color:#aaa}
-.dead{color:#888;text-decoration:line-through}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+.page{display:none;padding:20px;text-align:center}
+.page.active{display:block}
+.page-start{
+  background-image: url("background01.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+h1{margin:30px 0;color:#222}
+input,button{padding:12px;margin:8px;font-size:16px;border-radius:8px}
+button{background:#2563eb;color:white;border:none}
+#debug{position:fixed;bottom:0;left:0;width:100%;background:rgba(0,0,0,0.85);color:#9f9;max-height:180px;overflow:auto;font-size:12px;padding:6px;text-align:left}
 </style>
 </head>
 <body>
 
-<div id="pageLobby">
-  <div class="card">
-    <h3>🏠 開房 / 加入房間（最多 8 人）</h3>
-    <input id="inpName" placeholder="輸入你的玩家名稱">
-    <input id="inpRoom" placeholder="4 位數房號">
-    <div>
-      <button id="btnCreateRoom" class="btn-yellow">房主：開啟房間</button>
-      <button id="btnJoinRoom" class="btn-green">玩家：加入房間</button>
-    </div>
+<!-- 第一頁（有背景） -->
+<div id="page1" class="page page-start active">
+  <h1>包剪揼多人遊戲</h1>
+  <p>輸入玩家名稱</p>
+  <input id="playerName" placeholder="你的名字">
+  <br>
+  <button id="createRoom">開新房間</button>
+  <br>
+  <p>或者加入房間</p>
+  <input id="roomCode" placeholder="四位房號">
+  <button id="joinRoom">加入房間</button>
+</div>
+
+<!-- 第二頁（等候區，無背景） -->
+<div id="page2" class="page">
+  <h2>等候房間</h2>
+  <p id="roomInfo"></p>
+  <p id="playerList"></p>
+  <button id="readyBtn">已準備</button>
+  <button id="startGameBtn" style="display:none">開始遊戲</button>
+</div>
+
+<!-- 第三頁（遊戲頁，無背景） -->
+<div id="page3" class="page">
+  <h2>包剪揼對戰</h2>
+  <p id="gameStatus"></p>
+  <div>
+    <button class="playBtn" data-choice="包">包</button>
+    <button class="playBtn" data-choice="剪">剪</button>
+    <button class="playBtn" data-choice="揼">揼</button>
   </div>
 </div>
 
-<div id="pageWaitAudio" style="display:none">
-  <div class="card">
-    <h3>房號：<span id="showRoomId"></span></h3>
-    <div id="isOwnerTip" style="color:#ffdd44">👑 你係房主</div>
-    <h4>玩家列表（等待全部人上傳兩段錄音）</h4>
-    <div id="playerListBox"></div>
+<!-- Debug 視窗永久顯示 -->
+<div id="debug"></div>
 
-    <div class="card">
-      <h4>🎤 錄音（各 3 秒）</h4>
-      <button id="btnRecAud1" class="btn-red">錄【大合唱‑包剪揼】aud1</button>
-      <button id="btnRecAud2" class="btn-red">錄【勝利宣言】aud2</button>
-      <div>
-        <span id="statAud1">aud1：未上傳</span>｜
-        <span id="statAud2">aud2：未上傳</span>
-      </div>
-      <button id="btnReady" class="btn-green">✅ 已上傳完兩段音訊，準備就緒</button>
-      <button id="btnOwnerStart" class="btn-yellow" style="margin-top:8px;display:none">👑 房主：開始遊戲</button>
-    </div>
-  </div>
-</div>
+<script>
+const debug = document.getElementById("debug");
+function log(msg){
+  debug.innerText += "\n" + msg;
+  debug.scrollTop = debug.scrollHeight;
+}
+log("系統載入完成，第一頁背景：background01.jpg");
 
-<div id="pageGamePlay" style="display:none">
-  <div class="card">
-    <h3>第<span id="roundNumText">1</span>輪｜請出拳</h3>
-    <div id="gamePlayerList"></div>
-    <div class="card">
-      <button class="btn-hand" data-val="paper">✋ 包 paper</button>
-      <button class="btn-hand" data-val="scissors">✌️ 剪 scissors</button>
-      <button class="btn-hand" data-val="rock">✊ 揼 rock</button>
-    </div>
-    <div id="gameHint">等待所有存活玩家出拳...</div>
-  </div>
-</div>
-
-<div id="pageRoundResult" style="display:none">
-  <div class="card">
-    <h3>本輪賽果（本地運算）</h3>
-    <div id="resultText"></div>
-    <div id="elimText"></div>
-    <div id="nextHint"></div>
-  </div>
-</div>
-
-<div id="pageFinalWin" style="display:none">
-  <div class="card">
-    <h3>🏆 最終勝利者：<span id="winnerNameText"></span></h3>
-    <p>全部設備正在播放勝利宣言...</p>
-    <button onclick="location.reload()">重新開始</button>
-  </div>
-</div>
-
-<div id="debug">Debug log...</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
-  authDomain: "game-ad81e.firebaseapp.com",
-  databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "game-ad81e",
-  storageBucket: "game-ad81e.firebasestorage.app",
-  messagingSenderId: "524468263754",
-  appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
-  measurementId: "G-GSWSWK4WEL"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// -------- 全域狀態 --------
-const debugBox = document.getElementById("debug");
-function log(s){ debugBox.textContent += "\n"+s; console.log(s); }
-
-let myPlayerId = "p_"+Math.random().toString(36).slice(2,9);
-let myName = "";
-let roomId = "";
-let isRoomOwner = false;
-let heartbeatTimer = null;
-let unSubRoom = null;
-
-// 本地緩存全部玩家錄音 {playerId:{aud1:base64,aud2:base64,name:""}}
-let localAllAudios = {};
-let mediaRecorder = null;
-let recChunks = [];
-
-// 遊戲狀態
-let roundIndex = 1;
-let gamePhase = "waitAudio"; // waitAudio / play / roundResult / finalWin
-let playersRaw = {}; // firebase原始players
-let aliveIds = []; //本輪存活玩家id[]
-let eliminatedIds = []; //被淘汰id[]
-
-// DOM
-const pageLobby = document.getElementById("pageLobby");
-const pageWaitAudio = document.getElementById("pageWaitAudio");
-const pageGamePlay = document.getElementById("pageGamePlay");
-const pageRoundResult = document.getElementById("pageRoundResult");
-const pageFinalWin = document.getElementById("pageFinalWin");
-
-const inpName = document.getElementById("inpName");
-const inpRoom = document.getElementById("inpRoom");
-const btnCreateRoom = document.getElementById("btnCreateRoom");
-const btnJoinRoom = document.getElementById("btnJoinRoom");
-const showRoomId = document.getElementById("showRoomId");
-const isOwnerTip = document.getElementById("isOwnerTip");
-const playerListBox = document.getElementById("playerListBox");
-
-const btnRecAud1 = document.getElementById("btnRecAud1");
-const btnRecAud2 = document.getElementById("btnRecAud2");
-const statAud1 = document.getElementById("statAud1");
-const statAud2 = document.getElementById("statAud2");
-const btnReady = document.getElementById("btnReady");
-const btnOwnerStart = document.getElementById("btnOwnerStart");
-
-const roundNumText = document.getElementById("roundNumText");
-const gamePlayerList = document.getElementById("gamePlayerList");
-const gameHint = document.getElementById("gameHint");
-const resultText = document.getElementById("resultText");
-const elimText = document.getElementById("elimText");
-const nextHint = document.getElementById("nextHint");
-const winnerNameText = document.getElementById("winnerNameText");
-
-// 頁面切換函數
-function hideAllPages(){
-  pageLobby.style.display="none";
-  pageWaitAudio.style.display="none";
-  pageGamePlay.style.display="none";
-  pageRoundResult.style.display="none";
-  pageFinalWin.style.display="none";
+// 頁面切換
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
 }
 
-// ========== 開房 / 入房 ==========
-btnCreateRoom.onclick = async ()=>{
-  myName = inpName.value.trim();
-  roomId = inpRoom.value.trim();
-  if(!myName || roomId.length!==4){ alert("輸入名稱以及 4 位房號"); return; }
-  isRoomOwner = true;
-  hideAllPages();
-  pageWaitAudio.style.display = "block";
-  showRoomId.textContent = roomId;
-  log("👑 我是房主，建立房間 "+roomId);
-  await set(ref(db,"rooms/"+roomId),{
-    ownerId: myPlayerId,
-    phase:"waitAudio",
-    round:1
-  });
-  await joinRoomCore();
+// 簡單房間模擬（之後你可以換返 Firebase）
+let room = null;
+let playerName = "";
+
+document.getElementById("createRoom").onclick = ()=>{
+  playerName = document.getElementById("playerName").value.trim();
+  if(!playerName) return log("請輸入名稱");
+  const code = Math.floor(1000 + Math.random()*9000).toString();
+  room = { code, players:[{name:playerName,ready:false}], host:playerName };
+  log("房主開房，房號：" + code);
+  showPage("page2");
+  document.getElementById("roomInfo").innerText = "房號：" + code;
+  renderPlayerList();
 };
 
-btnJoinRoom.onclick = async ()=>{
-  myName = inpName.value.trim();
-  roomId = inpRoom.value.trim();
-  if(!myName || roomId.length!==4){ alert("輸入名稱以及 4 位房號"); return; }
-  isRoomOwner = false;
-  hideAllPages();
-  pageWaitAudio.style.display = "block";
-  showRoomId.textContent = roomId;
-  isOwnerTip.style.display = "none";
-  log("玩家加入房間 "+roomId);
-  await joinRoomCore();
-};
-
-async function joinRoomCore(){
-  const roomSnap = await get(ref(db, "rooms/" + roomId));
-  const roomData = roomSnap.val();
-  const players = roomData?.players || {};
-  const playerCount = Object.keys(players).length;
-
-  if (playerCount >= 8) {
-    log("❌ 房間已滿，遊戲上限 8 個人");
-    alert("房間已滿，遊戲上限 8 個人");
+document.getElementById("joinRoom").onclick = ()=>{
+  playerName = document.getElementById("playerName").value.trim();
+  const inputCode = document.getElementById("roomCode").value.trim();
+  if(!playerName || !inputCode) return log("請填名稱同房號");
+  if(!room){
+    log("暫時模擬，要 Firebase 先可以跨機搜房");
     return;
   }
-
-  await set(ref(db,"rooms/"+roomId+"/players/"+myPlayerId),{
-    name:myName,
-    heartbeat:Date.now(),
-    aud1Ok:false,
-    aud2Ok:false,
-    ready:false,
-    move:"",
-    alive:true
-  });
-  startHeartBeat();
-  startListenRoom();
-}
-
-// 心跳每 2 秒
-function startHeartBeat(){
-  if(heartbeatTimer) clearInterval(heartbeatTimer);
-  heartbeatTimer = setInterval(async ()=>{
-    await set(ref(db,"rooms/"+roomId+"/players/"+myPlayerId+"/heartbeat"),Date.now());
-  },2000);
-}
-
-// 離開頁面刪自己玩家
-window.addEventListener("beforeunload",async ()=>{
-  if(unSubRoom) unSubRoom();
-  if(roomId){
-    await remove(ref(db,"rooms/"+roomId+"/players/"+myPlayerId));
+  if(room.code === inputCode){
+    room.players.push({name:playerName,ready:false});
+    log(playerName + " 加入房間");
+    showPage("page2");
+    document.getElementById("roomInfo").innerText = "房號：" + room.code;
+    renderPlayerList();
   }
-  if(heartbeatTimer) clearInterval(heartbeatTimer);
+};
+
+function renderPlayerList(){
+  const list = document.getElementById("playerList");
+  list.innerText = "";
+  room.players.forEach(p=>{
+    list.innerText += p.name + (p.ready ? " ✅已準備" : " ❌未準備") + "\n";
+  });
+  if(room.host === playerName){
+    document.getElementById("startGameBtn").style.display = "block";
+  }
+}
+
+document.getElementById("readyBtn").onclick = ()=>{
+  const me = room.players.find(p=>p.name === playerName);
+  if(me){
+    me.ready = true;
+    log(playerName + " 已準備");
+    renderPlayerList();
+  }
+};
+
+document.getElementById("startGameBtn").onclick = ()=>{
+  const allReady = room.players.every(p=>p.ready === true);
+  if(allReady){
+    log("全部人準備好，進入遊戲");
+    showPage("page3");
+  }else{
+    log("仲有人未準備好");
+  }
+};
+
+document.querySelectorAll(".playBtn").forEach(btn=>{
+  btn.onclick = ()=>{
+    const choice = btn.dataset.choice;
+    log(playerName + " 出：" + choice);
+    document.getElementById("gameStatus").innerText = "你出咗：" + choice;
+  };
 });
-
-// ========== 錄音 3 秒，上傳 base64 到 firebase ==========
-async function recordAudio(audKey){
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    recChunks = [];
-    mediaRecorder = new MediaRecorder(stream,{mimeType:"audio/webm;codecs=opus"});
-    mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recChunks.push(e.data); };
-    mediaRecorder.start();
-    log("🎤 開始錄音 "+audKey+"，3 秒");
-    setTimeout(()=>{
-      mediaRecorder.stop();
-      stream.getTracks().forEach(t=>t.stop());
-    },3000);
-
-    mediaRecorder.onstop = async ()=>{
-      const blob = new Blob(recChunks,{type:"audio/webm"});
-      const reader = new FileReader();
-      reader.onloadend = async ()=>{
-        const b64 = reader.result;
-        // 上傳到房間 audios
-        await set(ref(db,"rooms/"+roomId+"/audios/"+myPlayerId+"_"+audKey),{
-          name:myName,
-          data:b64
-        });
-        // 標記自己已上傳該段
-        const updateObj = {};
-        updateObj["aud"+(audKey==="aud1"?1:2)+"Ok"] = true;
-        await update(ref(db,"rooms/"+roomId+"/players/"+myPlayerId),updateObj);
-        log("✅ "+audKey+" 上傳完畢");
-        if(audKey==="aud1") statAud1.textContent="aud1 ✅已上傳";
-        if(audKey==="aud2") statAud2.textContent="aud2 ✅已上傳";
-      }
-    }
-  }catch(e){
-    log("❌錄音失敗："+e.message);
-    alert("無法取得麥克風權限");
-  }
-}
-btnRecAud1.onclick = ()=>recordAudio("aud1");
-btnRecAud2.onclick = ()=>recordAudio("aud2");
-
-// 玩家點【已準備】
-btnReady.onclick = async ()=>{
-  await set(ref(db,"rooms/"+roomId+"/players/"+myPlayerId+"/ready"),true);
-  log("✅ 我已準備就緒");
-};
-
-// 房主按【開始遊戲】
-btnOwnerStart.onclick = async ()=>{
-  log("👑房主觸發開始遊戲，切換 phase=play");
-  await update(ref(db,"rooms/"+roomId),{phase:"play"});
-};
-
-// ========== 監聽整個房間資料 ==========
-function startListenRoom(){
-  if(unSubRoom) unSubRoom();
-  unSubRoom = onValue(ref(db,"rooms/"+roomId),async (snap)=>{
-    const roomData = snap.val();
-    if(!roomData){ log("⚠️房間資料消失"); return; }
-    playersRaw = roomData.players||{};
-    gamePhase = roomData.phase;
-    roundIndex = roomData.round||1;
-    roundNumText.textContent = roundIndex;
-
-    // 下載全部玩家音訊到本地緩存 localAllAudios
-    const audiosRaw = roomData.audios||{};
-    for(let k in audiosRaw){
-      const parts = k.split("_");
-      const pid = parts[0];
-      const audType = parts[1];
-      if(!localAllAudios[pid]) localAllAudios[pid]={aud1:null,aud2:null,name:playersRaw[pid]?.name||"未知"};
-      localAllAudios[pid][audType] = audiosRaw[k].data;
-      localAllAudios[pid].name = audiosRaw[k].name;
-    }
-
-    renderPlayerWaitList();
-    await routeGamePhase(roomData);
-  });
-}
-
-// 渲染等候頁玩家列表
-function renderPlayerWaitList(){
-  playerListBox.innerHTML = "";
-  const now = Date.now();
-  let allAudioReady = true;
-  for(let pid in playersRaw){
-    const p = playersRaw[pid];
-    const offline = (now - (p.heartbeat||0))>6000;
-    const audOk = p.aud1Ok && p.aud2Ok;
-    if(!audOk) allAudioReady=false;
-    const div = document.createElement("div");
-    div.className = "player-item "+(offline?"offline":"");
-    div.innerText = `${p.name} ${offline?"⚠離線":""} | aud1:${p.aud1Ok?"✅":"❌"} aud2:${p.aud2Ok?"✅":"❌"} | ready:${p.ready?"✅":"❌"}`;
-    playerListBox.appendChild(div);
-  }
-  // 只有房主，且全部玩家兩段音訊都上傳完，先顯示開始按鈕
-  if(isRoomOwner && allAudioReady){
-    btnOwnerStart.style.display = "block";
-  }else{
-    btnOwnerStart.style.display = "none";
-  }
-}
-
-// ========== 遊戲狀態分發，全部客戶端執行同一套邏輯 ==========
-async function routeGamePhase(roomData){
-  const players = playersRaw;
-  // 計算存活 / 淘汰（本地運算）
-  aliveIds = Object.keys(players).filter(id=>players[id].alive!==false);
-  eliminatedIds = Object.keys(players).filter(id=>players[id].alive===false);
-
-  switch(gamePhase){
-    case "waitAudio":
-      hideAllPages(); pageWaitAudio.style.display="block"; break;
-
-    case "play":{
-      hideAllPages(); pageGamePlay.style.display="block";
-      renderGamePlayingList();
-      // 檢查：所有存活玩家是否全部出拳 move 非空
-      const allAliveMoved = aliveIds.every(pid=> players[pid].move && players[pid].move!=="");
-      if(allAliveMoved){
-        log("✅全部存活玩家已經出拳，執行大合唱齊播 + 本地計算賽果");
-        await playAllChorusSync(); //【重點：全部 aud1 同時播放，唔係順序】
-        await computeRoundResultLocal(); //本地運算本輪賽果
-      }
-      break;
-    }
-
-    case "roundResult":
-      hideAllPages(); pageRoundResult.style.display="block";
-      break;
-
-    case "finalWin":
-      hideAllPages(); pageFinalWin.style.display="block";
-      const winnerId = aliveIds[0];
-      winnerNameText.textContent = localAllAudios[winnerId].name;
-      await playSingleAudio(localAllAudios[winnerId].aud2); //全部機器播放勝利者 aud2
-      break;
-  }
-}
-
-// 遊戲頁渲染玩家，淘汰者標示，繼續觀戰
-function renderGamePlayingList(){
-  gamePlayerList.innerHTML = "";
-  const now = Date.now();
-  for(let pid in playersRaw){
-    const p = playersRaw[pid];
-    const offline = now-(p.heartbeat||0)>6000;
-    const isDead = !p.alive;
-    const div = document.createElement("div");
-    div.className = "player-item "+(isDead?"dead spectator":"");
-    div.innerText = `${p.name} ${isDead?"👀觀戰":""} ${offline?"⚠離線":""} | move:${p.move||"未出拳"}`;
-    gamePlayerList.appendChild(div);
-  }
-  gameHint.textContent = `存活人數：${aliveIds.length}，等待全部存活玩家出拳`;
-}
-
-// 🎵【核心：全部玩家 aud1 大合唱 同時並行播放，不是順序播放】
-async function playAllChorusSync(){
-  log("🔊觸發大合唱：同時啟動全部存活玩家 aud1");
-  const audioArr = [];
-  for(let pid of aliveIds){
-    const b64 = localAllAudios[pid]?.aud1;
-    if(!b64) continue;
-    const au = new Audio(b64);
-    audioArr.push(au);
-  }
-  // 全部一起 play()，時間軸同時起播
-  audioArr.forEach(a=>{
-    try{a.play().catch(e=>log("播放忽略:"+e.message));}catch(err){}
-  });
-}
-
-// 播放單條 base64 音訊（勝利宣言）
-async function playSingleAudio(b64){
-  if(!b64){ log("⚠️沒有勝利者音訊"); return; }
-  const au = new Audio(b64);
-  try{ await au.play(); }catch(e){ log("播放勝利宣言異常:"+e.message); }
-}
-
-// ========== 本地客戶端計算包剪揼賽果（所有手機資料一致，運算結果完全相同） ==========
-function fightResult(moveA,moveB){
-  // rock 揼 paper 包 scissors 剪
-  if(moveA===moveB) return "draw";
-  if(
-    (moveA==="rock" && moveB==="scissors")||
-    (moveA==="scissors" && moveB==="paper")||
-    (moveA==="paper" && moveB==="rock")
-  ) return "winA";
-  return "winB";
-}
-
-async function computeRoundResultLocal(){
-  log("🧮本地開始計算本輪賽果");
-  const alivePlayersData = aliveIds.map(id=>({pid:id, move:playersRaw[id].move}));
-  // 多人包剪揼簡單規則：統計每種拳數量；最少嘅拳種玩家本輪淘汰
-  const stat = {rock:0,paper:0,scissors:0};
-  alivePlayersData.forEach(p=> stat[p.move]++);
-  // 找出出拳數量最小嘅類別，該類別全部人淘汰
-  const sortByCnt = Object.entries(stat).sort((a,b)=>a[1]-b[1]);
-  const minCount = sortByCnt[0][1];
-  const loseType = sortByCnt[0][0];
-  const willEliminatePids = alivePlayersData.filter(x=>x.move===loseType).map(x=>x.pid);
-
-  log(`本輪出拳統計:${JSON.stringify(stat)}，落敗拳種:${loseType}，淘汰名單 pid:${willEliminatePids.join(",")}`);
-
-  // 渲染本輪結果頁
-  resultText.innerText = `本輪出拳統計：揼=${stat.rock} 包=${stat.paper} 剪=${stat.scissors}`;
-  elimText.innerText = `本輪被淘汰玩家：${willEliminatePids.map(pid=>playersRaw[pid].name).join(", ")}`;
-
-  // 更新 firebase 玩家 alive 狀態；清空所有人 move
-  const patch = {};
-  for(let pid of willEliminatePids){
-    patch["players/"+pid+"/alive"] = false;
-  }
-  for(let pid of Object.keys(playersRaw)){
-    patch["players/"+pid+"/move"] = "";
-  }
-  await update(ref(db,"rooms/"+roomId),patch);
-
-  // 新存活人數
-  const newAlive = aliveIds.filter(x=>!willEliminatePids.includes(x));
-  if(newAlive.length <= 1){
-    // 剩餘 1 人，進入最終勝利
-    await update(ref(db,"rooms/"+roomId),{phase:"finalWin"});
-  }else{
-    // 還有多人，下一輪
-    nextHint.innerText = `剩餘存活 ${newAlive.length} 人，即將下一輪`;
-    await update(ref(db,"rooms/"+roomId),{phase:"roundResult", round:roundIndex+1});
-    setTimeout(async ()=>{
-      await update(ref(db,"rooms/"+roomId),{phase:"play"});
-    },3500);
-  }
-}
-
-// 頁面：玩家點擊出拳按鈕
-document.querySelectorAll(".btn-hand").forEach(btn=>{
-  btn.onclick = async ()=>{
-    const mv = btn.dataset.val;
-    log("✊本地出拳："+mv);
-    await set(ref(db,"rooms/"+roomId+"/players/"+myPlayerId+"/move"),mv);
-  }
-})
-
 </script>
+
 </body>
 </html>
