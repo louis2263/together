@@ -1,469 +1,63 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V95</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
-body{background:#FFE66D;margin:0}
-.wrap{position:relative;width:100%;max-width:480px;margin:0 auto;min-height:100vh;background-color:#FFE66D;background-repeat:no-repeat;background-position:top center;background-size:100% auto;padding:14px 14px 180px}
-.wrap1{background-image:url('background01.jpg')} .wrap2{background-image:url('background02.jpg')} .wrap3,.wrap4,.wrap5{background-image:url('background03.jpg')}
-.card-black{background:#111;border-radius:22px;padding:14px;border:3px solid #111;margin-bottom:12px}
-.room-orange{font-size:42px;font-weight:1000;color:#FF7A00;text-align:center;margin:12px 0}
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.mode-btn{background:#fff;border:3px solid #111;border-radius:16px;padding:12px 8px;text-align:center;font-weight:1000;font-size:13px;cursor:pointer}
-.mode-btn.selected{background:#FFD93D;outline:3px solid #111}
-.btn-red{background:#FF1A1A;color:#fff;border:3px solid #111;border-radius:999px;padding:13px;text-align:center;font-weight:1000;font-size:15px;width:100%;cursor:pointer}
-.btn-red.recording{background:#fff;color:#FF1A1A;animation:pulse 0.6s infinite;transform:scale(1.03)}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,26,26,.7)}70%{box-shadow:0 0 0 12px rgba(255,26,26,0)}100%{box-shadow:0 0 0 0 rgba(255,26,26,0)}}
-.btn-yellow{background:#FFD93D;color:#111;border:3px solid #111;border-radius:16px;padding:14px;text-align:center;font-weight:1000;font-size:18px;margin-top:10px;cursor:pointer}
-.btn-green{background:#34C759;color:#fff;border:3px solid #111;border-radius:999px;padding:12px;text-align:center;font-weight:1000;cursor:pointer}
-.input-card{position:absolute;left:16px;right:16px;bottom:20px;background:#111;border-radius:28px;padding:20px}
-.yellow{color:#FFE66D;font-weight:900;font-size:13px}
-.input-box{width:100%;background:#2A2A2A;border:2px solid #3A3A3A;border-radius:14px;padding:14px;color:#fff;margin-top:6px;font-size:16px}
-.input-box.newroom{background:#FFE66D;border-color:#FF7A00;color:#111;font-weight:1000;font-size:20px;text-align:center;letter-spacing:3px}
-.player-chip{display:inline-block;background:#FFE66D;color:#111;border-radius:999px;padding:3px 10px;margin:3px;font-weight:900;font-size:11px;border:2px solid #111}
-.hand-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
-.hand-card{background:#fff;border:4px solid #111;border-radius:20px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.hand-card.selected{background:#FFD93D;transform:scale(1.05)}
-.hand-card img{width:75%;height:75%;object-fit:contain}
-.hand-label{background:#111;color:#FFE66D;border-radius:999px;padding:6px;text-align:center;font-weight:1000;margin-top:6px}
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.result-item{background:#111;border-radius:18px;padding:10px;text-align:center;border:3px solid #333;opacity:0;transform:scale(0.8);transition:all 0.5s}
-.result-item.show{opacity:1;transform:scale(1)}
-.debug-toggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px}
-.debug-toggle .badge{position:absolute;top:-4px;right:-4px;background:#FF1A1A;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 3px}
-.debug-panel{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(20,20,20,0.98);border-top:3px solid #0f0;border-left:3px solid #0f0;border-right:3px solid #0f0;border-radius:18px 18px 0 0;padding:10px;z-index:99998;display:none;flex-direction:column}
-.debug-panel.open{display:flex}
-.debug-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #333;padding-bottom:6px}
-.debug-head button{background:#333;color:#fff;border:1px solid #555;border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer}
-.debug-logs{height:260px;overflow-y:auto;font-family:monospace;font-size:11px;color:#0f0;line-height:1.5;white-space:pre-wrap;background:#0a0a0a;border-radius:8px;padding:8px}
-.debug-logs.small{height:150px} .debug-logs.large{height:400px}
-.worm-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:6px;background:linear-gradient(90deg,#34C759,#FFE66D);z-index:99999}
-.worm-bar.rec{height:10px;background:linear-gradient(90deg,#FF0000,#FF9999);animation:grow 3s linear forwards}
-@keyframes grow{0%{width:0}100%{width:100%}}
-</style>
-<!-- ===== 手機調試工具vConsole，正式上線要刪除這兩行 ===== -->
-<script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-<script>new window.VConsole();</script>
-
-<script>
-let logs = [];
-let myId = localStorage.getItem('myId') || 'p_' + Math.random().toString(36).substr(2, 6);
-localStorage.setItem('myId', myId);
-let currentRoom = "";
-let currentName = "";
-let roundNum = 1;
-let myChoice = "";
-let localAudios = {};
-let audioUrls = [];
-let db = null;
-let players = {};
-let choices = {};
-let audios = {};
-let alivePlayers = [];
-let isSpectator = false;
-let oldRoomRefs = [];
-
-function dlog(m) {
-  let t = new Date().toLocaleTimeString('zh-HK', { hour12: false });
-  let line = '[' + t + '] ' + m;
-  logs.unshift(line);
-  if (logs.length > 120) logs.pop();
-  let el = document.getElementById('dbgLog');
-  if (el) {
-    el.innerHTML = logs.map(l => '<div style="border-bottom:1px dashed #222;padding:2px 0">' + l + '</div>').join('');
-  }
-  let badge = document.getElementById('logBadge');
-  if (badge) badge.textContent = logs.length > 99 ? '99' : logs.length;
-  console.log(line);
-}
-function toggleDebug() {
-  let p = document.getElementById('debugPanel');
-  if (!p) return;
-  p.classList.toggle('open');
-  if (p.classList.contains('open')) dlog('🐛 Debug已打開');
-}
-function changeSize(s) {
-  let el = document.getElementById('dbgLog');
-  if (!el) return;
-  el.classList.remove('small', 'large');
-  if (s === 'small') el.classList.add('small');
-  if (s === 'large') el.classList.add('large');
-  dlog('Debug大細：' + s);
-}
-function clearLogs() {
-  logs = [];
-  let el = document.getElementById('dbgLog');
-  if (el) el.innerHTML = '';
-  let b = document.getElementById('logBadge');
-  if (b) b.textContent = '0';
-  dlog('已清Debug');
-}
-
-// 過濾跨域 Script error.行:0 假錯誤
-window.onerror = function (msg, url, line, col, err) {
-  if(msg === "Script error." && line === 0){
-    dlog("⚠️跨域隱藏錯(多數Firebase CDN，睇vConsole睇真錯)");
-    return true;
-  }
-  dlog('❌ JS錯誤：' + msg + ' 行:' + line);
-};
-
-window.addEventListener('load', function () {
-  dlog('✅ V95 頁面已載入');
-  setTimeout(function () {
-    let p = document.getElementById('debugPanel');
-    if (p) p.classList.add('open');
-  }, 500);
-
-  // ========== 👉 把下面替換成你自己 Firebase config ==========
-  const firebaseConfig = {
-    apiKey: "替換你自己",
-    authDomain: "替換你自己",
-    databaseURL: "替換你自己",
-    projectId: "替換你自己",
-    storageBucket: "替換你自己",
-    messagingSenderId: "替換你自己",
-    appId: "替換你自己"
-  };
-
-  if(typeof firebase !== 'undefined'){
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
-    dlog('✅ Firebase SDK 已載入 & 初始化完成');
-  }else{
-    dlog('❌ Firebase 未載入，檢查CDN網路');
-  }
-});
-
-function genRoom() {
-  let a = new Uint32Array(1);
-  crypto.getRandomValues(a);
-  return (1000 + a[0] % 9000).toString();
-}
-async function getUniqueRoom() {
-  for (let i = 0; i < 10; i++) {
-    let r = genRoom();
-    if (!db) return r;
-    try {
-      let s = await db.ref('rooms/' + r + '/players').get();
-      if (!s.val()) return r;
-      let s2 = await db.ref('rooms/' + r + '/createdAt').get();
-      if (s2.val() && Date.now() - s2.val() > 2 * 60 * 60 * 1000) {
-        await db.ref('rooms/' + r).remove();
-        return r;
-      }
-      dlog('房號 ' + r + ' 已有人用，重新隨機...');
-    } catch (e) {
-      return r;
-    }
-  }
-  return genRoom();
-}
-async function createRoom() {
-  let v = document.getElementById('nameInput').value.trim();
-  if (!v) { alert('請輸入你個名，例如：Louis'); return; }
-  currentName = v;
-  document.getElementById('roomNum').textContent = '房號 隨機中...';
-  currentRoom = await getUniqueRoom();
-  document.getElementById('roomInput').value = currentRoom;
-  showRoom();
-  dlog('✅ 已開真隨機房 ' + currentRoom + ' 玩家:' + currentName);
-  if (db) {
-    db.ref('rooms/' + currentRoom + '/players/' + myId).set({ name: currentName, alive: true, joined: Date.now() });
-    db.ref('rooms/' + currentRoom + '/createdAt').set(Date.now());
-    db.ref('rooms/' + currentRoom + '/mode').set('one');
-  }
-}
-function joinRoom() {
-  let v = document.getElementById('nameInput').value.trim();
-  if (!v) { alert('請輸入你個名'); return; }
-  currentName = v;
-  let r = document.getElementById('roomInput').value.trim();
-  if (!r || r.length !== 4) { alert('請輸入4位房號'); return; }
-  currentRoom = r;
-  showRoom();
-  dlog('✅ 加入房號 ' + currentRoom + ' 玩家:' + currentName);
-  if (db) {
-    db.ref('rooms/' + currentRoom + '/players/' + myId).set({ name: currentName, alive: true, joined: Date.now() });
-  }
-}
-
-function detachOldListeners(){
-  oldRoomRefs.forEach(ref=>{
-    if(ref) ref.off('value');
-  });
-  oldRoomRefs = [];
-  dlog('🧹 解除舊房間 Firebase 監聽器');
-}
-
-function showRoom() {
-  detachOldListeners();
-  document.getElementById('roomNum').textContent = '房號 ' + currentRoom;
-  document.getElementById('roomNum3').textContent = '房號 ' + currentRoom;
-  document.getElementById('roomNum4').textContent = '房號 ' + currentRoom;
-  document.getElementById('roomNum5').textContent = '房號 ' + currentRoom;
-  document.getElementById('s1').style.display = 'none';
-  document.getElementById('s2').style.display = 'block';
-  listenPlayers();
-  listenAudios();
-}
-
-function setMode(el) {
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
-  dlog('玩法：' + el.textContent);
-  if (db && currentRoom) db.ref('rooms/' + currentRoom + '/mode').set(el.dataset.mode);
-}
-
-function imgFor(c) {
-  if (c === 'paper') return 'paper.jpg';
-  if (c === 'scissors') return 'scissors.jpg';
-  if (c === 'rock') return 'rock.jpg';
-  return 'paper.jpg';
-}
-function labelFor(c) {
-  if (c === 'paper') return '包';
-  if (c === 'scissors') return '剪';
-  if (c === 'rock') return '揼';
-  return c;
-}
-function blobToBase64(b) {
-  return new Promise(r => {
-    let fr = new FileReader();
-    fr.onload = () => r(fr.result);
-    fr.readAsDataURL(b);
-  });
-}
-function createUrl(b) {
-  let u = URL.createObjectURL(b);
-  audioUrls.push(u);
-  return u;
-}
-function clearPhone() {
-  dlog('🧹 手機取消：清Blob+base64');
-  audioUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
-  audioUrls = [];
-  localAudios = {};
-  document.querySelectorAll('audio').forEach(a => {
-    try { a.pause(); a.src = ''; a.removeAttribute('src'); a.load(); } catch (e) {}
-  });
-}
-function clearFirebase() {
-  if (!db || !currentRoom) return;
-  dlog('🧹 Firebase取消：清 rooms/' + currentRoom);
-  db.ref('rooms/' + currentRoom).remove().then(() => dlog('✅ Firebase已全清 '+currentRoom));
-}
-
-function listenPlayers() {
-  if (!db) return;
-  const refPlayers = db.ref('rooms/' + currentRoom + '/players');
-  const refChoices = db.ref('rooms/' + currentRoom + '/choices');
-  const refMode = db.ref('rooms/' + currentRoom + '/mode');
-  oldRoomRefs.push(refPlayers, refChoices, refMode);
-
-  refPlayers.on('value', snap => {
-    players = snap.val() || {};
-    let ids = Object.keys(players);
-    let alive = ids.filter(id => players[id].alive !== false);
-    alivePlayers = alive;
-    let al3 = document.getElementById('aliveList3');
-    if (al3) al3.textContent = alive.map(id => players[id].name).join(',');
-    let logList = document.getElementById('choiceLogList');
-    if (logList) {
-      logList.innerHTML = ids.map(id => {
-        let p = players[id];
-        let c = choices[id];
-        if (p.alive === false) return '<span class="player-chip" style="background:#555">💀' + p.name + '</span>';
-        if (c) return '<span class="player-chip me">' + p.name + ' 已揀 ' + labelFor(c) + '</span>';
-        return '<span class="player-chip">' + p.name + ' 未揀</span>';
-      }).join('');
-    }
-    let cc = document.getElementById('choiceCount');
-    if (cc) cc.textContent = (Object.keys(choices).length) + '/' + alive.length;
-    if (document.getElementById('s3').style.display !== 'none') {
-      let allChosen = alive.length > 0 && alive.every(id => choices[id]);
-      if (allChosen) {
-        dlog('✅ 所有存活者 ' + alive.length + '人 已出拳，自動入第四頁');
-        setTimeout(goToChorus, 500);
-      }
-    }
-  });
-  refChoices.on('value', snap => {
-    choices = snap.val() || {};
-  });
-  refMode.on('value', snap => {
-    let m = snap.val();
-    if (m) {
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === m));
-    }
-  });
-}
-function listenAudios() {
-  if (!db) return;
-  const refAudios = db.ref('rooms/' + currentRoom + '/audios');
-  oldRoomRefs.push(refAudios);
-  refAudios.on('value', snap => {
-    audios = snap.val() || {};
-    let box1 = document.getElementById('remoteBox1');
-    let box2 = document.getElementById('remoteBox2');
-    if (box1) box1.innerHTML = '';
-    if (box2) box2.innerHTML = '';
-    Object.keys(audios).forEach(k => {
-      if (k.startsWith(myId)) return;
-      let d = audios[k];
-      let type = k.split('_')[1];
-      let html = '<div style="background:#222;border-radius:14px;padding:8px;margin-top:8px;border:2px dashed #FFD93D"><div style="color:#FFD93D;font-size:11px">🔊 ' + d.name + ' - ' + (type === 'aud1' ? '包剪揼' : '勝利宣言') + '</div><audio controls src="' + d.b64 + '" style="width:100%;margin-top:6px"></div>';
-      if (type === 'aud1' && box1) box1.innerHTML += html;
-      if (type === 'aud2' && box2) box2.innerHTML += html;
-    });
-  });
-}
-
-let mr, chunks, recTimer;
-async function toggleRec(t) {
-  if (!currentName) {
-    let n = document.getElementById('nameInput').value.trim();
-    if (!n) { alert('請先輸入你個名'); return; }
-    currentName = n;
-  }
-  let btn = document.getElementById('btn' + t);
-  if (btn.classList.contains('recording')) return;
-  let stream=null;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-    chunks = [];
-    let opt = { mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:128000 };
-    if(!MediaRecorder.isTypeSupported(opt.mimeType)){
-      opt = { mimeType:'audio/webm' };
-    }
-    mr = new MediaRecorder(stream, opt);
-    mr.ondataavailable = e=>{ if(e.data.size>0) chunks.push(e.data); };
-
-    let sec = 3;
-    btn.classList.add('recording');
-    document.getElementById('wormBar').classList.add('rec');
-    document.getElementById('count'+t).style.display='block';
-    document.getElementById('num'+t).textContent = sec;
-
-    mr.start();
-    recTimer = setInterval(()=>{
-      sec--;
-      document.getElementById('num'+t).textContent = sec;
-      if(sec <= 0){
-        clearInterval(recTimer);
-        mr.stop();
-        stream.getTracks().forEach(tr=>tr.stop());
-        btn.classList.remove('recording');
-        document.getElementById('count'+t).style.display='none';
-        document.getElementById('wormBar').classList.remove('rec');
-        dlog('✅ 錄音'+t+'完成，chunks:'+chunks.length);
-        let blob = new Blob(chunks, {type:opt.mimeType});
-        blobToBase64(blob).then(b64=>{
-          localAudios['aud'+t] = b64;
-          if(db && currentRoom){
-            db.ref('rooms/'+currentRoom+'/audios/'+myId+'_aud'+t).set({
-              name:currentName,
-              b64:b64
-            });
-          }
-        });
-      }
-    },1000);
-
-  } catch(err){
-    dlog('❌錄音失敗:'+err.message);
-    alert('無法取得麥克風權限，請開啟權限');
-    btn.classList.remove('recording');
-    if(stream) stream.getTracks().forEach(tr=>tr.stop());
-    clearInterval(recTimer);
-  }
-}
-
-function goToChoice(){
-  dlog('👉 goToChoice 切到s3出拳頁');
-  document.getElementById('s2').style.display='none';
-  document.getElementById('s3').style.display='block';
-}
-function goToChorus(){
-  dlog('👉 goToChorus 切到s4結果頁');
-  document.getElementById('s3').style.display='none';
-  document.getElementById('s4').style.display='block';
-}
-function chooseHand(h){
-  dlog('✊ chooseHand:'+h);
-  myChoice = h;
-  document.querySelectorAll('.hand-card').forEach(c=>c.classList.remove('selected'));
-  document.getElementById('hand-'+h).classList.add('selected');
-  if(db && currentRoom){
-    db.ref('rooms/'+currentRoom+'/choices/'+myId).set(h);
-  }
-}
-function nextRound(){
-  dlog('🔁 nextRound 下一輪');
-  roundNum++;
-  document.getElementById('roundLabel1').textContent = roundNum;
-  document.getElementById('s4').style.display='none';
-  document.getElementById('s3').style.display='block';
-  if(db) db.ref('rooms/'+currentRoom+'/choices').remove();
-}
-async function finalCleanupAndReload(){
-  dlog('🔄 finalCleanupAndReload 重置遊戲');
-  detachOldListeners();
-  clearPhone();
-  await clearFirebase();
-  currentRoom=""; currentName=""; roundNum=1; myChoice="";
-  players={};choices={};audios={};alivePlayers=[];
-  document.querySelectorAll('#s1,#s2,#s3,#s4,#s5').forEach(s=>s.style.display='none');
-  document.getElementById('s1').style.display='block';
-}
-function celebrate(){
-  dlog('🎉 celebrate 慶祝動畫佔位');
-  alert('🎉 恭喜勝利！');
-}
-</script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase 連線測試</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+    button { padding: 10px 20px; font-size: 16px; margin: 5px 0; }
+    #debug { margin-top: 20px; padding: 15px; background: #000; color: #0f0; font-family: monospace; min-height: 200px; }
+  </style>
 </head>
 <body>
-<div class="debug-toggle" onclick="toggleDebug()"><span>🐛</span><div class="badge" id="logBadge">0</div></div>
-<div class="worm-bar" id="wormBar"></div>
-<div class="debug-panel" id="debugPanel">
-  <div class="debug-head"><b style="color:#FFE66D">🐛 DEBUG V95</b><div style="display:flex;gap:6px"><button onclick="changeSize('small')">細</button><button onclick="changeSize('mid')">中</button><button onclick="changeSize('large')">大</button><button onclick="clearLogs()">清</button><button onclick="toggleDebug()">✕ 收埋</button></div></div>
-  <div id="connStatus" style="color:#FFD93D;font-size:11px;margin-bottom:4px">準備中...</div>
-  <div class="debug-logs" id="dbgLog"><div style="color:#888">載入中... V95 Debug</div></div>
-</div>
+  <h1>Firebase Realtime Database 測試</h1>
+  <button id="btnConnect">測試連接</button>
+  <button id="btnWrite">寫測試資料入 rooms</button>
+  <div id="debug">Debug 準備就緒...</div>
 
-<div id="s1" style="display:block">
-<div class="wrap wrap1">
-<div class="input-card">
-<div class="yellow">與朋友一起對決！準備好了嗎？</div>
-<div class="yellow" style="margin-top:8px">輸入你個名</div>
-<input id="nameInput" class="input-box" placeholder="例如：Louis" value="" autocomplete="off">
-<div style="display:flex;gap:10px;margin-top:12px">
-<div style="flex:1;background:#FFD93D;border:3px solid #111;border-radius:16px;padding:12px;text-align:center;font-weight:1000;cursor:pointer" onclick="createRoom()">開始房間</div>
-<div style="flex:1;background:#34C759;border:3px solid #111;border-radius:16px;padding:12px;text-align:center;font-weight:1000;cursor:pointer" onclick="joinRoom()">進入房間</div>
-</div>
-<div class="yellow" style="margin-top:12px"># 房號</div>
-<input id="roomInput" class="input-box newroom" placeholder="4位房號 例如 4829" maxlength="4">
-</div>
-</div>
-</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-<div id="s2" style="display:none">
-<div class="wrap wrap2">
-  <div class="room-orange" id="roomNum">房號 --</div>
-  <div class="card-black">
-    <div style="color:#FFE66D;font-weight:900">玩法選擇</div>
-    <div class="mode-grid">
-      <div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div>
-      <div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪</div>
-      <div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪</div>
-      <div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪</div>
-    </div>
-  </div>
-  <div class="card-black">
-    <div style="color:#FFE66D;font-weight:900">包剪揼 (手機暫存，互相傳)</div>
-    <div id="btn1"
+    const firebaseConfig = {
+      apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
+      authDomain: "game-ad81e.firebaseapp.com",
+      databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "game-ad81e",
+      storageBucket: "game-ad81e.firebasestorage.app",
+      messagingSenderId: "你自己補返",
+      appId: "你自己補返"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const debugBox = document.getElementById("debug");
+
+    function log(msg) {
+      debugBox.textContent += "\n" + msg;
+    }
+
+    document.getElementById("btnConnect").addEventListener("click", () => {
+      log("嘗試連接 Firebase...");
+      const testRef = ref(db, "rooms/test");
+      onValue(testRef, (snap) => {
+        log("✅ Firebase 連接成功，可以讀資料");
+      }, (err) => {
+        log("❌ 連接失敗：" + err.message);
+      });
+    });
+
+    document.getElementById("btnWrite").addEventListener("click", async () => {
+      log("嘗試寫入測試資料...");
+      const testRef = ref(db, "rooms/test");
+      try {
+        await set(testRef, { message: "測試成功！可以寫入 rooms" });
+        log("✅ 寫入成功！資料庫規則正常");
+      } catch (err) {
+        log("❌ 寫入失敗：" + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
