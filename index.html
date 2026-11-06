@@ -44,6 +44,10 @@ body{background:#FFE66D;margin:0}
 .worm-bar.rec{height:10px;background:linear-gradient(90deg,#FF0000,#FF9999);animation:grow 3s linear forwards}
 @keyframes grow{0%{width:0}100%{width:100%}}
 </style>
+<!-- ===== 手機調試工具vConsole，正式上線要刪除這兩行 ===== -->
+<script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+<script>new window.VConsole();</script>
+
 <script>
 let logs = [];
 let myId = localStorage.getItem('myId') || 'p_' + Math.random().toString(36).substr(2, 6);
@@ -60,7 +64,6 @@ let choices = {};
 let audios = {};
 let alivePlayers = [];
 let isSpectator = false;
-// 用來保存舊房間監聽引用，方便 off
 let oldRoomRefs = [];
 
 function dlog(m) {
@@ -98,9 +101,16 @@ function clearLogs() {
   if (b) b.textContent = '0';
   dlog('已清Debug');
 }
-window.onerror = function (msg, url, line) {
+
+// 過濾跨域 Script error.行:0 假錯誤
+window.onerror = function (msg, url, line, col, err) {
+  if(msg === "Script error." && line === 0){
+    dlog("⚠️跨域隱藏錯(多數Firebase CDN，睇vConsole睇真錯)");
+    return true;
+  }
   dlog('❌ JS錯誤：' + msg + ' 行:' + line);
 };
+
 window.addEventListener('load', function () {
   dlog('✅ V95 頁面已載入');
   setTimeout(function () {
@@ -108,7 +118,7 @@ window.addEventListener('load', function () {
     if (p) p.classList.add('open');
   }, 500);
 
-  // ========== 填入你的 Firebase config ==========
+  // ========== 👉 把下面替換成你自己 Firebase config ==========
   const firebaseConfig = {
     apiKey: "替換你自己",
     authDomain: "替換你自己",
@@ -118,12 +128,13 @@ window.addEventListener('load', function () {
     messagingSenderId: "替換你自己",
     appId: "替換你自己"
   };
+
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
-    dlog('✅ Firebase 初始化完成');
+    dlog('✅ Firebase SDK 已載入 & 初始化完成');
   }else{
-    dlog('⚠️ Firebase SDK未載入，僅本地模擬模式');
+    dlog('❌ Firebase 未載入，檢查CDN網路');
   }
 });
 
@@ -180,7 +191,6 @@ function joinRoom() {
   }
 }
 
-// 關閉舊房間監聽，防止洩漏
 function detachOldListeners(){
   oldRoomRefs.forEach(ref=>{
     if(ref) ref.off('value');
@@ -312,7 +322,6 @@ function listenAudios() {
   });
 }
 
-// ========== 補齊完整錄音 toggleRec ==========
 let mr, chunks, recTimer;
 async function toggleRec(t) {
   if (!currentName) {
@@ -346,13 +355,11 @@ async function toggleRec(t) {
       if(sec <= 0){
         clearInterval(recTimer);
         mr.stop();
-        // 停止麥克風
         stream.getTracks().forEach(tr=>tr.stop());
         btn.classList.remove('recording');
         document.getElementById('count'+t).style.display='none';
         document.getElementById('wormBar').classList.remove('rec');
         dlog('✅ 錄音'+t+'完成，chunks:'+chunks.length);
-        // 錄音完成轉base64，上傳firebase範例骨架
         let blob = new Blob(chunks, {type:opt.mimeType});
         blobToBase64(blob).then(b64=>{
           localAudios['aud'+t] = b64;
@@ -375,7 +382,6 @@ async function toggleRec(t) {
   }
 }
 
-// ========== 缺失函數佔位骨架，後續填寫遊戲邏輯 ==========
 function goToChoice(){
   dlog('👉 goToChoice 切到s3出拳頁');
   document.getElementById('s2').style.display='none';
@@ -460,5 +466,4 @@ function celebrate(){
   </div>
   <div class="card-black">
     <div style="color:#FFE66D;font-weight:900">包剪揼 (手機暫存，互相傳)</div>
-    <div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 包剪揼 - 高清</div>
-    <div id="count1" style="display:none;text-align:center;margin-top:8px"><span id="num1" style=
+    <div id="btn1"
