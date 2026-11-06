@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>方包包包剪揼 V95 Debug自動彈出</title>
+<title>方包包包剪揼 V95</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang HK",sans-serif}
 body{background:#FFE66D;margin:0}
@@ -32,7 +32,6 @@ body{background:#FFE66D;margin:0}
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .result-item{background:#111;border-radius:18px;padding:10px;text-align:center;border:3px solid #333;opacity:0;transform:scale(0.8);transition:all 0.5s}
 .result-item.show{opacity:1;transform:scale(1)}
-/* V95 Debug 放頭，保證睇到 */
 .debug-toggle{position:fixed;top:10px;right:10px;z-index:99999;background:#111;color:#0f0;border:2px solid #0f0;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px}
 .debug-toggle .badge{position:absolute;top:-4px;right:-4px;background:#FF1A1A;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 3px}
 .debug-panel{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(20,20,20,0.98);border-top:3px solid #0f0;border-left:3px solid #0f0;border-right:3px solid #0f0;border-radius:18px 18px 0 0;padding:10px;z-index:99998;display:none;flex-direction:column}
@@ -46,123 +45,420 @@ body{background:#FFE66D;margin:0}
 @keyframes grow{0%{width:0}100%{width:100%}}
 </style>
 <script>
-// V95 Debug 放最頂，唔靠Firebase都跑到
-let logs=[];
-function dlog(m){
-  let t=new Date().toLocaleTimeString('zh-HK',{hour12:false});
-  let line='['+t+'] '+m;
+let logs = [];
+let myId = localStorage.getItem('myId') || 'p_' + Math.random().toString(36).substr(2, 6);
+localStorage.setItem('myId', myId);
+let currentRoom = "";
+let currentName = "";
+let roundNum = 1;
+let myChoice = "";
+let localAudios = {};
+let audioUrls = [];
+let db = null;
+let players = {};
+let choices = {};
+let audios = {};
+let alivePlayers = [];
+let isSpectator = false;
+// 用來保存舊房間監聽引用，方便 off
+let oldRoomRefs = [];
+
+function dlog(m) {
+  let t = new Date().toLocaleTimeString('zh-HK', { hour12: false });
+  let line = '[' + t + '] ' + m;
   logs.unshift(line);
-  if(logs.length>120) logs.pop();
-  let el=document.getElementById('dbgLog');
-  if(el){ el.innerHTML=logs.map(l=>'<div style="border-bottom:1px dashed #222;padding:2px 0">'+l+'</div>').join(''); }
-  let badge=document.getElementById('logBadge');
-  if(badge){ badge.textContent=logs.length>99?'99':logs.length; }
+  if (logs.length > 120) logs.pop();
+  let el = document.getElementById('dbgLog');
+  if (el) {
+    el.innerHTML = logs.map(l => '<div style="border-bottom:1px dashed #222;padding:2px 0">' + l + '</div>').join('');
+  }
+  let badge = document.getElementById('logBadge');
+  if (badge) badge.textContent = logs.length > 99 ? '99' : logs.length;
   console.log(line);
 }
-function toggleDebug(){ let p=document.getElementById('debugPanel'); if(!p) return; p.classList.toggle('open'); if(p.classList.contains('open')) dlog('🐛 Debug已打開 15行可滾動'); }
-function changeSize(s){ let el=document.getElementById('dbgLog'); if(!el) return; el.classList.remove('small','large'); if(s=='small') el.classList.add('small'); if(s=='large') el.classList.add('large'); dlog('Debug大細：'+s); }
-function clearLogs(){ logs=[]; let el=document.getElementById('dbgLog'); if(el) el.innerHTML=''; let b=document.getElementById('logBadge'); if(b) b.textContent='0'; dlog('已清Debug'); }
-window.onerror=function(msg,url,line){ dlog('❌ JS錯誤：'+msg+' 行:'+line); };
-window.addEventListener('load',function(){
-  dlog('✅ V95 頁面已載入 Debug在head已跑');
-  dlog('✅ V95 第二頁四掣+真隨機房號+全清已就緒');
-  dlog('✅ 點🐛可以收埋/打開，細/中/大控制15行');
-  // V95重點：第一次自動彈出Debug俾你睇到，證明唔係0
-  setTimeout(function(){ let p=document.getElementById('debugPanel'); if(p) p.classList.add('open'); },500);
+function toggleDebug() {
+  let p = document.getElementById('debugPanel');
+  if (!p) return;
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) dlog('🐛 Debug已打開');
+}
+function changeSize(s) {
+  let el = document.getElementById('dbgLog');
+  if (!el) return;
+  el.classList.remove('small', 'large');
+  if (s === 'small') el.classList.add('small');
+  if (s === 'large') el.classList.add('large');
+  dlog('Debug大細：' + s);
+}
+function clearLogs() {
+  logs = [];
+  let el = document.getElementById('dbgLog');
+  if (el) el.innerHTML = '';
+  let b = document.getElementById('logBadge');
+  if (b) b.textContent = '0';
+  dlog('已清Debug');
+}
+window.onerror = function (msg, url, line) {
+  dlog('❌ JS錯誤：' + msg + ' 行:' + line);
+};
+window.addEventListener('load', function () {
+  dlog('✅ V95 頁面已載入');
+  setTimeout(function () {
+    let p = document.getElementById('debugPanel');
+    if (p) p.classList.add('open');
+  }, 500);
+
+  // ========== 填入你的 Firebase config ==========
+  const firebaseConfig = {
+    apiKey: "替換你自己",
+    authDomain: "替換你自己",
+    databaseURL: "替換你自己",
+    projectId: "替換你自己",
+    storageBucket: "替換你自己",
+    messagingSenderId: "替換你自己",
+    appId: "替換你自己"
+  };
+  if(typeof firebase !== 'undefined'){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    dlog('✅ Firebase 初始化完成');
+  }else{
+    dlog('⚠️ Firebase SDK未載入，僅本地模擬模式');
+  }
 });
-let myId=localStorage.getItem('myId')||'p_'+Math.random().toString(36).substr(2,6); localStorage.setItem('myId',myId);
-let currentRoom="", currentName="", roundNum=1, myChoice="", localAudios={}, audioUrls=[], db=null, players={}, choices={}, audios={}, alivePlayers=[], isSpectator=false;
-function genRoom(){ let a=new Uint32Array(1); crypto.getRandomValues(a); return (1000+a[0]%9000).toString(); }
-async function getUniqueRoom(){ for(let i=0;i<10;i++){ let r=genRoom(); if(!db) return r; try{ let s=await db.ref('rooms/'+r+'/players').get(); if(!s.val()) return r; }catch(e){ return r; } } return genRoom(); }
-async function createRoom(){ let v=document.getElementById('nameInput').value.trim(); if(!v){ alert('請輸入你個名，例如：Louis'); return; } currentName=v; document.getElementById('roomNum').textContent='房號 隨機中...'; currentRoom=await getUniqueRoom(); document.getElementById('roomInput').value=currentRoom; showRoom(); dlog('✅ 已開真隨機房 '+currentRoom+' 玩家:'+currentName); if(db){ db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName,alive:true,joined:Date.now()}); db.ref('rooms/'+currentRoom+'/createdAt').set(Date.now()); db.ref('rooms/'+currentRoom+'/mode').set('one'); } }
-function joinRoom(){ let v=document.getElementById('nameInput').value.trim(); if(!v){ alert('請輸入你個名'); return; } currentName=v; let r=document.getElementById('roomInput').value.trim(); if(!r||r.length!=4){ alert('請輸入4位房號'); return; } currentRoom=r; showRoom(); dlog('✅ 加入房號 '+currentRoom); if(db){ db.ref('rooms/'+currentRoom+'/players/'+myId).set({name:currentName,alive:true,joined:Date.now()}); } }
-function showRoom(){ document.getElementById('roomNum').textContent='房號 '+currentRoom; document.getElementById('roomNum3').textContent='房號 '+currentRoom; document.getElementById('roomNum4').textContent='房號 '+currentRoom; document.getElementById('roomNum5').textContent='房號 '+currentRoom; document.getElementById('s1').style.display='none'; document.getElementById('s2').style.display='block'; listenPlayers(); listenAudios(); }
+
+function genRoom() {
+  let a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return (1000 + a[0] % 9000).toString();
+}
+async function getUniqueRoom() {
+  for (let i = 0; i < 10; i++) {
+    let r = genRoom();
+    if (!db) return r;
+    try {
+      let s = await db.ref('rooms/' + r + '/players').get();
+      if (!s.val()) return r;
+      let s2 = await db.ref('rooms/' + r + '/createdAt').get();
+      if (s2.val() && Date.now() - s2.val() > 2 * 60 * 60 * 1000) {
+        await db.ref('rooms/' + r).remove();
+        return r;
+      }
+      dlog('房號 ' + r + ' 已有人用，重新隨機...');
+    } catch (e) {
+      return r;
+    }
+  }
+  return genRoom();
+}
+async function createRoom() {
+  let v = document.getElementById('nameInput').value.trim();
+  if (!v) { alert('請輸入你個名，例如：Louis'); return; }
+  currentName = v;
+  document.getElementById('roomNum').textContent = '房號 隨機中...';
+  currentRoom = await getUniqueRoom();
+  document.getElementById('roomInput').value = currentRoom;
+  showRoom();
+  dlog('✅ 已開真隨機房 ' + currentRoom + ' 玩家:' + currentName);
+  if (db) {
+    db.ref('rooms/' + currentRoom + '/players/' + myId).set({ name: currentName, alive: true, joined: Date.now() });
+    db.ref('rooms/' + currentRoom + '/createdAt').set(Date.now());
+    db.ref('rooms/' + currentRoom + '/mode').set('one');
+  }
+}
+function joinRoom() {
+  let v = document.getElementById('nameInput').value.trim();
+  if (!v) { alert('請輸入你個名'); return; }
+  currentName = v;
+  let r = document.getElementById('roomInput').value.trim();
+  if (!r || r.length !== 4) { alert('請輸入4位房號'); return; }
+  currentRoom = r;
+  showRoom();
+  dlog('✅ 加入房號 ' + currentRoom + ' 玩家:' + currentName);
+  if (db) {
+    db.ref('rooms/' + currentRoom + '/players/' + myId).set({ name: currentName, alive: true, joined: Date.now() });
+  }
+}
+
+// 關閉舊房間監聽，防止洩漏
+function detachOldListeners(){
+  oldRoomRefs.forEach(ref=>{
+    if(ref) ref.off('value');
+  });
+  oldRoomRefs = [];
+  dlog('🧹 解除舊房間 Firebase 監聽器');
+}
+
+function showRoom() {
+  detachOldListeners();
+  document.getElementById('roomNum').textContent = '房號 ' + currentRoom;
+  document.getElementById('roomNum3').textContent = '房號 ' + currentRoom;
+  document.getElementById('roomNum4').textContent = '房號 ' + currentRoom;
+  document.getElementById('roomNum5').textContent = '房號 ' + currentRoom;
+  document.getElementById('s1').style.display = 'none';
+  document.getElementById('s2').style.display = 'block';
+  listenPlayers();
+  listenAudios();
+}
+
+function setMode(el) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  dlog('玩法：' + el.textContent);
+  if (db && currentRoom) db.ref('rooms/' + currentRoom + '/mode').set(el.dataset.mode);
+}
+
+function imgFor(c) {
+  if (c === 'paper') return 'paper.jpg';
+  if (c === 'scissors') return 'scissors.jpg';
+  if (c === 'rock') return 'rock.jpg';
+  return 'paper.jpg';
+}
+function labelFor(c) {
+  if (c === 'paper') return '包';
+  if (c === 'scissors') return '剪';
+  if (c === 'rock') return '揼';
+  return c;
+}
+function blobToBase64(b) {
+  return new Promise(r => {
+    let fr = new FileReader();
+    fr.onload = () => r(fr.result);
+    fr.readAsDataURL(b);
+  });
+}
+function createUrl(b) {
+  let u = URL.createObjectURL(b);
+  audioUrls.push(u);
+  return u;
+}
+function clearPhone() {
+  dlog('🧹 手機取消：清Blob+base64');
+  audioUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+  audioUrls = [];
+  localAudios = {};
+  document.querySelectorAll('audio').forEach(a => {
+    try { a.pause(); a.src = ''; a.removeAttribute('src'); a.load(); } catch (e) {}
+  });
+}
+function clearFirebase() {
+  if (!db || !currentRoom) return;
+  dlog('🧹 Firebase取消：清 rooms/' + currentRoom);
+  db.ref('rooms/' + currentRoom).remove().then(() => dlog('✅ Firebase已全清 '+currentRoom));
+}
+
+function listenPlayers() {
+  if (!db) return;
+  const refPlayers = db.ref('rooms/' + currentRoom + '/players');
+  const refChoices = db.ref('rooms/' + currentRoom + '/choices');
+  const refMode = db.ref('rooms/' + currentRoom + '/mode');
+  oldRoomRefs.push(refPlayers, refChoices, refMode);
+
+  refPlayers.on('value', snap => {
+    players = snap.val() || {};
+    let ids = Object.keys(players);
+    let alive = ids.filter(id => players[id].alive !== false);
+    alivePlayers = alive;
+    let al3 = document.getElementById('aliveList3');
+    if (al3) al3.textContent = alive.map(id => players[id].name).join(',');
+    let logList = document.getElementById('choiceLogList');
+    if (logList) {
+      logList.innerHTML = ids.map(id => {
+        let p = players[id];
+        let c = choices[id];
+        if (p.alive === false) return '<span class="player-chip" style="background:#555">💀' + p.name + '</span>';
+        if (c) return '<span class="player-chip me">' + p.name + ' 已揀 ' + labelFor(c) + '</span>';
+        return '<span class="player-chip">' + p.name + ' 未揀</span>';
+      }).join('');
+    }
+    let cc = document.getElementById('choiceCount');
+    if (cc) cc.textContent = (Object.keys(choices).length) + '/' + alive.length;
+    if (document.getElementById('s3').style.display !== 'none') {
+      let allChosen = alive.length > 0 && alive.every(id => choices[id]);
+      if (allChosen) {
+        dlog('✅ 所有存活者 ' + alive.length + '人 已出拳，自動入第四頁');
+        setTimeout(goToChorus, 500);
+      }
+    }
+  });
+  refChoices.on('value', snap => {
+    choices = snap.val() || {};
+  });
+  refMode.on('value', snap => {
+    let m = snap.val();
+    if (m) {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === m));
+    }
+  });
+}
+function listenAudios() {
+  if (!db) return;
+  const refAudios = db.ref('rooms/' + currentRoom + '/audios');
+  oldRoomRefs.push(refAudios);
+  refAudios.on('value', snap => {
+    audios = snap.val() || {};
+    let box1 = document.getElementById('remoteBox1');
+    let box2 = document.getElementById('remoteBox2');
+    if (box1) box1.innerHTML = '';
+    if (box2) box2.innerHTML = '';
+    Object.keys(audios).forEach(k => {
+      if (k.startsWith(myId)) return;
+      let d = audios[k];
+      let type = k.split('_')[1];
+      let html = '<div style="background:#222;border-radius:14px;padding:8px;margin-top:8px;border:2px dashed #FFD93D"><div style="color:#FFD93D;font-size:11px">🔊 ' + d.name + ' - ' + (type === 'aud1' ? '包剪揼' : '勝利宣言') + '</div><audio controls src="' + d.b64 + '" style="width:100%;margin-top:6px"></div>';
+      if (type === 'aud1' && box1) box1.innerHTML += html;
+      if (type === 'aud2' && box2) box2.innerHTML += html;
+    });
+  });
+}
+
+// ========== 補齊完整錄音 toggleRec ==========
+let mr, chunks, recTimer;
+async function toggleRec(t) {
+  if (!currentName) {
+    let n = document.getElementById('nameInput').value.trim();
+    if (!n) { alert('請先輸入你個名'); return; }
+    currentName = n;
+  }
+  let btn = document.getElementById('btn' + t);
+  if (btn.classList.contains('recording')) return;
+  let stream=null;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    chunks = [];
+    let opt = { mimeType:'audio/webm;codecs=opus', audioBitsPerSecond:128000 };
+    if(!MediaRecorder.isTypeSupported(opt.mimeType)){
+      opt = { mimeType:'audio/webm' };
+    }
+    mr = new MediaRecorder(stream, opt);
+    mr.ondataavailable = e=>{ if(e.data.size>0) chunks.push(e.data); };
+
+    let sec = 3;
+    btn.classList.add('recording');
+    document.getElementById('wormBar').classList.add('rec');
+    document.getElementById('count'+t).style.display='block';
+    document.getElementById('num'+t).textContent = sec;
+
+    mr.start();
+    recTimer = setInterval(()=>{
+      sec--;
+      document.getElementById('num'+t).textContent = sec;
+      if(sec <= 0){
+        clearInterval(recTimer);
+        mr.stop();
+        // 停止麥克風
+        stream.getTracks().forEach(tr=>tr.stop());
+        btn.classList.remove('recording');
+        document.getElementById('count'+t).style.display='none';
+        document.getElementById('wormBar').classList.remove('rec');
+        dlog('✅ 錄音'+t+'完成，chunks:'+chunks.length);
+        // 錄音完成轉base64，上傳firebase範例骨架
+        let blob = new Blob(chunks, {type:opt.mimeType});
+        blobToBase64(blob).then(b64=>{
+          localAudios['aud'+t] = b64;
+          if(db && currentRoom){
+            db.ref('rooms/'+currentRoom+'/audios/'+myId+'_aud'+t).set({
+              name:currentName,
+              b64:b64
+            });
+          }
+        });
+      }
+    },1000);
+
+  } catch(err){
+    dlog('❌錄音失敗:'+err.message);
+    alert('無法取得麥克風權限，請開啟權限');
+    btn.classList.remove('recording');
+    if(stream) stream.getTracks().forEach(tr=>tr.stop());
+    clearInterval(recTimer);
+  }
+}
+
+// ========== 缺失函數佔位骨架，後續填寫遊戲邏輯 ==========
+function goToChoice(){
+  dlog('👉 goToChoice 切到s3出拳頁');
+  document.getElementById('s2').style.display='none';
+  document.getElementById('s3').style.display='block';
+}
+function goToChorus(){
+  dlog('👉 goToChorus 切到s4結果頁');
+  document.getElementById('s3').style.display='none';
+  document.getElementById('s4').style.display='block';
+}
+function chooseHand(h){
+  dlog('✊ chooseHand:'+h);
+  myChoice = h;
+  document.querySelectorAll('.hand-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('hand-'+h).classList.add('selected');
+  if(db && currentRoom){
+    db.ref('rooms/'+currentRoom+'/choices/'+myId).set(h);
+  }
+}
+function nextRound(){
+  dlog('🔁 nextRound 下一輪');
+  roundNum++;
+  document.getElementById('roundLabel1').textContent = roundNum;
+  document.getElementById('s4').style.display='none';
+  document.getElementById('s3').style.display='block';
+  if(db) db.ref('rooms/'+currentRoom+'/choices').remove();
+}
+async function finalCleanupAndReload(){
+  dlog('🔄 finalCleanupAndReload 重置遊戲');
+  detachOldListeners();
+  clearPhone();
+  await clearFirebase();
+  currentRoom=""; currentName=""; roundNum=1; myChoice="";
+  players={};choices={};audios={};alivePlayers=[];
+  document.querySelectorAll('#s1,#s2,#s3,#s4,#s5').forEach(s=>s.style.display='none');
+  document.getElementById('s1').style.display='block';
+}
+function celebrate(){
+  dlog('🎉 celebrate 慶祝動畫佔位');
+  alert('🎉 恭喜勝利！');
+}
 </script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 <div class="debug-toggle" onclick="toggleDebug()"><span>🐛</span><div class="badge" id="logBadge">0</div></div>
 <div class="worm-bar" id="wormBar"></div>
 <div class="debug-panel" id="debugPanel">
-  <div class="debug-head"><b style="color:#FFE66D">🐛 DEBUG V95 自動彈出 15行</b><div style="display:flex;gap:6px"><button onclick="changeSize('small')">細</button><button onclick="changeSize('mid')">中</button><button onclick="changeSize('large')">大</button><button onclick="clearLogs()">清</button><button onclick="toggleDebug()">✕ 收埋</button></div></div>
+  <div class="debug-head"><b style="color:#FFE66D">🐛 DEBUG V95</b><div style="display:flex;gap:6px"><button onclick="changeSize('small')">細</button><button onclick="changeSize('mid')">中</button><button onclick="changeSize('large')">大</button><button onclick="clearLogs()">清</button><button onclick="toggleDebug()">✕ 收埋</button></div></div>
   <div id="connStatus" style="color:#FFD93D;font-size:11px;margin-bottom:4px">準備中...</div>
-  <div class="debug-logs" id="dbgLog"><div style="color:#888">載入中... V95 Debug已在head運行</div></div>
+  <div class="debug-logs" id="dbgLog"><div style="color:#888">載入中... V95 Debug</div></div>
 </div>
 
-<div id="s1" style="display:block"><div class="wrap wrap1"><div class="input-card"><div class="yellow">與朋友一起對決！準備好了嗎？</div><div class="yellow" style="margin-top:8px">輸入你個名</div><input id="nameInput" class="input-box" placeholder="例如：Louis" value="" autocomplete="off"><div style="display:flex;gap:10px;margin-top:12px"><div style="flex:1;background:#FFD93D;border:3px solid #111;border-radius:16px;padding:12px;text-align:center;font-weight:1000;cursor:pointer" onclick="createRoom()">開始房間</div><div style="flex:1;background:#34C759;border:3px solid #111;border-radius:16px;padding:12px;text-align:center;font-weight:1000;cursor:pointer" onclick="joinRoom()">進入房間</div></div><div class="yellow" style="margin-top:12px"># 房號</div><input id="roomInput" class="input-box newroom" placeholder="4位房號 例如 4829" maxlength="4"></div></div></div>
+<div id="s1" style="display:block">
+<div class="wrap wrap1">
+<div class="input-card">
+<div class="yellow">與朋友一起對決！準備好了嗎？</div>
+<div class="yellow" style="margin-top:8px">輸入你個名</div>
+<input id="nameInput" class="input-box" placeholder="例如：Louis" value="" autocomplete="off">
+<div style="display:flex;gap:10px;margin-top:12px">
+<div style="flex:1;background:#FFD93D;border:3px solid #111;border-radius:16px;padding:12px;text-align:center;font-weight:1000;cursor:pointer" onclick="createRoom()">開始房間</div>
+<div style="flex:1;background:#34C759;border:3px solid #111;border-radius:16px;padding:12px;text-align:center;font-weight:1000;cursor:pointer" onclick="joinRoom()">進入房間</div>
+</div>
+<div class="yellow" style="margin-top:12px"># 房號</div>
+<input id="roomInput" class="input-box newroom" placeholder="4位房號 例如 4829" maxlength="4">
+</div>
+</div>
+</div>
 
-<div id="s2" style="display:none"><div class="wrap wrap2">
+<div id="s2" style="display:none">
+<div class="wrap wrap2">
   <div class="room-orange" id="roomNum">房號 --</div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">玩法選擇</div><div class="mode-grid"><div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div><div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪</div><div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪</div><div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪</div></div></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">包剪揼 (手機暫存，互相傳)</div><div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 包剪揼 - 高清</div><div id="count1" style="display:none;text-align:center;margin-top:8px"><span id="num1" style="font-size:32px;font-weight:1000;color:#FF7A00">3</span> 倒數中...</div><audio id="aud1" controls style="display:none;width:100%;margin-top:8px"></audio><div id="st1" style="color:#FFE66D;font-size:11px;margin-top:4px">未錄</div><div id="remoteBox1"></div></div>
-  <div class="card-black"><div style="color:#FFE66D;font-weight:900">勝利宣言 (最終勝利者先播)</div><div id="btn2" class="btn-red" onclick="toggleRec(2)">🔴 錄音 3秒 勝利宣言</div><div id="count2" style="display:none;text-align:center;margin-top:8px"><span id="num2" style="font-size:32px;font-weight:1000;color:#FF7A00">3</span> 倒數中...</div><audio id="aud2" controls style="display:none;width:100%;margin-top:8px"></audio><div id="st2" style="color:#FFE66D;font-size:11px;margin-top:4px">未錄，最終勝利先播</div><div id="remoteBox2"></div></div>
-  <div class="btn-yellow" onclick="goToChoice()">錄完 → 進入出拳頁</div>
-</div></div>
-
-<div id="s3" style="display:none"><div class="wrap wrap3">
-  <div class="card-black" style="display:flex;justify-content:space-between"><div style="color:#fff;font-weight:1000" id="roomNum3">房號 4829</div><div style="color:#FFE66D;font-size:12px">存活：<span id="aliveList3"></span></div></div>
-  <div style="background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px;text-align:center;font-weight:1000;font-size:24px">第<span id="roundLabel1">1</span>輪 - 請出拳</div>
-  <div class="hand-row"><div onclick="chooseHand('paper')"><div class="hand-card" id="hand-paper"><img src="paper.jpg"></div><div class="hand-label">包</div></div><div onclick="chooseHand('scissors')"><div class="hand-card" id="hand-scissors"><img src="scissors.jpg"></div><div class="hand-label">剪</div></div><div onclick="chooseHand('rock')"><div class="hand-card" id="hand-rock"><img src="rock.jpg"></div><div class="hand-label">揼</div></div></div>
-  <div style="background:#FFE66D;border:4px solid #111;border-radius:18px;padding:8px;text-align:center;font-size:28px;font-weight:1000" id="timerBox">等待出拳中</div>
-  <div style="background:#FFE66D;border:4px solid #111;border-radius:20px;padding:12px"><div style="font-weight:1000">Choice log：<span id="choiceLogMain">你未揀</span> <span id="choiceCount">0/5</span></div><div id="choiceLogList" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"></div></div>
-</div></div>
-
-<div id="s4" style="display:none"><div class="wrap wrap4">
-  <div class="card-black" style="display:flex;justify-content:space-between"><div style="color:#fff;font-weight:1000" id="roomNum4">房號 4829</div><div style="color:#FFE66D" id="roundLabel4">第1輪結果</div></div>
-  <div style="background:#FFE66D;border:4px solid #111;border-radius:16px;padding:8px;text-align:center;font-weight:1000;margin-bottom:10px">大家出拳情況 - 大合唱混音3秒同時播</div>
-  <div id="chorusMixPlayers" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px"></div>
-  <div class="result-grid" id="resultGrid"></div>
-  <div class="card-black" style="text-align:center;margin-top:10px"><div style="color:#FFE66D">剩餘人數</div><div style="font-size:24px;font-weight:1000;color:#FFE66D">剩餘 <span id="remainCount">2</span>人</div><div id="eliminatedList" style="color:#FF5555;font-weight:1000;margin-top:6px"></div></div>
-  <div style="display:flex;gap:10px;margin-top:12px"><div id="nextBtn" class="btn-green" style="flex:1;display:none" onclick="nextRound()">▶ 下一輪</div><div class="btn-yellow" style="flex:1" onclick="finalCleanupAndReload()">↺ 全新遊戲</div></div>
-  <div id="spectatorMsg" style="display:none;background:#222;color:#FFD93D;border-radius:12px;padding:8px;text-align:center;margin-top:8px">👀 你已被淘汰，觀戰模式繼續連線觀看...</div>
-</div></div>
-
-<div id="s5" style="display:none"><div class="wrap wrap5">
-  <div class="card-black"><div style="color:#FFE66D;font-weight:1000" id="roomNum5">房號 4829 | 🎉 最終勝利</div></div>
-  <div style="text-align:center;font-size:50px">👑</div>
-  <div style="background:#FFE66D;border:4px solid #111;border-radius:20px;padding:10px;text-align:center;font-weight:1000;font-size:26px">最終勝利者</div>
-  <div style="font-size:36px;font-weight:1000;text-align:center;color:#fff;-webkit-text-stroke:3px #111" id="winnerName">Player A</div>
-  <div style="background:#FFF8D6;border:3px solid #111;border-radius:18px;padding:12px;margin:10px 0"><div style="font-weight:1000">勝利宣言 — 所有手機同步播放 🔊</div><div id="victoryPlayer"></div></div>
-  <div style="display:flex;gap:10px;margin-top:12px"><div class="btn-yellow" style="flex:1" onclick="celebrate()">🎉 慶祝一下</div><div class="btn-yellow" style="flex:1;background:#fff" onclick="finalCleanupAndReload()">↺ 全新遊戲</div></div>
-  <div id="finalCleanupLog" style="color:#FFD93D;font-size:10px;text-align:center;margin-top:8px">播完勝利宣言 3秒後自動全清...</div>
-</div></div>
-
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script>
-function setMode(el){ document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); dlog('玩法：'+el.textContent); if(db&&currentRoom) db.ref('rooms/'+currentRoom+'/mode').set(el.dataset.mode); }
-function imgFor(c){ if(c=='paper') return 'paper.jpg'; if(c=='scissors') return 'scissors.jpg'; if(c=='rock') return 'rock.jpg'; return 'paper.jpg'; }
-function labelFor(c){ if(c=='paper') return '包'; if(c=='scissors') return '剪'; if(c=='rock') return '揼'; return c; }
-function blobToBase64(b){ return new Promise(r=>{ let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(b); }); }
-function createUrl(b){ let u=URL.createObjectURL(b); audioUrls.push(u); return u; }
-function clearPhone(){ dlog('🧹 手機取消：清Blob'); audioUrls.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} }); audioUrls=[]; localAudios={}; document.querySelectorAll('audio').forEach(a=>{ try{ a.pause(); a.src=''; a.removeAttribute('src'); a.load(); }catch(e){} }); }
-function clearFirebase(){ if(!db||!currentRoom) return; dlog('🧹 Firebase取消：清 rooms/'+currentRoom); db.ref('rooms/'+currentRoom).remove().then(()=>dlog('✅ Firebase已全清 rooms/'+currentRoom+' => null')); }
-function listenPlayers(){
-  if(!db) return;
-  db.ref('rooms/'+currentRoom+'/players').on('value',snap=>{
-    players=snap.val()||{}; let ids=Object.keys(players); let alive=ids.filter(id=>players[id].alive!==false); alivePlayers=alive;
-    let al3=document.getElementById('aliveList3'); if(al3) al3.textContent=alive.map(id=>players[id].name).join(',');
-    let logList=document.getElementById('choiceLogList'); if(logList){ logList.innerHTML=ids.map(id=>{ let p=players[id]; let c=choices[id]; if(p.alive===false) return '<span class="player-chip" style="background:#555">💀'+p.name+'</span>'; if(c) return '<span class="player-chip me">'+p.name+' 已揀 '+labelFor(c)+'</span>'; return '<span class="player-chip">'+p.name+' 未揀</span>'; }).join(''); }
-    let cc=document.getElementById('choiceCount'); if(cc) cc.textContent=(Object.keys(choices).length)+'/'+alive.length;
-    if(document.getElementById('s3').style.display!='none'){ let allChosen=alive.length>0 && alive.every(id=>choices[id]); if(allChosen){ dlog('✅ 所有存活者 '+alive.length+'人 已出拳，自動入第四頁'); setTimeout(goToChorus,500); } }
-  });
-  db.ref('rooms/'+currentRoom+'/choices').on('value',snap=>{ choices=snap.val()||{}; });
-  db.ref('rooms/'+currentRoom+'/mode').on('value',snap=>{ let m=snap.val(); if(m){ document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mode==m)); } });
-}
-function listenAudios(){
-  if(!db) return;
-  db.ref('rooms/'+currentRoom+'/audios').on('value',snap=>{
-    audios=snap.val()||{};
-    let box1=document.getElementById('remoteBox1'), box2=document.getElementById('remoteBox2');
-    if(box1) box1.innerHTML=''; if(box2) box2.innerHTML='';
-    Object.keys(audios).forEach(k=>{ if(k.startsWith(myId)) return; let d=audios[k]; let type=k.split('_')[1]; let html='<div style="background:#222;border-radius:14px;padding:8px;margin-top:8px;border:2px dashed #FFD93D"><div style="color:#FFD93D;font-size:11px">🔊 '+d.name+' - '+(type=='aud1'?'包剪揼':'勝利宣言')+'</div><audio controls src="'+d.b64+'" style="width:100%;margin-top:6px"></audio></div>'; if(type=='aud1'&&box1) box1.innerHTML+=html; if(type=='aud2'&&box2) box2.innerHTML+=html; });
-  });
-}
-let mr,chunks,recTimer;
-async function toggleRec(t){
-  if(!currentName){ let n=document.getElementById('nameInput').value.trim(); if(!n){ alert('請先輸入你個名'); return; } currentName=n; }
-  let btn=document.getElementById('btn'+t); if(btn.classList.contains('recording')) return;
-  try{
-    let stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:48000,channelCount:1}});
-    chunks=[]; let opt={mimeType:'audio/webm;codecs=opus',audioBitsPerSecond:128000}; if(!MediaRecorder.isTypeSupported(opt.mimeType)) opt={mimeType:'audio/webm'};
-    mr=new MediaRecorder(stream,opt); mr.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
-    let sec=3; btn.classList.add('recording'); document.getElementById('wormBar').classList.add('rec'); document.getElementById('count'+t).style.display='block'; docu
+  <div class="card-black">
+    <div style="color:#FFE66D;font-weight:900">玩法選擇</div>
+    <div class="mode-grid">
+      <div class="mode-btn selected" data-mode="one" onclick="setMode(this)">一鋪定勝負</div>
+      <div class="mode-btn" data-mode="best3" onclick="setMode(this)">贏兩鋪</div>
+      <div class="mode-btn" data-mode="best5" onclick="setMode(this)">贏三鋪</div>
+      <div class="mode-btn" data-mode="win2" onclick="setMode(this)">連贏兩鋪</div>
+    </div>
+  </div>
+  <div class="card-black">
+    <div style="color:#FFE66D;font-weight:900">包剪揼 (手機暫存，互相傳)</div>
+    <div id="btn1" class="btn-red" onclick="toggleRec(1)">🔴 錄音 3秒 包剪揼 - 高清</div>
+    <div id="count1" style="display:none;text-align:center;margin-top:8px"><span id="num1" style=
