@@ -43,7 +43,7 @@ button{padding:14px 18px;font-size:17px;border-radius:10px;border:none;margin:6p
 </style>
 </head>
 <body>
-<div class="version">v1.0</div>
+<div class="version">v1.1</div>
 
 <!-- 頁1：輸入名字 + 房間號 -->
 <div id="page1" class="page active">
@@ -138,7 +138,7 @@ let ruleType = "one";
 let countdownTimer = null;
 let heartbeatTimer = null;
 
-// Debug 函數【修復：保證一定會寫入】
+// Debug 函數
 function log(msg){
   const d = new Date();
   const timeStr = `[${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}]`;
@@ -148,17 +148,17 @@ function log(msg){
   debugDom.scrollTop = debugDom.scrollHeight;
 }
 
-log("✅ 程式啟動 v1.0");
+log("✅ 程式啟動 v1.1");
 
 // 切頁
 function switchPage(n){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById("page"+n).classList.add("active");
-  log("切換到 page"+n);
+  log("🔄 切換到 page"+n);
 }
 
-// 房主：開啟房間
-function genRoom(){
+// 房主：開啟房間【重點：先做本地動作，再連Firebase】
+async function genRoom(){
   log("👉 觸發：開啟房間");
   myName = document.getElementById("nameInput").value.trim();
   if(!myName){
@@ -166,19 +166,34 @@ function genRoom(){
     log("❌ 失敗：冇輸入玩家名稱");
     return;
   }
+  // 本地生成房號，先寫入畫面
   const r = String(Math.floor(Math.random()*9000)+1000);
   document.getElementById("roomInput").value = r;
   roomId = r;
-  log("✅ 房主開啟房間："+roomId);
   document.getElementById("showRoomId").innerText = roomId;
   document.getElementById("myUid").innerText = myUid;
+  log("✅ 本地生成房號："+roomId);
+
+  // 先跳頁！唔等Firebase回應
   switchPage(2);
-  initRoomListen();
-  startHeartbeat();
+
+  try{
+    // 寫基礎房間資料
+    await db.ref("rooms/"+roomId).set({
+      gameState:"wait",
+      ruleType:"one",
+      createTime:Date.now()
+    })
+    log("✅ Firebase 房間建立成功");
+    initRoomListen();
+    startHeartbeat();
+  }catch(err){
+    log("❌ Firebase 寫房間失敗："+err.message);
+  }
 }
 
 // 房客：進入房間
-function joinRoom(){
+async function joinRoom(){
   log("👉 觸發：進入房間");
   roomId = document.getElementById("roomInput").value.trim();
   myName = document.getElementById("nameInput").value.trim();
@@ -192,12 +207,16 @@ function joinRoom(){
     log("❌ 失敗：房號唔係4位數字");
     return;
   }
-  log("✅ 房客進入房間："+roomId+"｜玩家："+myName+"｜UID："+myUid);
   document.getElementById("showRoomId").innerText = roomId;
   document.getElementById("myUid").innerText = myUid;
+  log("✅ 房客準備進入房間："+roomId+"｜玩家："+myName+"｜UID："+myUid);
   switchPage(2);
-  initRoomListen();
-  startHeartbeat();
+  try{
+    initRoomListen();
+    startHeartbeat();
+  }catch(err){
+    log("❌ 房客監聽失敗："+err.message);
+  }
 }
 
 // 心跳
@@ -326,7 +345,6 @@ function runResult(){
   const winSel = calcResult();
   const allP = Object.values(players);
   log("🎶 大合唱：過濾淘汰玩家，剩餘"+allP.filter(x=>!x.eliminated).length+"人");
-  // 更新勝場、淘汰邏輯
   allP.forEach(p=>{
     if(p.eliminated) return;
     if(p.choice === winSel){
@@ -343,7 +361,6 @@ function runResult(){
   })
   document.getElementById("resultView").innerText = allP.map(x=>`${x.name}:${x.choice} ${x.eliminated?"【淘汰】":""}`).join("\n");
   document.getElementById("rankView").innerText = allP.sort((a,b)=>b.win-a.win).map(x=>`${x.name}｜勝${x.win}｜連勝${x.consec}`).join("\n");
-  // 5秒倒數
   let c = 5;
   document.getElementById("countdown").innerText = c;
   clearInterval(countdownTimer);
