@@ -2,486 +2,308 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>多人包剪揼遊戲</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>包剪揼多人同步遊戲</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
-.page{display:none;padding:30px;text-align:center;color:#fff}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{overflow:hidden}
+.page{display:none;width:100vw;height:100vh;background-size:cover;background-position:center;padding:16px;padding-bottom:140px}
 .page.active{display:block}
-h2{margin:30px 0}
-input,button{padding:12px;margin:8px;font-size:16px}
-#playerList,#readyBox,#ruleBox,#statusBox,#rankBox,#outBox{background:rgba(0,0,0,0.5);padding:20px;margin:15px;border-radius:12px}
-img{max-width:100%}
-#countNum{font-size:80px;font-weight:bold;color:#ff0}
-#debugWindow{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  height:180px;
-  background:rgba(0,0,0,0.85);
-  color:#9f9;
-  font-size:12px;
-  overflow-y:auto;
-  padding:8px;
-  z-index:9999;
-  text-align:left;
-}
+#page1{background-image:url('background01.jpg')}
+#page2{background-image:url('background02.jpg')}
+#page3{background-image:url('background03.jpg')}
+#page4{background-image:url('background04.jpg')}
+#page5{background-image:url('background05.jpg')}
+h2{text-align:center;margin:20px 0;color:#fff;text-shadow:2px 2px 4px #000}
+input{width:90%;padding:12px;font-size:18px;margin:8px auto;display:block;border-radius:8px;border:1px solid #aaa}
+button{padding:14px 18px;font-size:17px;border-radius:10px;border:none;margin:6px;cursor:pointer;background:#fff;color:#222}
+.btn-row{display:flex;flex-wrap:wrap;justify-content:center}
+#debug{position:fixed;bottom:0;left:0;width:100%;height:120px;background:rgba(0,0,0,0.85);color:#3f3;font-size:12px;overflow-y:auto;padding:8px;z-index:9999}
+.player-item{padding:8px;background:rgba(255,255,255,0.7);margin:4px;border-radius:6px}
+.eliminated{opacity:0.4;text-decoration:line-through}
 </style>
 </head>
 <body>
-
-<!-- Page 1 開房入房 -->
-<div id="page1" class="page active" style="background:url('background01.jpg') center/cover no-repeat;height:calc(100vh - 180px)">
-  <h2>包剪揼多人遊戲</h2>
-  <input id="roomIdInput" placeholder="輸入房號">
-  <br>
-  <button onclick="createRoom()">開啟房間</button>
-  <button onclick="joinRoom()">進入房間</button>
-  <div id="roomInfo"></div>
-  <div id="playerList"></div>
+<!-- 頁1：輸入名字 + 房間號 -->
+<div id="page1" class="page active">
+<h2>開啟 / 進入房間</h2>
+<input id="nameInput" placeholder="輸入玩家名稱">
+<input id="roomInput" placeholder="4位數房間號碼">
+<div class="btn-row">
+<button onclick="genRoom()">隨機生成房號</button>
+<button onclick="joinRoom()">進入房間</button>
+</div>
 </div>
 
-<!-- Page 2 錄音 + 玩家狀態 + 遊戲規則 -->
-<div id="page2" class="page" style="background:url('background02.jpg') center/cover no-repeat;height:calc(100vh - 180px)">
-  <h2>錄製音訊 & 設定遊戲</h2>
-  <div id="readyBox">
-    <h3>玩家狀態</h3>
-    <div id="playerStatus"></div>
-  </div>
-  <p>第一段：包剪揼（大合唱用）</p>
-  <button onclick="rec1Start()">開始錄第一段</button>
-  <button onclick="rec1Stop()">停止錄第一段</button>
-  <div id="rec1Status"></div>
-  <br>
-  <p>第二段：勝利宣言</p>
-  <button onclick="rec2Start()">開始錄第二段</button>
-  <button onclick="rec2Stop()">停止錄第二段</button>
-  <div id="rec2Status"></div>
-  <br>
-  <div id="ruleBox">
-    <h3>房主選擇遊戲規則</h3>
-    <button onclick="setRule('one')">一鋪定勝負</button>
-    <button onclick="setRule('win2')">贏兩鋪</button>
-    <button onclick="setRule('win3')">贏三鋪</button>
-    <button onclick="setRule('streak2')">連贏兩鋪</button>
-    <div id="currentRule"></div>
-  </div>
-  <br>
-  <button onclick="goPage3()">全部準備好，下一頁</button>
+<!-- 頁2：錄音 + 規則選擇 + 玩家列表 -->
+<div id="page2" class="page">
+<h2>錄製音訊 & 設定遊戲</h2>
+<div class="player-item">玩家ID：<span id="myUid"></span></div>
+<div style="margin:12px 0;text-align:center">
+<h3>第一段：包剪揼（大合唱用）</h3>
+<div class="btn-row">
+<button onclick="startRec1()">開始錄第一段</button>
+<button onclick="stopRec1()">停止錄第一段</button>
+</div>
+<h3 style="margin-top:12px">第二段：勝利宣言</h3>
+<div class="btn-row">
+<button onclick="startRec2()">開始錄第二段</button>
+<button onclick="stopRec2()">停止錄第二段</button>
+</div>
+</div>
+<h3>房主選擇遊戲規則</h3>
+<div class="btn-row">
+<button onclick="setRule('one')">一鋪定勝負</button>
+<button onclick="setRule('win2')">贏兩鋪</button>
+<button onclick="setRule('win3')">贏三鋪</button>
+<button onclick="setRule('con2')">連贏兩鋪</button>
+</div>
+<h3>在線玩家狀態</h3>
+<div id="playerList"></div>
 </div>
 
-<!-- Page 3 出拳 -->
-<div id="page3" class="page" style="background:url('background03.jpg') center/cover no-repeat;height:calc(100vh - 180px)">
-  <h2>請出拳</h2>
-  <div>
-    <img src="rock.jpg" onclick="play('rock')" style="width:120px;margin:10px;cursor:pointer">
-    <img src="scissors.jpg" onclick="play('scissors')" style="width:120px;margin:10px;cursor:pointer">
-    <img src="paper.jpg" onclick="play('paper')" style="width:120px;margin:10px;cursor:pointer">
-  </div>
-  <div id="playStatus"></div>
+<!-- 頁3：出拳頁面 -->
+<div id="page3" class="page">
+<h2>請選擇包 / 剪 / 揼</h2>
+<div class="btn-row">
+<button onclick="play('rock')"><img src="rock.png" style="width:80px"></button>
+<button onclick="play('scissors')"><img src="scissors.png" style="width:80px"></button>
+<button onclick="play('paper')"><img src="paper.png" style="width:80px"></button>
+</div>
 </div>
 
-<!-- Page 4：狀態、排行榜、倒數 -->
-<div id="page4" class="page" style="background:url('background04.jpg') center/cover no-repeat;height:calc(100vh - 180px)">
-  <h2>本回合結果</h2>
-  <div id="playerStatusBox"></div>
-  <div id="rankBox"></div>
-  <div id="countNum"></div>
+<!-- 頁4：結果 + 5秒倒數 -->
+<div id="page4" class="page">
+<h2>出拳狀況</h2>
+<div id="resultView"></div>
+<h2>勝利排行</h2>
+<div id="rankView"></div>
+<div style="font-size:60px;text-align:center;color:#ff0000;margin:20px" id="countdown">5</div>
 </div>
 
-<!-- Page 5：最終勝利完場 -->
-<div id="page5" class="page" style="background:url('background05.jpg') center/cover no-repeat;height:calc(100vh - 180px)">
-  <h2>遊戲完結</h2>
-  <div id="finalWinner"></div>
-  <button onclick="endGame()">清除房間資料</button>
+<!-- 頁5：最終勝利畫面 -->
+<div id="page5" class="page">
+<h2>遊戲完結！</h2>
+<h2 id="winnerText"></h2>
 </div>
 
-<!-- Debug 視窗（永遠在底） -->
-<div id="debugWindow">Debug 已啟動</div>
+<!-- Debug視窗 -->
+<div id="debug"></div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
 <script>
+// ========== Firebase 設定，換返你自己嘅 config ==========
 const firebaseConfig = {
-  apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
-  authDomain: "game-ad81e.firebaseapp.com",
-  databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "game-ad81e",
-  storageBucket: "game-ad81e.firebasestorage.app",
-  messagingSenderId: "524468263754",
-  appId: "1:524468263754:web:6ff2273f778277cf22ffb3"
+  apiKey: "你的apiKey",
+  authDomain: "你的authDomain",
+  databaseURL: "你的databaseURL",
+  projectId: "你的projectId",
+  storageBucket: "你的storageBucket",
+  messagingSenderId: "你的senderId",
+  appId: "你的appId"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let roomId = "";
-let myId = "user_" + Math.random().toString(36).substr(2,9);
-let heartbeatTimer;
-let rec1, rec2;
-let audio1Blob, audio2Blob;
-let audio1Base64 = "";
-let audio2Base64 = "";
+let myName = "";
+let myUid = "user_" + Math.random().toString(36).slice(2,10);
+let mediaRecorder1,mediaRecorder2;
+let audio1Blob,audio2Blob;
+let players = {};
+let gameState = "wait";
+let ruleType = "one";
+let countdownTimer = null;
+let heartbeatTimer = null;
 
-// Debug 輸出函數
-function logDebug(msg){
+// Debug 函數
+function log(msg){
   const d = new Date();
-  const time = d.toLocaleString();
-  const box = document.getElementById("debugWindow");
-  box.innerHTML += `[${time}] ${msg}<br>`;
-  box.scrollTop = box.scrollHeight;
+  const line = `[${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}] ${msg}\n`;
+  document.getElementById("debug").innerText += line;
+  document.getElementById("debug").scrollTop = document.getElementById("debug").scrollHeight;
 }
 
-function showPage(id){
+// 切頁
+function switchPage(n){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  logDebug(`切換頁面：${id}`);
+  document.getElementById("page"+n).classList.add("active");
 }
 
-function createRoom(){
-  roomId = Math.random().toString(36).substr(2,6);
-  db.ref("rooms/"+roomId).set({
-    maxPlayer:8,
-    players:{},
-    gameState:"wait",
-    round:1,
-    rule:"none"
-  });
-  logDebug(`建立房間：${roomId}`);
-  joinRoomByCode(roomId);
+// 隨機4位房號
+function genRoom(){
+  const r = String(Math.floor(Math.random()*9000)+1000);
+  document.getElementById("roomInput").value = r;
+  log("已生成房號："+r);
 }
 
+// 入房
 function joinRoom(){
-  const input = document.getElementById("roomIdInput").value.trim();
-  logDebug(`嘗試入房：${input}`);
-  joinRoomByCode(input);
-}
-
-function joinRoomByCode(code){
-  roomId = code;
-  db.ref("rooms/"+roomId+"/players/"+myId).set({
-    online:true,
-    lastHeart:Date.now(),
-    play:"",
-    win:0,
-    streak:0,
-    rec1:false,
-    rec2:false,
-    audio1:"",
-    audio2:"",
-    isEliminated:false
-  });
+  roomId = document.getElementById("roomInput").value.trim();
+  myName = document.getElementById("nameInput").value.trim();
+  if(!roomId || !myName){alert("請輸入名稱同4位房間號");return}
+  if(!/^[0-9]{4}$/.test(roomId)){alert("房號必須4個數字");return}
+  document.getElementById("myUid").innerText = myUid;
+  log("進入房間："+roomId+"｜玩家："+myName+"｜UID："+myUid);
+  switchPage(2);
+  initRoomListen();
   startHeartbeat();
-  listenRoom();
-  document.getElementById("roomInfo").innerText = "房號："+roomId;
-  logDebug(`成功入房 ${roomId}，本機 ID：${myId}`);
-  showPage("page2");
 }
 
+// 心跳
 function startHeartbeat(){
   heartbeatTimer = setInterval(()=>{
-    db.ref("rooms/"+roomId+"/players/"+myId+"/lastHeart").set(Date.now());
-  },1500);
-  logDebug("心跳已啟動");
+    if(!roomId) return;
+    db.ref("rooms/"+roomId+"/players/"+myUid).update({
+      name:myName,uid:myUid,online:true,lastSeen:Date.now(),
+      rec1Ready:!!audio1Blob,rec2Ready:!!audio2Blob,
+      choice:null,win:0,consec:0,eliminated:false
+    })
+  },1500)
 }
 
-window.addEventListener("beforeunload",()=>{
-  db.ref("rooms/"+roomId+"/players/"+myId).remove();
-  clearInterval(heartbeatTimer);
-  logDebug("離開，清除本機玩家");
-});
-
-function listenRoom(){
-  db.ref("rooms/"+roomId).on("value",snap=>{
-    const data = snap.val();
-    if(!data){
-      logDebug("Firebase 資料為空");
-      return;
-    }
-    logDebug(`收到房狀態 gameState = ${data.gameState}`);
-    renderPlayerStatus(data.players);
-    checkOffline(data.players);
-    if(data.rule) showRule(data.rule);
-
-    if(data.gameState === "resultCountdown"){
-      showPage("page4");
-      renderResultPage(data.players);
-      startCountdown(data.players, data.rule);
-    }
-
-    if(data.gameState === "gameEnd"){
-      showPage("page5");
-      const winner = data.finalWinner;
-      document.getElementById("finalWinner").innerText = "最終勝利者：" + winner;
-      logDebug(`遊戲完結，最終勝利者：${winner}`);
-      if(data.players[winner] && data.players[winner].audio2){
-        const winAudio = new Audio(data.players[winner].audio2);
-        winAudio.play();
-        logDebug("播放勝利宣言");
-      }
-    }
-  })
-  logDebug("Firebase 房間監聽已開啟");
-}
-
-function renderPlayerStatus(players){
-  const box = document.getElementById("playerStatus");
-  let html = "";
-  for(let k in players){
-    let readyText = "";
-    let outText = "";
-    if(players[k].rec1 && players[k].rec2) readyText = "｜已準備";
-    if(players[k].isEliminated) outText = "｜已淘汰";
-    html += `<p>${k} ${readyText} ${outText}</p>`;
-  }
-  box.innerHTML = html;
-}
-
-function checkOffline(players){
-  const now = Date.now();
-  for(let k in players){
-    if(now - players[k].lastHeart > 5000){
-      db.ref("rooms/"+roomId+"/players/"+k).remove();
-      logDebug(`玩家 ${k} 心跳過期，移除`);
-    }
-  }
-}
-
-function setRule(rule){
-  db.ref("rooms/"+roomId+"/rule").set(rule);
-  logDebug(`設定遊戲規則：${rule}`);
-}
-
-function showRule(r){
-  let name;
-  if(r === "one") name = "一鋪定勝負";
-  else if(r === "win2") name = "贏兩鋪";
-  else if(r === "win3") name = "贏三鋪";
-  else if(r === "streak2") name = "連贏兩鋪";
-  else name = "未選擇";
-  document.getElementById("currentRule").innerText = "當前規則："+name;
-}
-
-function rec1Start(){
-  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-    rec1 = new MediaRecorder(stream);
-    rec1.start();
-    rec1.ondataavailable = e=>{ audio1Blob = e.data; };
-    document.getElementById("rec1Status").innerText = "錄緊第一段";
-    logDebug("開始錄第一段（大合唱）");
+// 監聽房間
+function initRoomListen(){
+  const roomRef = db.ref("rooms/"+roomId);
+  roomRef.on("value",snap=>{
+    const data = snap.val() || {};
+    players = data.players || {};
+    gameState = data.gameState ?? "wait";
+    ruleType = data.ruleType ?? "one";
+    log("收到房狀態 gameState = "+gameState);
+    renderPlayerList();
+    routeGameState();
   })
 }
 
-function rec1Stop(){
-  rec1.stop();
-  let reader = new FileReader();
-  reader.onload = function(){
-    audio1Base64 = reader.result;
-    db.ref("rooms/"+roomId+"/players/"+myId+"/audio1").set(audio1Base64);
-    db.ref("rooms/"+roomId+"/players/"+myId+"/rec1").set(true);
-  }
-  reader.readAsDataURL(audio1Blob);
-  document.getElementById("rec1Status").innerText = "第一段錄好，同步去房間";
-  logDebug("第一段錄音上傳完成");
-}
-
-function rec2Start(){
-  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-    rec2 = new MediaRecorder(stream);
-    rec2.start();
-    rec2.ondataavailable = e=>{ audio2Blob = e.data; };
-    document.getElementById("rec2Status").innerText = "錄緊第二段";
-    logDebug("開始錄第二段（勝利宣言）");
+// 渲染玩家列表
+function renderPlayerList(){
+  const wrap = document.getElementById("playerList");
+  wrap.innerHTML = "";
+  Object.values(players).forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "player-item"+(p.eliminated?" eliminated":"");
+    div.innerText = `${p.name}｜${p.rec1Ready?"✅包剪揼錄好":"❌未錄音"}｜${p.rec2Ready?"✅宣言錄好":"❌未錄宣言"}｜勝：${p.win}`;
+    wrap.appendChild(div);
   })
 }
 
-function rec2Stop(){
-  rec2.stop();
-  let reader = new FileReader();
-  reader.onload = function(){
-    audio2Base64 = reader.result;
-    db.ref("rooms/"+roomId+"/players/"+myId+"/audio2").set(audio2Base64);
-    db.ref("rooms/"+roomId+"/players/"+myId+"/rec2").set(true);
+// 房主設定規則
+function setRule(r){
+  db.ref("rooms/"+roomId).update({ruleType:r,gameState:"wait"})
+  log("房主設定規則："+r)
+}
+
+// 錄音第一段
+async function startRec1(){
+  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  mediaRecorder1 = new MediaRecorder(stream);
+  const chunks = [];
+  mediaRecorder1.ondataavailable = e=>chunks.push(e.data);
+  mediaRecorder1.onstop = ()=>{
+    audio1Blob = new Blob(chunks,{type:"audio/webm"});
+    log("第一段錄音完成");
+    db.ref("rooms/"+roomId+"/players/"+myUid+"/rec1Ready").set(true);
   }
-  reader.readAsDataURL(audio2Blob);
-  document.getElementById("rec2Status").innerText = "第二段錄好，同步去房間";
-  logDebug("第二段錄音上傳完成");
+  mediaRecorder1.start();
+  log("開始錄第一段");
+}
+function stopRec1(){mediaRecorder1?.stop();log("停止第一段錄音")}
+
+// 錄音第二段
+async function startRec2(){
+  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  mediaRecorder2 = new MediaRecorder(stream);
+  const chunks = [];
+  mediaRecorder2.ondataavailable = e=>chunks.push(e.data);
+  mediaRecorder2.onstop = ()=>{
+    audio2Blob = new Blob(chunks,{type:"audio/webm"});
+    log("第二段錄音完成");
+    db.ref("rooms/"+roomId+"/players/"+myUid+"/rec2Ready").set(true);
+  }
+  mediaRecorder2.start();
+  log("開始錄第二段");
+}
+function stopRec2(){mediaRecorder2?.stop();log("停止第二段錄音")}
+
+// 出拳
+function play(sel){
+  db.ref("rooms/"+roomId+"/players/"+myUid+"/choice").set(sel);
+  log("我出："+sel);
 }
 
-function goPage3(){
-  showPage("page3");
+// 遊戲狀態分流
+function routeGameState(){
+  if(gameState==="wait") switchPage(2);
+  if(gameState==="play") switchPage(3);
+  if(gameState==="result") runResult();
+  if(gameState==="end") runEnd();
 }
 
-function play(type){
-  db.ref("rooms/"+roomId+"/players/"+myId+"/play").set(type);
-  document.getElementById("playStatus").innerText = "你已經出："+type;
-  logDebug(`本機出拳：${type}`);
-  checkAllPlayComplete();
+// 計算勝負
+function calcResult(){
+  const arr = Object.values(players).filter(x=>!x.eliminated && x.choice);
+  const rock = arr.filter(x=>x.choice==="rock").length;
+  const scis = arr.filter(x=>x.choice==="scissors").length;
+  const pap = arr.filter(x=>x.choice==="paper").length;
+  let winnerChoice = null;
+  if(rock>0 && scis>0 && pap===0) winnerChoice="rock";
+  else if(scis>0 && pap>0 && rock===0) winnerChoice="scissors";
+  else if(pap>0 && rock>0 && scis===0) winnerChoice="paper";
+  return winnerChoice;
 }
 
-function checkAllPlayComplete(){
-  db.ref("rooms/"+roomId).once("value",snap=>{
-    const r = snap.val();
-    const ps = r.players;
-    let allOk = true;
-    for(let k in ps){
-      if(ps[k].isEliminated) continue;
-      if(!ps[k].play) allOk = false;
-    }
-    if(allOk){
-      logDebug("全部存活玩家已出齊拳，開始計回合結果");
-      calcRoundResult(ps, r.rule);
+function runResult(){
+  switchPage(4);
+  const winSel = calcResult();
+  const allP = Object.values(players);
+  // 大合唱：只播放未淘汰玩家
+  log("大合唱：過濾淘汰玩家，剩餘"+allP.filter(x=>!x.eliminated).length+"人");
+  // 更新勝場、淘汰邏輯
+  allP.forEach(p=>{
+    if(p.eliminated) return;
+    if(p.choice === winSel){
+      p.win +=1;
+      p.consec +=1;
     }else{
-      logDebug("仲有玩家未出拳");
+      p.consec =0;
     }
+    // 判斷淘汰
+    let out = false;
+    if(ruleType==="win2" && p.win>=2) out=true;
+    if(ruleType==="win3" && p.win>=3) out=true;
+    if(ruleType==="con2" && p.consec>=2) out=true;
+    p.eliminated = out;
   })
-}
-
-function beat(a,b){
-  if(a === b) return "draw";
-  if((a === "rock" && b === "scissors") || (a === "scissors" && b === "paper") || (a === "paper" && b === "rock")) return "win";
-  return "lose";
-}
-
-function calcRoundResult(players, rule){
-  const list = Object.keys(players).filter(p=>!players[p].isEliminated);
-  logDebug(`存活玩家數量：${list.length}`);
-  if(list.length <= 1){
-    endGameFinal(players, list[0]);
-    return;
-  }
-
-  let roundWinners = [];
-  for(let p of list){
-    let winCount = 0;
-    for(let o of list){
-      if(p === o) continue;
-      if(beat(players[p].play, players[o].play) === "win") winCount++;
-    }
-    if(winCount === list.length - 1) roundWinners.push(p);
-  }
-
-  if(roundWinners.length === 1){
-    let winnerId = roundWinners[0];
-    db.ref("rooms/"+roomId+"/players/"+winnerId+"/win").set(players[winnerId].win + 1);
-    db.ref("rooms/"+roomId+"/players/"+winnerId+"/streak").set(players[winnerId].streak + 1);
-    for(let p of list){
-      if(p !== winnerId) db.ref("rooms/"+roomId+"/players/"+p+"/streak").set(0);
-    }
-    logDebug(`本回合單一贏家：${winnerId}`);
-  }else{
-    logDebug("本回合多個贏家 / 和局");
-  }
-
-  checkGameEndCondition(players, rule);
-  db.ref("rooms/"+roomId+"/gameState").set("resultCountdown");
-  logDebug("設定 gameState = resultCountdown");
-}
-
-function checkGameEndCondition(players, rule){
-  const alive = Object.keys(players).filter(p=>!players[p].isEliminated);
-  if(alive.length === 1){
-    endGameFinal(players, alive[0]);
-    return;
-  }
-
-  if(rule === "win2"){
-    for(let p of alive){
-      if(players[p].win >= 2){
-        endGameFinal(players, p);
-        return;
+  // 畫面顯示
+  document.getElementById("resultView").innerText = allP.map(x=>`${x.name}:${x.choice} ${x.eliminated?"【淘汰】":""}`).join("\n");
+  document.getElementById("rankView").innerText = allP.sort((a,b)=>b.win-a.win).map(x=>`${x.name}｜勝${x.win}｜連勝${x.consec}`).join("\n");
+  // 5秒倒數
+  let c = 5;
+  document.getElementById("countdown").innerText = c;
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(()=>{
+    c--;
+    document.getElementById("countdown").innerText = c;
+    if(c<=0){
+      clearInterval(countdownTimer);
+      const remain = allP.filter(x=>!x.eliminated);
+      if(remain.length <=1){
+        db.ref("rooms/"+roomId).update({gameState:"end",winner:remain[0]?.name})
+      }else{
+        db.ref("rooms/"+roomId).update({gameState:"play"})
       }
     }
-  }
-  if(rule === "win3"){
-    for(let p of alive){
-      if(players[p].win >= 3){
-        endGameFinal(players, p);
-        return;
-      }
-    }
-  }
-  if(rule === "streak2"){
-    for(let p of alive){
-      if(players[p].streak >= 2){
-        endGameFinal(players, p);
-        return;
-      }
-    }
-  }
+  },1000)
 }
 
-function endGameFinal(players, winnerId){
-  db.ref("rooms/"+roomId).update({
-    gameState:"gameEnd",
-    finalWinner:winnerId
-  });
-  logDebug(`遊戲正式完結，最終勝利者：${winnerId}`);
-}
-
-function renderResultPage(players){
-  let statusHtml = "<h3>選手狀態</h3>";
-  let rankHtml = "<h3>勝利排行榜</h3>";
-
-  let arr = Object.keys(players).map(k=>({id:k,...players[k]}));
-  arr.sort((a,b)=>b.win - a.win);
-
-  for(let p of arr){
-    statusHtml += `<p>${p.id}｜勝：${p.win}｜連勝：${p.streak}｜${p.isEliminated ? "已淘汰（觀戰）" : "存活"}</p>`;
-  }
-
-  for(let i=0;i<arr.length;i++){
-    rankHtml += `<p>${i+1}. ${arr[i].id}｜勝 ${arr[i].win}</p>`;
-  }
-
-  document.getElementById("playerStatusBox").innerHTML = statusHtml;
-  document.getElementById("rankBox").innerHTML = rankHtml;
-  logDebug("渲染第四頁選手狀態及排行榜");
-}
-
-function startCountdown(players, rule){
-  let count = 5;
-  const el = document.getElementById("countNum");
-  el.innerText = count;
-  logDebug("開始 5 秒倒數");
-
-  const timer = setInterval(()=>{
-    count--;
-    el.innerText = count;
-
-    if(count <= 0){
-      clearInterval(timer);
-      logDebug("倒數完結，進下一輪處理");
-      nextRoundOrObserve(players);
-    }
-  }, 1000);
-}
-
-function nextRoundOrObserve(players){
-  const alive = Object.keys(players).filter(p=>!players[p].isEliminated);
-
-  if(alive.length <= 1) return;
-
-  db.ref("rooms/"+roomId+"/gameState").set("nextRound");
-  logDebug("設定 gameState = nextRound");
-
-  if(players[myId] && !players[myId].isEliminated){
-    showPage("page3");
-    db.ref("rooms/"+roomId+"/players/"+myId+"/play").set("");
-    logDebug("本機存活，返回第三頁繼續出拳");
-  }else{
-    showPage("page4");
-    logDebug("本機已淘汰，留觀戰頁");
-  }
-}
-
-function endGame(){
-  db.ref("rooms/"+roomId).remove();
-  clearInterval(heartbeatTimer);
-  alert("房間已清除");
-  logDebug("清除房間，返回首頁");
-  showPage("page1");
+function runEnd(){
+  switchPage(5);
+  db.ref("rooms/"+roomId).once("value",s=>{
+    const d = s.val();
+    document.getElementById("winnerText").innerText = "勝利者："+d.winner;
+  })
 }
 </script>
 </body>
