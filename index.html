@@ -7,6 +7,17 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{overflow:hidden}
+.version{
+    position:fixed;
+    top:6px;
+    right:8px;
+    color:#fff;
+    background:rgba(0,0,0,0.6);
+    padding:3px 8px;
+    border-radius:6px;
+    font-size:13px;
+    z-index:9998;
+}
 .page{display:none;width:100vw;height:100vh;background-size:cover;background-position:center;padding:16px;padding-bottom:140px}
 .page.active{display:block}
 #page1{background-image:url('background01.jpg')}
@@ -32,6 +43,8 @@ button{padding:14px 18px;font-size:17px;border-radius:10px;border:none;margin:6p
 </style>
 </head>
 <body>
+<div class="version">v1.0</div>
+
 <!-- 頁1：輸入名字 + 房間號 -->
 <div id="page1" class="page active">
 <input id="nameInput" placeholder="輸入玩家名稱">
@@ -125,29 +138,38 @@ let ruleType = "one";
 let countdownTimer = null;
 let heartbeatTimer = null;
 
-// Debug 函數
+// Debug 函數【修復：保證一定會寫入】
 function log(msg){
   const d = new Date();
-  const line = `[${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}] ${msg}\n`;
-  document.getElementById("debug").innerText += line;
-  document.getElementById("debug").scrollTop = document.getElementById("debug").scrollHeight;
+  const timeStr = `[${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}]`;
+  const line = timeStr + " " + msg + "\n";
+  const debugDom = document.getElementById("debug");
+  debugDom.innerText += line;
+  debugDom.scrollTop = debugDom.scrollHeight;
 }
+
+log("✅ 程式啟動 v1.0");
 
 // 切頁
 function switchPage(n){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById("page"+n).classList.add("active");
+  log("切換到 page"+n);
 }
 
-// 房主：開啟房間（隨機4位房號，自動入房跳去第二頁）
+// 房主：開啟房間
 function genRoom(){
+  log("👉 觸發：開啟房間");
   myName = document.getElementById("nameInput").value.trim();
-  if(!myName){alert("請輸入玩家名稱");return}
+  if(!myName){
+    alert("請輸入玩家名稱");
+    log("❌ 失敗：冇輸入玩家名稱");
+    return;
+  }
   const r = String(Math.floor(Math.random()*9000)+1000);
   document.getElementById("roomInput").value = r;
   roomId = r;
-  log("房主開啟房間："+roomId);
-  // 第二頁頂部顯示房號
+  log("✅ 房主開啟房間："+roomId);
   document.getElementById("showRoomId").innerText = roomId;
   document.getElementById("myUid").innerText = myUid;
   switchPage(2);
@@ -157,12 +179,20 @@ function genRoom(){
 
 // 房客：進入房間
 function joinRoom(){
+  log("👉 觸發：進入房間");
   roomId = document.getElementById("roomInput").value.trim();
   myName = document.getElementById("nameInput").value.trim();
-  if(!roomId || !myName){alert("請輸入名稱同4位房間號");return}
-  if(!/^[0-9]{4}$/.test(roomId)){alert("房號必須4個數字");return}
-  log("房客進入房間："+roomId+"｜玩家："+myName+"｜UID："+myUid);
-  // 第二頁頂部顯示房號
+  if(!roomId || !myName){
+    alert("請輸入名稱同4位房間號");
+    log("❌ 失敗：名稱或房號空白");
+    return;
+  }
+  if(!/^[0-9]{4}$/.test(roomId)){
+    alert("房號必須4個數字");
+    log("❌ 失敗：房號唔係4位數字");
+    return;
+  }
+  log("✅ 房客進入房間："+roomId+"｜玩家："+myName+"｜UID："+myUid);
   document.getElementById("showRoomId").innerText = roomId;
   document.getElementById("myUid").innerText = myUid;
   switchPage(2);
@@ -172,6 +202,7 @@ function joinRoom(){
 
 // 心跳
 function startHeartbeat(){
+  log("💓 啟動心跳");
   heartbeatTimer = setInterval(()=>{
     if(!roomId) return;
     db.ref("rooms/"+roomId+"/players/"+myUid).update({
@@ -184,13 +215,14 @@ function startHeartbeat(){
 
 // 監聽房間
 function initRoomListen(){
+  log("👂 開始監聽房間："+roomId);
   const roomRef = db.ref("rooms/"+roomId);
   roomRef.on("value",snap=>{
     const data = snap.val() || {};
     players = data.players || {};
     gameState = data.gameState ?? "wait";
     ruleType = data.ruleType ?? "one";
-    log("收到房狀態 gameState = "+gameState);
+    log("📥 收到房狀態 gameState = "+gameState);
     renderPlayerList();
     routeGameState();
   })
@@ -211,45 +243,61 @@ function renderPlayerList(){
 // 房主設定規則
 function setRule(r){
   db.ref("rooms/"+roomId).update({ruleType:r,gameState:"wait"})
-  log("房主設定規則："+r)
+  log("⚙️ 房主設定規則："+r)
 }
 
 // 錄音第一段
 async function startRec1(){
-  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  mediaRecorder1 = new MediaRecorder(stream);
-  const chunks = [];
-  mediaRecorder1.ondataavailable = e=>chunks.push(e.data);
-  mediaRecorder1.onstop = ()=>{
-    audio1Blob = new Blob(chunks,{type:"audio/webm"});
-    log("第一段錄音完成");
-    db.ref("rooms/"+roomId+"/players/"+myUid+"/rec1Ready").set(true);
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder1 = new MediaRecorder(stream);
+    const chunks = [];
+    mediaRecorder1.ondataavailable = e=>chunks.push(e.data);
+    mediaRecorder1.onstop = ()=>{
+      audio1Blob = new Blob(chunks,{type:"audio/webm"});
+      log("🎤 第一段錄音完成");
+      db.ref("rooms/"+roomId+"/players/"+myUid+"/rec1Ready").set(true);
+    }
+    mediaRecorder1.start();
+    log("🎤 開始錄第一段");
+  }catch(err){
+    log("❌ 錄音1失敗："+err.message);
+    alert("錄音權限被拒，請開啟麥克風權限");
   }
-  mediaRecorder1.start();
-  log("開始錄第一段");
 }
-function stopRec1(){mediaRecorder1?.stop();log("停止第一段錄音")}
+function stopRec1(){
+  if(mediaRecorder1) mediaRecorder1.stop();
+  log("🎤 停止第一段錄音")
+}
 
 // 錄音第二段
 async function startRec2(){
-  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  mediaRecorder2 = new MediaRecorder(stream);
-  const chunks = [];
-  mediaRecorder2.ondataavailable = e=>chunks.push(e.data);
-  mediaRecorder2.onstop = ()=>{
-    audio2Blob = new Blob(chunks,{type:"audio/webm"});
-    log("第二段錄音完成");
-    db.ref("rooms/"+roomId+"/players/"+myUid+"/rec2Ready").set(true);
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder2 = new MediaRecorder(stream);
+    const chunks = [];
+    mediaRecorder2.ondataavailable = e=>chunks.push(e.data);
+    mediaRecorder2.onstop = ()=>{
+      audio2Blob = new Blob(chunks,{type:"audio/webm"});
+      log("🎤 第二段錄音完成");
+      db.ref("rooms/"+roomId+"/players/"+myUid+"/rec2Ready").set(true);
+    }
+    mediaRecorder2.start();
+    log("🎤 開始錄第二段");
+  }catch(err){
+    log("❌ 錄音2失敗："+err.message);
+    alert("錄音權限被拒，請開啟麥克風權限");
   }
-  mediaRecorder2.start();
-  log("開始錄第二段");
 }
-function stopRec2(){mediaRecorder2?.stop();log("停止第二段錄音")}
+function stopRec2(){
+  if(mediaRecorder2) mediaRecorder2.stop();
+  log("🎤 停止第二段錄音")
+}
 
 // 出拳
 function play(sel){
   db.ref("rooms/"+roomId+"/players/"+myUid+"/choice").set(sel);
-  log("我出："+sel);
+  log("✊ 我出："+sel);
 }
 
 // 遊戲狀態分流
@@ -277,8 +325,7 @@ function runResult(){
   switchPage(4);
   const winSel = calcResult();
   const allP = Object.values(players);
-  // 大合唱：只播放未淘汰玩家
-  log("大合唱：過濾淘汰玩家，剩餘"+allP.filter(x=>!x.eliminated).length+"人");
+  log("🎶 大合唱：過濾淘汰玩家，剩餘"+allP.filter(x=>!x.eliminated).length+"人");
   // 更新勝場、淘汰邏輯
   allP.forEach(p=>{
     if(p.eliminated) return;
@@ -288,14 +335,12 @@ function runResult(){
     }else{
       p.consec =0;
     }
-    // 判斷淘汰
     let out = false;
     if(ruleType==="win2" && p.win>=2) out=true;
     if(ruleType==="win3" && p.win>=3) out=true;
     if(ruleType==="con2" && p.consec>=2) out=true;
     p.eliminated = out;
   })
-  // 畫面顯示
   document.getElementById("resultView").innerText = allP.map(x=>`${x.name}:${x.choice} ${x.eliminated?"【淘汰】":""}`).join("\n");
   document.getElementById("rankView").innerText = allP.sort((a,b)=>b.win-a.win).map(x=>`${x.name}｜勝${x.win}｜連勝${x.consec}`).join("\n");
   // 5秒倒數
