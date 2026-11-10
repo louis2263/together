@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v1.7</title>
+<title>包剪揼多人同步 v1.9</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
 body{overflow-x:hidden}
@@ -13,14 +13,28 @@ body{overflow-x:hidden}
 .ver{position:fixed;top:12px;right:12px;background:#0008;color:#fff;padding:4px 8px;border-radius:8px}
 button{padding:14px 22px;font-size:17px;margin:6px;border-radius:12px;border:none;background:#fff;box-shadow:0 2px 6px #0002}
 input{width:100%;padding:14px;font-size:17px;margin:8px 0;border-radius:10px;border:1px solid #aaa}
-h2{text-align:center;margin:20px 0}
+h2{text-align:center;margin:12px 0}
 h3{margin:14px 0}
+.imgBtn{width:100px;height:100px;margin:8px;border:none;background:none}
+.imgBtn img{width:100%;height:100%;object-fit:contain}
+/* 事件訊息視窗 */
+#eventLog{
+  border:1px solid #333;
+  background:rgba(255,255,255,0.75);
+  min-height:110px;
+  max-height:140px;
+  overflow-y:auto;
+  padding:10px;
+  border-radius:10px;
+  margin:10px 0;
+  font-size:16px;
+}
 </style>
 </head>
 <body>
-<div class="ver">v1.7</div>
+<div class="ver">v1.9</div>
 
-<!-- ========== 第1頁：輸入名字、建立 / 輸入房間 ========== -->
+<!-- ========== 第1頁 ========== -->
 <div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
 <h2>開啟 / 進入房間</h2>
 <input id="nameInput" placeholder="輸入你的玩家名稱">
@@ -29,9 +43,13 @@ h3{margin:14px 0}
 <button id="joinBtn">進入房間</button>
 </div>
 
-<!-- ========== 第2頁：錄音 + 揀規則 ========== -->
+<!-- ========== 第2頁 ========== -->
 <div id="page2" class="page" style="background:url('background02.jpg') center/cover">
 <h2>房間號碼：<span id="roomDisplay">----</span></h2>
+
+<!-- 新：事件訊息視窗 -->
+<div id="eventLog"></div>
+
 <h2>錄製音訊 & 設定遊戲</h2>
 <input id="playerIdInp" placeholder="玩家ID" readonly>
 <br>
@@ -53,15 +71,17 @@ h3{margin:14px 0}
 <div id="playerList"></div>
 </div>
 
-<!-- ========== 第3頁：出拳頁 ========== -->
+<!-- ========== 第3頁：圖片按鈕出拳 ========== -->
 <div id="page3" class="page" style="background:url('background03.jpg') center/cover">
 <h2>請出拳</h2>
-<button id="rock">包</button>
-<button id="scissors">剪</button>
-<button id="paper">揼</button>
+<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+<button class="imgBtn" id="rock"><img src="rock.jpg" alt="包"></button>
+<button class="imgBtn" id="scissors"><img src="scissors.jpg" alt="剪"></button>
+<button class="imgBtn" id="paper"><img src="paper.jpg" alt="揼"></button>
+</div>
 </div>
 
-<!-- ========== 第4頁：結果、倒數、淘汰邏輯 ========== -->
+<!-- ========== 第4頁：結果、延遲逐個顯示、倒數、淘汰邏輯 ========== -->
 <div id="page4" class="page" style="background:url('background04.jpg') center/cover">
 <h2>本輪出拳狀況</h2>
 <div id="roundResult"></div>
@@ -70,25 +90,32 @@ h3{margin:14px 0}
 <h2>倒數：<span id="countDown">5</span></h2>
 </div>
 
-<!-- ========== 第5頁：完結頁 ========== -->
+<!-- ========== 第5頁 ========== -->
 <div id="page5" class="page" style="background:url('background05.jpg') center/cover">
 <h2>遊戲完結！</h2>
 <div id="finalWinner"></div>
 </div>
 
-<!-- 常駐 Debug 視窗每一頁都見 -->
 <div id="debug"></div>
 
 <script>
-// ========== Debug 工具 ==========
 const debugDiv = document.querySelector("#debug");
+const eventLogDiv = document.querySelector("#eventLog");
+// 記錄已經觸發過嘅事件，防止重複彈訊息
+const firedEnter = new Set();
+const firedReady = new Set();
+
 function log(txt){
   const t = new Date().toLocaleString();
   debugDiv.innerHTML += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 }
+// 寫入第二頁事件視窗
+function pushEvent(msg){
+  eventLogDiv.innerHTML += msg + "<br>";
+  eventLogDiv.scrollTop = eventLogDiv.scrollHeight;
+}
 
-// ========== 全域變數 ==========
 let app, db;
 let myRoomId = null;
 let myUid = "user_" + Math.random().toString(36).slice(2, 10);
@@ -98,23 +125,18 @@ let mediaRecorder1, mediaRecorder2;
 let audioChunks1 = [], audioChunks2 = [];
 let audioB641 = null, audioB642 = null;
 
-let roomRef, playersRef, gameRef;
+let roomRef;
 let heartbeatTimer;
 let localPlayers = {};
 let gameRule = null;
-let round = 0;
-let myChoice = null;
-let gamePhase = "ready";
 
-// ---------------- 動態Import Firebase ----------------
 async function initFB(){
   try{
     log("Step0：動態Import Firebase");
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
-    const { getDatabase, ref, set, onValue, push, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
-    window.fb = {ref,set,onValue,push,serverTimestamp};
+    const { getDatabase, ref, set, onValue, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
+    window.fb = {ref,set,onValue,serverTimestamp};
 
-    // ========= 替換返你自己嘅 firebase config！！ =========
     const firebaseConfig = {
       apiKey: "你的apiKey",
       authDomain: "xxx.firebaseapp.com",
@@ -135,19 +157,16 @@ async function initFB(){
   }
 }
 
-// 切頁函數
 function goPage(pageId){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.querySelector("#"+pageId).classList.add("active");
   log(`➡️ 切換到 ${pageId}`);
 }
 
-// 生成4位隨機房號
 function gen4DigitRoom(){
   return String(Math.floor(1000 + Math.random()*9000));
 }
 
-// Base64 <-> Blob 錄音工具
 function blobToBase64(blob) {
   return new Promise(resolve => {
     const r = new FileReader();
@@ -156,7 +175,6 @@ function blobToBase64(blob) {
   })
 }
 
-// ======== 心跳：每2秒寫入自己時間戳，用於檢測離線 ========
 function startHeartBeat(){
   heartbeatTimer = setInterval(()=>{
     if(!roomRef || !myRoomId) return;
@@ -164,7 +182,6 @@ function startHeartBeat(){
   },2000);
 }
 
-// 玩家清單渲染
 function renderPlayerList(){
   const box = document.getElementById("playerList");
   let html = "";
@@ -175,7 +192,7 @@ function renderPlayerList(){
   box.innerHTML = html;
 }
 
-// -------- 綁定錄音按鈕 --------
+//錄音
 document.querySelector("#rec1Start").onclick = async ()=>{
   const stream = await navigator.mediaDevices.getUserMedia({audio:true});
   mediaRecorder1 = new MediaRecorder(stream);
@@ -190,9 +207,9 @@ document.querySelector("#rec1Stop").onclick = async ()=>{
     const blob = new Blob(audioChunks1,{type:"audio/webm"});
     audioB641 = await blobToBase64(blob);
     await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/voice1`), audioB641);
-    localPlayers[myUid].ready = true;
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/ready`), true);
+    localPlayers[myUid].voice1 = audioB641;
     log("✅ 第一段錄音上傳完成");
+    checkMyAllReady();
     renderPlayerList();
   }
 }
@@ -211,11 +228,22 @@ document.querySelector("#rec2Stop").onclick = async ()=>{
     const blob = new Blob(audioChunks2,{type:"audio/webm"});
     audioB642 = await blobToBase64(blob);
     await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/voice2`), audioB642);
+    localPlayers[myUid].voice2 = audioB642;
     log("✅ 第二段錄音上傳完成");
+    checkMyAllReady();
+    renderPlayerList();
   }
 }
 
-// -------- 房主選擇遊戲規則 --------
+// 檢查自己兩段音訊齊唔齊，齊就上傳ready標記
+async function checkMyAllReady(){
+  if(audioB641 && audioB642){
+    localPlayers[myUid].ready = true;
+    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/ready`), true);
+  }
+}
+
+//選規則
 document.querySelectorAll("[data-rule]").forEach(btn=>{
   btn.onclick = async ()=>{
     gameRule = btn.dataset.rule;
@@ -225,19 +253,17 @@ document.querySelectorAll("[data-rule]").forEach(btn=>{
   }
 })
 
-// -------- 出拳按鈕 --------
-document.querySelector("#rock").onclick = async ()=>{myChoice="rock"; await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"rock"); log("👊我出：包")}
-document.querySelector("#scissors").onclick = async ()=>{myChoice="scissors"; await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"scissors"); log("✂️我出：剪")}
-document.querySelector("#paper").onclick = async ()=>{myChoice="paper"; await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"paper"); log("🖐️我出：揼")}
+//圖片按鈕出拳
+document.querySelector("#rock").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"rock"); log("👊我出：包")}
+document.querySelector("#scissors").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"scissors"); log("✂️我出：剪")}
+document.querySelector("#paper").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"paper"); log("🖐️我出：揼")}
 
-// 本機判勝邏輯
 function getWinner(a,b){
   if(a===b) return 0;
   if((a==="rock"&&b==="scissors")||(a==="scissors"&&b==="paper")||(a==="paper"&&b==="rock")) return 1;
   return -1;
 }
 
-// 播放大合唱：只播放未被淘汰嘅玩家 voice1
 async function playChorus(){
   const ps = Object.values(localPlayers).filter(p=>!p.eliminated && p.voice1);
   log(`🔊 大合唱，有效玩家數：${ps.length}`);
@@ -246,7 +272,6 @@ async function playChorus(){
     au.play().catch(e=>log(`播放音訊錯誤:${e}`));
   }
 }
-// 播放勝利者宣言
 async function playWinnerVoice(pid){
   const p = localPlayers[pid];
   if(!p || !p.voice2) return;
@@ -254,7 +279,6 @@ async function playWinnerVoice(pid){
   au.play();
 }
 
-// 監聽房間全域狀態
 function subscribeRoom(){
   roomRef = window.fb.ref(db,`rooms/${myRoomId}`);
   window.fb.onValue(roomRef, snap=>{
@@ -262,13 +286,23 @@ function subscribeRoom(){
     if(!d) return;
     if(d.gameRule) gameRule = d.gameRule;
     if(d.players){
-      // 同步全部玩家，同時清走3秒冇心跳嘅離線玩家
       const nowTs = Date.now();
       localPlayers = {};
       for(const pid in d.players){
         const pl = d.players[pid];
         if(!pl.lastHb || (nowTs - pl.lastHb) > 3500) continue;
         localPlayers[pid] = pl;
+
+        // 玩家進入房間事件
+        if(!firedEnter.has(pid)){
+          firedEnter.add(pid);
+          pushEvent(`${pl.name} 進入房間`);
+        }
+        // 兩個音訊都存在，觸發已準備，只彈一次
+        if(pl.ready && !firedReady.has(pid)){
+          firedReady.add(pid);
+          pushEvent(`${pl.name} 已準備`);
+        }
       }
       renderPlayerList();
     }
@@ -285,31 +319,31 @@ function subscribeRoom(){
   })
 }
 
-// 處理本輪完結，全部運算本機執行
 async function handleRoundEnd(){
   goPage("page4");
   await playChorus();
-  // 排序：先自己，再其他玩家
+
+  // 順序：先自己，其餘每個延遲0.8s顯示
   let pids = [myUid];
   Object.keys(localPlayers).forEach(id=>{if(id!==myUid) pids.push(id)});
 
-  // ------ 本輪計分 & 按規則判淘汰 ------
   const resultDiv = document.getElementById("roundResult");
-  const rankDiv = document.getElementById("rankBox");
   resultDiv.innerHTML = "";
-  for(const pid of pids){
+  for(let i=0;i<pids.length;i++){
+    const pid = pids[i];
     const p = localPlayers[pid];
-    resultDiv.innerHTML += `<div>${p.name} : ${p.choice||"未出拳"}</div>`
+    await new Promise(r=>setTimeout(r, i===0 ? 0 : 800));
+    resultDiv.innerHTML += `<div>${p.name} : ${p.choice||"未出拳"}</div>`;
   }
 
-  // 簡易計分、勝場、連勝
+  //初始化計數
   for(const pid in localPlayers){
     const pl = localPlayers[pid];
     if(!pl.winCnt) pl.winCnt = 0;
     if(!pl.streak) pl.streak = 0;
   }
 
-  // 兩兩對戰計勝
+  //兩兩對戰
   const arr = Object.values(localPlayers);
   for(let i=0;i<arr.length;i++){
     for(let j=i+1;j<arr.length;j++){
@@ -320,7 +354,7 @@ async function handleRoundEnd(){
     }
   }
 
-  // 按當前規則標記淘汰
+  //完整4套規則淘汰判斷
   for(const pid in localPlayers){
     const pl = localPlayers[pid];
     if(pl.eliminated) continue;
@@ -329,19 +363,21 @@ async function handleRoundEnd(){
         if(pl.winCnt===0) pl.eliminated=true;
         break;
       case "win2":
+        if(pl.winCnt >= 2) pl.eliminated = true;
         break;
       case "win3":
+        if(pl.winCnt >= 3) pl.eliminated = true;
         break;
       case "consec2":
+        if(pl.streak >= 2) pl.eliminated = true;
         break;
     }
   }
 
-  // 排行
+  //排行榜
   const sorted = Object.values(localPlayers).sort((a,b)=>b.winCnt - a.winCnt);
-  rankDiv.innerHTML = sorted.map(x=>`<div>${x.name}｜勝：${x.winCnt} 連勝：${x.streak} ${x.eliminated?"【已淘汰】":""}</div>`).join("");
+  document.getElementById("rankBox").innerHTML = sorted.map(x=>`<div>${x.name}｜勝：${x.winCnt} 連勝：${x.streak} ${x.eliminated?"【已淘汰】":""}</div>`).join("");
 
-  // 檢查是否只剩1人 -> 遊戲結束
   const alive = Object.values(localPlayers).filter(x=>!x.eliminated);
   if(alive.length === 1){
     const winnerId = alive[0].uid;
@@ -350,7 +386,7 @@ async function handleRoundEnd(){
     return;
   }
 
-  // 5秒倒數
+  //5秒倒數
   let cd = 5;
   const cdSpan = document.getElementById("countDown");
   await new Promise(res=>{
@@ -361,7 +397,7 @@ async function handleRoundEnd(){
     },1000)
   })
 
-  // 下一輪重置出拳
+  //重置本輪出拳
   for(const pid in localPlayers){
     await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${pid}/choice`), null);
   }
@@ -374,74 +410,64 @@ function handleGameOver(winnerId){
   playWinnerVoice(winnerId);
 }
 
-// ---------- 房主 / 房客進入流程【修復時序：先跳頁】 ----------
+//開房
 document.querySelector("#hostBtn").onclick = async ()=>{
   myName = document.querySelector("#nameInput").value.trim();
-  if(!myName){
-    log("⚠️ 請先輸入玩家名稱");
-    return;
-  }
+  if(!myName){ log("⚠️ 請先輸入玩家名稱"); return; }
   log("Step4：房主點擊開啟房間");
   const ok = await initFB();
-  if(!ok){
-    log("🛑 Firebase初始化失敗，唔可以開房");
-    return;
-  }
+  if(!ok){ log("🛑 Firebase初始化失敗，唔可以開房"); return; }
+
   myRoomId = gen4DigitRoom();
   document.querySelector("#roomInput").value = myRoomId;
   log(`✅ Step5：本地生成房號 = ${myRoomId}`);
 
-  // ✅ 先更新UI、直接跳第二頁，唔等寫庫
   document.querySelector("#roomDisplay").innerText = myRoomId;
   document.querySelector("#playerIdInp").value = myName;
   goPage("page2");
 
-  // 後台異步寫入、啟動心跳、監聽房間
   (async ()=>{
     await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
       uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
+      voice1:null, voice2:null,
       lastHb: window.fb.serverTimestamp()
     });
+    localPlayers[myUid] = {uid:myUid,name:myName,ready:false,eliminated:false,winCnt:0,streak:0,voice1:null,voice2:null};
+    renderPlayerList();
     startHeartBeat();
     subscribeRoom();
   })();
 };
 
+//入房
 document.querySelector("#joinBtn").onclick = async ()=>{
   myName = document.querySelector("#nameInput").value.trim();
-  if(!myName){
-    log("⚠️ 請先輸入玩家名稱");
-    return;
-  }
+  if(!myName){ log("⚠️ 請先輸入玩家名稱"); return; }
   log("Step4：房客點擊進入房間");
   const ok = await initFB();
-  if(!ok){
-    log("🛑 Firebase初始化失敗，唔可以入房");
-    return;
-  }
-  myRoomId = document.querySelector("#roomInput").value.trim();
-  if(!/^\d{4}$/.test(myRoomId)){
-    log("⚠️ 房間號必須4個數字");
-    return;
-  }
+  if(!ok){ log("🛑 Firebase初始化失敗，唔可以入房"); return; }
 
-  // ✅ 先更新UI、直接跳第二頁
+  myRoomId = document.querySelector("#roomInput").value.trim();
+  if(!/^\d{4}$/.test(myRoomId)){ log("⚠️ 房間號必須4個數字"); return; }
+
   document.querySelector("#roomDisplay").innerText = myRoomId;
   document.querySelector("#playerIdInp").value = myName;
   goPage("page2");
 
-  // 後台異步同步
   (async ()=>{
     await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
       uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
+      voice1:null, voice2:null,
       lastHb: window.fb.serverTimestamp()
     });
+    localPlayers[myUid] = {uid:myUid,name:myName,ready:false,eliminated:false,winCnt:0,streak:0,voice1:null,voice2:null};
+    renderPlayerList();
     startHeartBeat();
     subscribeRoom();
   })();
 };
 
-log("✅ v1.7 JS全部載入完畢，等待玩家開房");
+log("✅ v1.9 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
