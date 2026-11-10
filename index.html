@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v1.3</title>
+<title>包剪揼多人同步 v1.4</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
 body{overflow-x:hidden}
@@ -14,13 +14,11 @@ body{overflow-x:hidden}
 button{padding:14px 22px;font-size:17px;margin:6px;border-radius:12px;border:none;background:#fff;box-shadow:0 2px 6px #0002}
 input{width:100%;padding:14px;font-size:17px;margin:8px 0;border-radius:10px;border:1px solid #aaa}
 h2{text-align:center;margin:20px 0}
+h3{margin:14px 0}
 </style>
-<!-- ******** 重點：先載 Firebase CDN，先於你所有自定義代碼 ******** -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
 </head>
 <body>
-<div class="ver">v1.3</div>
+<div class="ver">v1.4</div>
 
 <!-- ========== 第1頁：建立 / 輸入房間 ========== -->
 <div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
@@ -96,18 +94,14 @@ let myUid = "user_" + Math.random().toString(36).slice(2, 10);
 let mediaRecorder1, mediaRecorder2;
 let audioChunks1 = [], audioChunks2 = [];
 
-// ---------------- Firebase 初始化 加強錯誤捕獲 ----------------
+// ---------------- 用動態 import 載入 Firebase，唔再依賴靜態CDN ----------------
 async function initFB(){
   try{
-    log("Step0：開始載入 Firebase");
-    if(!window.firebase){
-      log("❌ window.firebase 未定義！CDN載入失敗");
-      return false;
-    }
-    const { initializeApp } = firebase;
-    const { getDatabase } = firebase;
+    log("Step0：動態Import Firebase");
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
+    const { getDatabase } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
 
-    // ========= 貼返你自己嘅 firebase config =========
+    // ========= 替換返你自己嘅 firebase config！！ =========
     const firebaseConfig = {
       apiKey: "你的apiKey",
       authDomain: "xxx.firebaseapp.com",
@@ -174,7 +168,6 @@ document.querySelector("#joinBtn").onclick = async ()=>{
   goPage("page2");
 };
 
-// ---------- 其餘頁面暫時掛空，後續同步、錄音、判勝邏輯可以再補 ----------
 log("✅ 頁面JS初始化完成，等待用戶按鈕觸發");
 </script>
 </body>
