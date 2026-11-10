@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v1.9</title>
+<title>包剪揼多人同步 v2.0</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
 body{overflow-x:hidden}
@@ -32,7 +32,7 @@ h3{margin:14px 0}
 </style>
 </head>
 <body>
-<div class="ver">v1.9</div>
+<div class="ver">v2.0</div>
 
 <!-- ========== 第1頁 ========== -->
 <div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
@@ -101,9 +101,9 @@ h3{margin:14px 0}
 <script>
 const debugDiv = document.querySelector("#debug");
 const eventLogDiv = document.querySelector("#eventLog");
-// 記錄已經觸發過嘅事件，防止重複彈訊息
-const firedEnter = new Set();
-const firedReady = new Set();
+// ✅改用本地紀錄本機已經彈過嘅ID，每次重連清空，唔會跨機攔截訊息
+let seenPlayerIds = new Set();
+let seenReadyIds = new Set();
 
 function log(txt){
   const t = new Date().toLocaleString();
@@ -293,14 +293,14 @@ function subscribeRoom(){
         if(!pl.lastHb || (nowTs - pl.lastHb) > 3500) continue;
         localPlayers[pid] = pl;
 
-        // 玩家進入房間事件
-        if(!firedEnter.has(pid)){
-          firedEnter.add(pid);
+        // ✅ 本機第一次見到呢個玩家就彈進房訊息，每台機各自顯示
+        if(!seenPlayerIds.has(pid)){
+          seenPlayerIds.add(pid);
           pushEvent(`${pl.name} 進入房間`);
         }
-        // 兩個音訊都存在，觸發已準備，只彈一次
-        if(pl.ready && !firedReady.has(pid)){
-          firedReady.add(pid);
+        // 第一次見到佢ready，彈已準備
+        if(pl.ready && !seenReadyIds.has(pid)){
+          seenReadyIds.add(pid);
           pushEvent(`${pl.name} 已準備`);
         }
       }
@@ -467,7 +467,7 @@ document.querySelector("#joinBtn").onclick = async ()=>{
   })();
 };
 
-log("✅ v1.9 JS全部載入完畢，等待玩家開房");
+log("✅ v2.0 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
