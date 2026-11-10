@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v1.6</title>
+<title>包剪揼多人同步 v1.7</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
 body{overflow-x:hidden}
@@ -18,7 +18,7 @@ h3{margin:14px 0}
 </style>
 </head>
 <body>
-<div class="ver">v1.6</div>
+<div class="ver">v1.7</div>
 
 <!-- ========== 第1頁：輸入名字、建立 / 輸入房間 ========== -->
 <div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
@@ -159,7 +159,7 @@ function blobToBase64(blob) {
 // ======== 心跳：每2秒寫入自己時間戳，用於檢測離線 ========
 function startHeartBeat(){
   heartbeatTimer = setInterval(()=>{
-    if(!roomRef) return;
+    if(!roomRef || !myRoomId) return;
     window.fb.set(fb.ref(db,`rooms/${myRoomId}/players/${myUid}/lastHb`), fb.serverTimestamp());
   },2000);
 }
@@ -329,13 +329,10 @@ async function handleRoundEnd(){
         if(pl.winCnt===0) pl.eliminated=true;
         break;
       case "win2":
-        if(pl.winCnt >= 2) pl.eliminated=false;
         break;
       case "win3":
-        if(pl.winCnt >= 3) pl.eliminated=false;
         break;
       case "consec2":
-        if(pl.streak >= 2) pl.eliminated=false;
         break;
     }
   }
@@ -377,7 +374,7 @@ function handleGameOver(winnerId){
   playWinnerVoice(winnerId);
 }
 
-// ---------- 房主 / 房客進入流程 ----------
+// ---------- 房主 / 房客進入流程【修復時序：先跳頁】 ----------
 document.querySelector("#hostBtn").onclick = async ()=>{
   myName = document.querySelector("#nameInput").value.trim();
   if(!myName){
@@ -394,17 +391,20 @@ document.querySelector("#hostBtn").onclick = async ()=>{
   document.querySelector("#roomInput").value = myRoomId;
   log(`✅ Step5：本地生成房號 = ${myRoomId}`);
 
+  // ✅ 先更新UI、直接跳第二頁，唔等寫庫
   document.querySelector("#roomDisplay").innerText = myRoomId;
   document.querySelector("#playerIdInp").value = myName;
-
-  // 註冊自己入房間
-  await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
-    uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
-    lastHb: window.fb.serverTimestamp()
-  });
-  startHeartBeat();
-  subscribeRoom();
   goPage("page2");
+
+  // 後台異步寫入、啟動心跳、監聽房間
+  (async ()=>{
+    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
+      uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
+      lastHb: window.fb.serverTimestamp()
+    });
+    startHeartBeat();
+    subscribeRoom();
+  })();
 };
 
 document.querySelector("#joinBtn").onclick = async ()=>{
@@ -424,19 +424,24 @@ document.querySelector("#joinBtn").onclick = async ()=>{
     log("⚠️ 房間號必須4個數字");
     return;
   }
+
+  // ✅ 先更新UI、直接跳第二頁
   document.querySelector("#roomDisplay").innerText = myRoomId;
   document.querySelector("#playerIdInp").value = myName;
-
-  await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
-    uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
-    lastHb: window.fb.serverTimestamp()
-  });
-  startHeartBeat();
-  subscribeRoom();
   goPage("page2");
+
+  // 後台異步同步
+  (async ()=>{
+    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
+      uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
+      lastHb: window.fb.serverTimestamp()
+    });
+    startHeartBeat();
+    subscribeRoom();
+  })();
 };
 
-log("✅ v1.6 JS全部載入完畢，等待玩家開房");
+log("✅ v1.7 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
