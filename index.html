@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v1.5</title>
+<title>包剪揼多人同步 v1.6</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
 body{overflow-x:hidden}
@@ -18,11 +18,12 @@ h3{margin:14px 0}
 </style>
 </head>
 <body>
-<div class="ver">v1.5</div>
+<div class="ver">v1.6</div>
 
-<!-- ========== 第1頁：建立 / 輸入房間 ========== -->
+<!-- ========== 第1頁：輸入名字、建立 / 輸入房間 ========== -->
 <div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
 <h2>開啟 / 進入房間</h2>
+<input id="nameInput" placeholder="輸入你的玩家名稱">
 <input id="roomInput" placeholder="輸入4位數房間號">
 <button id="hostBtn">開啟房間</button>
 <button id="joinBtn">進入房間</button>
@@ -32,7 +33,7 @@ h3{margin:14px 0}
 <div id="page2" class="page" style="background:url('background02.jpg') center/cover">
 <h2>房間號碼：<span id="roomDisplay">----</span></h2>
 <h2>錄製音訊 & 設定遊戲</h2>
-<input id="playerIdInp" placeholder="玩家ID">
+<input id="playerIdInp" placeholder="玩家ID" readonly>
 <br>
 <h3>第一段：包剪揼（大合唱用）</h3>
 <button id="rec1Start">開始錄第一段</button>
@@ -91,7 +92,7 @@ function log(txt){
 let app, db;
 let myRoomId = null;
 let myUid = "user_" + Math.random().toString(36).slice(2, 10);
-let myName = myUid;
+let myName = "";
 
 let mediaRecorder1, mediaRecorder2;
 let audioChunks1 = [], audioChunks2 = [];
@@ -378,6 +379,11 @@ function handleGameOver(winnerId){
 
 // ---------- 房主 / 房客進入流程 ----------
 document.querySelector("#hostBtn").onclick = async ()=>{
+  myName = document.querySelector("#nameInput").value.trim();
+  if(!myName){
+    log("⚠️ 請先輸入玩家名稱");
+    return;
+  }
   log("Step4：房主點擊開啟房間");
   const ok = await initFB();
   if(!ok){
@@ -388,7 +394,6 @@ document.querySelector("#hostBtn").onclick = async ()=>{
   document.querySelector("#roomInput").value = myRoomId;
   log(`✅ Step5：本地生成房號 = ${myRoomId}`);
 
-  myName = myUid;
   document.querySelector("#roomDisplay").innerText = myRoomId;
   document.querySelector("#playerIdInp").value = myName;
 
@@ -403,6 +408,11 @@ document.querySelector("#hostBtn").onclick = async ()=>{
 };
 
 document.querySelector("#joinBtn").onclick = async ()=>{
+  myName = document.querySelector("#nameInput").value.trim();
+  if(!myName){
+    log("⚠️ 請先輸入玩家名稱");
+    return;
+  }
   log("Step4：房客點擊進入房間");
   const ok = await initFB();
   if(!ok){
@@ -414,7 +424,6 @@ document.querySelector("#joinBtn").onclick = async ()=>{
     log("⚠️ 房間號必須4個數字");
     return;
   }
-  myName = myUid;
   document.querySelector("#roomDisplay").innerText = myRoomId;
   document.querySelector("#playerIdInp").value = myName;
 
@@ -427,7 +436,7 @@ document.querySelector("#joinBtn").onclick = async ()=>{
   goPage("page2");
 };
 
-log("✅ v1.5 JS全部載入完畢，等待玩家開房");
+log("✅ v1.6 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
