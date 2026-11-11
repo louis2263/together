@@ -2,22 +2,25 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v2.2</title>
+<meta name="viewport" content="width=device‑width, initial‑scale=1.0"/>
+<title>包剪揼多人同步 v2.3</title>
+<!-- 靜態載入Firebase，唔再動態import -->
+<script src="https://www.gstatic.com/firebasejs/11.4.0/firebase‑app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.4.0/firebase‑database.js"></script>
 <style>
 *{box-sizing:border-box;font-family:system‑ui}
-body{margin:0;padding:12px;background:#ffe666;font-size:17px}
+body{margin:0;padding:12px;background:#ffe666;font‑size:17px}
 .page{display:none}
 .page.active{display:block}
-button{padding:12px 16px;margin:6px;font-size:16px;border‑radius:8px;border:none;background:#fff}
+button{padding:12px 16px;margin:6px;font‑size:16px;border‑radius:8px;border:none;background:#fff}
 input{padding:11px;width:100%;margin:6px 0;font‑size:17px;border‑radius:6px;border:1px solid #aaa}
 #eventLogBox{width:100%;min‑height:140px;background:#fff;padding:10px;border‑radius:8px;white‑space:pre‑wrap;overflow‑y:auto;margin‑bottom:12px}
-#debugWindow{position:fixed;left:0;right:0;bottom:0;background:#000c;color:#4f4;padding:8px;font‑size:12px;max‑height:160px;overflow‑y:auto}
+#debugWindow{position:fixed;left:0;right:0;bottom:0;background:#000;color:#4f4;padding:8px;font‑size:12px;max‑height:160px;overflow‑y:auto}
 .versionTag{position:fixed;top:8px;right:8px;background:#444;color:#fff;padding:4px 8px;border‑radius:6px}
 </style>
 </head>
 <body>
-<div class="versionTag">v2.2</div>
+<div class="versionTag">v2.3</div>
 
 <!-- Page1 -->
 <div id="page1" class="page active">
@@ -57,8 +60,8 @@ input{padding:11px;width:100%;margin:6px 0;font‑size:17px;border‑radius:6px;
 
 <div id="debugWindow"></div>
 
-<script type="module">
-const VERSION = "v2.2";
+<script>
+const VERSION = "v2.3";
 const debugDiv = document.querySelector("#debugWindow");
 const log = (txt)=>{
   const t = new Date().toLocaleString("zh‑HK");
@@ -66,13 +69,19 @@ const log = (txt)=>{
   debugDiv.scrollTop = debugDiv.scrollHeight;
 };
 
-// ---- Firebase 動態載入
 let fbDb, roomRef, playersRef, roomEventsRef;
-const initFirebase = async ()=>{
-  log("Step0：動態 Import Firebase");
-  const {initializeApp} = await import("https://www.gstatic.com/firebasejs/11.4.0/firebase‑app.js");
-  const {getDatabase, ref, set, push, onValue, off} = await import("https://www.gstatic.com/firebasejs/11.4.0/firebase‑database.js");
-  log("Step1 Firebase 初始化成功");
+let myName = "";
+let currentRoomId = "";
+
+// 切換頁面
+const setPage = (id)=>{
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+};
+
+// ========== 初始化Firebase 一開頁就跑 ==========
+try{
+  log("Step0：開始初始化 Firebase");
   const cfg = {
     apiKey:"你的key",
     authDomain:"xxx.firebaseapp.com",
@@ -80,83 +89,67 @@ const initFirebase = async ()=>{
     projectId:"xxx",
     storageBucket:"xxx.appspot.com"
   };
-  const app = initializeApp(cfg);
-  fbDb = getDatabase(app);
-  window.$fb = {ref,set,push,onValue,off};
-};
+  const app = firebase.initializeApp(cfg);
+  fbDb = firebase.database(app);
+  log("Step1 Firebase 初始化成功");
+}catch(err){
+  log("!! Firebase初始化錯誤:"+err.message);
+}
 
-// 頁面切換
-const setPage = (id)=>{
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-};
-
-// 全域狀態
-let myName = "";
-let currentRoomId = "";
-let unsubPlayer, unsubEvent;
-
-// 寫入一條房間全域事件
+// 寫入房間事件
 const pushRoomEvent = async (msg)=>{
-  const {push} = window.$fb;
-  await push(roomEventsRef, {msg, ts:Date.now()});
+  await roomEventsRef.push({msg, ts:Date.now()});
 };
 
-// 渲染事件視窗
+// 繪製事件視窗
 const renderRoomEvents = (snap)=>{
   const box = document.querySelector("#eventLogBox");
   box.innerText = "";
   if(!snap.exists()) return;
-  const obj = snap.val();
-  const arr = Object.values(obj).sort((a,b)=>a.ts‑b.ts);
-  arr.forEach(e=>{
-    box.innerText += e.msg + "\n";
-  })
+  const arr = Object.values(snap.val()).sort((a,b)=>a.ts‑b.ts);
+  arr.forEach(e=> box.innerText += e.msg + "\n");
 };
 
 // 建立房間
 document.querySelector("#btnCreateRoom").onclick = async ()=>{
+  log("Step4 房主點擊開啟房間");
   myName = document.querySelector("#playerNameInput").value.trim();
-  if(!myName){alert("請輸入姓名");return}
-  await initFirebase();
-  // 隨機4位數
+  if(!myName){alert("請輸入姓名");return;}
+
   currentRoomId = String(Math.floor(1000 + Math.random()*9000));
-  log(`Step5：本地生成房號 = ${currentRoomId}`);
+  log(`Step5 生成房號=${currentRoomId}`);
 
-  const {ref,set,onValue} = window.$fb;
-  roomRef = ref(fbDb,`rooms/${currentRoomId}`);
-  playersRef = ref(fbDb,`rooms/${currentRoomId}/players`);
-  roomEventsRef = ref(fbDb,`rooms/${currentRoomId}/roomEvents`);
+  roomRef = fbDb.ref(`rooms/${currentRoomId}`);
+  playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
+  roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
 
-  await set(ref(fbDb,`rooms/${currentRoomId}/host`), myName);
-  await set(ref(playersRef, myName),{name:myName, ready:false});
+  await roomRef.child("host").set(myName);
+  await playersRef.child(myName).set({name:myName, ready:false});
   await pushRoomEvent(`${myName} 進入房間`);
 
-  // 監聽事件串
-  unsubEvent = onValue(roomEventsRef, renderRoomEvents);
+  roomEventsRef.on("value", renderRoomEvents);
 
   document.querySelector("#roomTitleShow").innerText = currentRoomId;
   document.querySelector("#p2PlayerName").value = myName;
-  log("➡ 切換到 page2");
+  log("➡ 切換 page2");
   setPage("page2");
 };
 
 // 加入房間
 document.querySelector("#btnJoinRoom").onclick = async ()=>{
+  log("房客點擊進入房間");
   myName = document.querySelector("#playerNameInput").value.trim();
   currentRoomId = document.querySelector("#roomIdJoinInput").value.trim();
-  if(!myName || currentRoomId.length!==4){alert("填寫姓名+4位房號");return}
-  await initFirebase();
-  const {ref,set,onValue} = window.$fb;
+  if(!myName || currentRoomId.length!==4){alert("請填寫姓名及4位房號");return;}
 
-  roomRef = ref(fbDb,`rooms/${currentRoomId}`);
-  playersRef = ref(fbDb,`rooms/${currentRoomId}/players`);
-  roomEventsRef = ref(fbDb,`rooms/${currentRoomId}/roomEvents`);
+  roomRef = fbDb.ref(`rooms/${currentRoomId}`);
+  playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
+  roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
 
-  await set(ref(playersRef, myName),{name:myName, ready:false});
+  await playersRef.child(myName).set({name:myName, ready:false});
   await pushRoomEvent(`${myName} 進入房間`);
 
-  unsubEvent = onValue(roomEventsRef, renderRoomEvents);
+  roomEventsRef.on("value", renderRoomEvents);
 
   document.querySelector("#roomTitleShow").innerText = currentRoomId;
   document.querySelector("#p2PlayerName").value = myName;
@@ -164,7 +157,7 @@ document.querySelector("#btnJoinRoom").onclick = async ()=>{
   setPage("page2");
 };
 
-// -------- 錄音臨時存儲，後續接大合唱
+// -----錄音
 let mediaRec1, mediaRec2;
 let chunks1=[],chunks2=[];
 
@@ -191,21 +184,18 @@ document.querySelector("#rec2Start").onclick=async ()=>{
 };
 document.querySelector("#rec2Stop").onclick=async ()=>{
   mediaRec2.stop();
-  // 兩段都錄好就標準準備，寫事件
   if(chunks1.length>0 && chunks2.length>0){
-    const {set,ref} = window.$fb;
-    await set(ref(playersRef,`${myName}/ready`),true);
+    await playersRef.child(`${myName}`).update({ready:true});
     await pushRoomEvent(`${myName} 已準備`);
     log(myName + "標記已準備");
   }
 };
 
-// 遊戲規則按鈕（房主用）
+// 設定遊戲規則
 document.querySelectorAll("[data‑rule]").forEach(btn=>{
   btn.onclick = async ()=>{
     const rule = btn.dataset.rule;
-    const {set,ref} = window.$fb;
-    await set(ref(roomRef,"gameRule"), rule);
+    await roomRef.child("gameRule").set(rule);
     log("房主設定規則:"+rule);
   }
 })
