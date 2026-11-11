@@ -1,450 +1,216 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v2.1</title>
+<title>包剪揼多人同步 v2.2</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
-body{overflow-x:hidden}
-.page{display:none;padding:16px;min-height:92vh}
+*{box-sizing:border-box;font-family:system‑ui}
+body{margin:0;padding:12px;background:#ffe666;font-size:17px}
+.page{display:none}
 .page.active{display:block}
-#debug{position:fixed;bottom:0;left:0;width:100%;background:#111;color:#4f4;padding:8px;font-size:12px;max-height:18vh;overflow-y:auto;z-index:9999}
-.ver{position:fixed;top:12px;right:12px;background:#0008;color:#fff;padding:4px 8px;border-radius:8px}
-button{padding:14px 22px;font-size:17px;margin:6px;border-radius:12px;border:none;background:#fff;box-shadow:0 2px 6px #0002}
-input{width:100%;padding:14px;font-size:17px;margin:8px 0;border-radius:10px;border:1px solid #aaa}
-h2{text-align:center;margin:12px 0}
-h3{margin:14px 0}
-.imgBtn{width:100px;height:100px;margin:8px;border:none;background:none}
-.imgBtn img{width:100%;height:100%;object-fit:contain}
-#eventLog{
-  border:1px solid #333;
-  background:rgba(255,255,255,0.75);
-  min-height:110px;
-  max-height:140px;
-  overflow-y:auto;
-  padding:10px;
-  border-radius:10px;
-  margin:10px 0;
-  font-size:16px;
-}
+button{padding:12px 16px;margin:6px;font-size:16px;border‑radius:8px;border:none;background:#fff}
+input{padding:11px;width:100%;margin:6px 0;font‑size:17px;border‑radius:6px;border:1px solid #aaa}
+#eventLogBox{width:100%;min‑height:140px;background:#fff;padding:10px;border‑radius:8px;white‑space:pre‑wrap;overflow‑y:auto;margin‑bottom:12px}
+#debugWindow{position:fixed;left:0;right:0;bottom:0;background:#000c;color:#4f4;padding:8px;font‑size:12px;max‑height:160px;overflow‑y:auto}
+.versionTag{position:fixed;top:8px;right:8px;background:#444;color:#fff;padding:4px 8px;border‑radius:6px}
 </style>
 </head>
 <body>
-<div class="ver">v2.1</div>
+<div class="versionTag">v2.2</div>
 
-<div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
-<h2>開啟 / 進入房間</h2>
-<input id="nameInput" placeholder="輸入你的玩家名稱">
-<input id="roomInput" placeholder="輸入4位數房間號">
-<button id="hostBtn">開啟房間</button>
-<button id="joinBtn">進入房間</button>
+<!-- Page1 -->
+<div id="page1" class="page active">
+<h2>第一頁：輸入姓名 / 建立或加入房間</h2>
+<input id="playerNameInput" placeholder="輸入你的名字"/>
+<br/>
+<button id="btnCreateRoom">房主：開啟全新房間</button>
+<br/>
+<input id="roomIdJoinInput" placeholder="輸入4位數房間號碼"/>
+<button id="btnJoinRoom">房客：進入房間</button>
 </div>
 
-<div id="page2" class="page" style="background:url('background02.jpg') center/cover">
-<h2>房間號碼：<span id="roomDisplay">----</span></h2>
-<div id="eventLog"></div>
-<h2>錄製音訊 & 設定遊戲</h2>
-<input id="playerIdInp" placeholder="玩家ID" readonly>
-<br>
-<h3>第一段：包剪揼（大合唱用）</h3>
+<!-- Page2 -->
+<div id="page2" class="page">
+<h2>房間號碼：<span id="roomTitleShow"></span></h2>
+<div id="eventLogBox"></div>
+
+<h3>錄製音訊 & 設定遊戲</h3>
+<input id="p2PlayerName" readonly/>
+
+<h4>第一段：包剪揼（大合唱用）</h4>
 <button id="rec1Start">開始錄第一段</button>
 <button id="rec1Stop">停止錄第一段</button>
-<br>
-<h3>第二段：勝利宣言</h3>
+
+<h4>第二段：勝利宣言</h4>
 <button id="rec2Start">開始錄第二段</button>
 <button id="rec2Stop">停止錄第二段</button>
-<br>
-<h3>房主選擇遊戲規則</h3>
-<button data-rule="oneRound">一舖定勝負</button>
-<button data-rule="win2">贏兩舖</button>
-<button data-rule="win3">贏三舖</button>
-<button data-rule="consec2">連贏兩舖</button>
-<br>
-<h3>在線玩家狀態</h3>
-<div id="playerList"></div>
-</div>
 
-<div id="page3" class="page" style="background:url('background03.jpg') center/cover">
-<h2>請出拳</h2>
-<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
-<button class="imgBtn" id="rock"><img src="rock.jpg" alt="包"></button>
-<button class="imgBtn" id="scissors"><img src="scissors.jpg" alt="剪"></button>
-<button class="imgBtn" id="paper"><img src="paper.jpg" alt="揼"></button>
+<h4>房主選擇遊戲規則</h4>
+<div>
+<button data‑rule="oneRound">一鋪定勝負</button>
+<button data‑rule="win2">贏兩鋪</button>
+<button data‑rule="win3">贏三鋪</button>
+<button data‑rule="consec2">連贏兩鋪</button>
 </div>
 </div>
 
-<div id="page4" class="page" style="background:url('background04.jpg') center/cover">
-<h2>本輪出拳狀況</h2>
-<div id="roundResult"></div>
-<h2>勝利排行榜</h2>
-<div id="rankBox"></div>
-<h2>倒數：<span id="countDown">5</span></h2>
-</div>
+<div id="debugWindow"></div>
 
-<div id="page5" class="page" style="background:url('background05.jpg') center/cover">
-<h2>遊戲完結！</h2>
-<div id="finalWinner"></div>
-</div>
-
-<div id="debug"></div>
-
-<script>
-const debugDiv = document.querySelector("#debug");
-const eventLogDiv = document.querySelector("#eventLog");
-let seenPlayerIds = new Set();
-let seenReadyIds = new Set();
-
-function log(txt){
-  const t = new Date().toLocaleString();
-  debugDiv.innerHTML += `[${t}] ${txt}\n`;
+<script type="module">
+const VERSION = "v2.2";
+const debugDiv = document.querySelector("#debugWindow");
+const log = (txt)=>{
+  const t = new Date().toLocaleString("zh‑HK");
+  debugDiv.innerText += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
-}
-function pushEvent(msg){
-  eventLogDiv.innerHTML += msg + "<br>";
-  eventLogDiv.scrollTop = eventLogDiv.scrollHeight;
-}
+};
 
-let app, db;
-let myRoomId = null;
-let myUid = "user_" + Math.random().toString(36).slice(2, 10);
-let myName = "";
+// ---- Firebase 動態載入
+let fbDb, roomRef, playersRef, roomEventsRef;
+const initFirebase = async ()=>{
+  log("Step0：動態 Import Firebase");
+  const {initializeApp} = await import("https://www.gstatic.com/firebasejs/11.4.0/firebase‑app.js");
+  const {getDatabase, ref, set, push, onValue, off} = await import("https://www.gstatic.com/firebasejs/11.4.0/firebase‑database.js");
+  log("Step1 Firebase 初始化成功");
+  const cfg = {
+    apiKey:"你的key",
+    authDomain:"xxx.firebaseapp.com",
+    databaseURL:"https://xxx‑default‑rtdb.firebaseio.com",
+    projectId:"xxx",
+    storageBucket:"xxx.appspot.com"
+  };
+  const app = initializeApp(cfg);
+  fbDb = getDatabase(app);
+  window.$fb = {ref,set,push,onValue,off};
+};
 
-let mediaRecorder1, mediaRecorder2;
-let audioChunks1 = [], audioChunks2 = [];
-let audioB641 = null, audioB642 = null;
-
-let roomRef;
-let heartbeatTimer;
-let localPlayers = {};
-let gameRule = null;
-
-async function initFB(){
-  try{
-    log("Step0：動態Import Firebase");
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
-    const { getDatabase, ref, set, onValue, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js");
-    window.fb = {ref,set,onValue,serverTimestamp};
-
-    const firebaseConfig = {
-      apiKey: "你的apiKey",
-      authDomain: "xxx.firebaseapp.com",
-      databaseURL: "https://xxx.firebaseio.com",
-      projectId: "xxx",
-      storageBucket: "xxx.appspot.com",
-      messagingSenderId: "xxx",
-      appId: "xxx"
-    };
-
-    app = initializeApp(firebaseConfig);
-    db = getDatabase(app);
-    log("✅ Step1 Firebase 初始化成功");
-    return true;
-  }catch(e){
-    log(`❌ initFB 異常:${e.message}`);
-    return false;
-  }
-}
-
-function goPage(pageId){
+// 頁面切換
+const setPage = (id)=>{
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.querySelector("#"+pageId).classList.add("active");
-  log(`➡️ 切換到 ${pageId}`);
-}
+  document.getElementById(id).classList.add("active");
+};
 
-function gen4DigitRoom(){
-  return String(Math.floor(1000 + Math.random()*9000));
-}
+// 全域狀態
+let myName = "";
+let currentRoomId = "";
+let unsubPlayer, unsubEvent;
 
-function blobToBase64(blob) {
-  return new Promise(resolve => {
-    const r = new FileReader();
-    r.onload = ()=>resolve(r.result);
-    r.readAsDataURL(blob);
+// 寫入一條房間全域事件
+const pushRoomEvent = async (msg)=>{
+  const {push} = window.$fb;
+  await push(roomEventsRef, {msg, ts:Date.now()});
+};
+
+// 渲染事件視窗
+const renderRoomEvents = (snap)=>{
+  const box = document.querySelector("#eventLogBox");
+  box.innerText = "";
+  if(!snap.exists()) return;
+  const obj = snap.val();
+  const arr = Object.values(obj).sort((a,b)=>a.ts‑b.ts);
+  arr.forEach(e=>{
+    box.innerText += e.msg + "\n";
   })
-}
+};
 
-function startHeartBeat(){
-  heartbeatTimer = setInterval(()=>{
-    if(!roomRef || !myRoomId) return;
-    window.fb.set(fb.ref(db,`rooms/${myRoomId}/players/${myUid}/lastHb`), fb.serverTimestamp());
-  },2000);
-}
+// 建立房間
+document.querySelector("#btnCreateRoom").onclick = async ()=>{
+  myName = document.querySelector("#playerNameInput").value.trim();
+  if(!myName){alert("請輸入姓名");return}
+  await initFirebase();
+  // 隨機4位數
+  currentRoomId = String(Math.floor(1000 + Math.random()*9000));
+  log(`Step5：本地生成房號 = ${currentRoomId}`);
 
-function renderPlayerList(){
-  const box = document.getElementById("playerList");
-  let html = "";
-  for(const pid in localPlayers){
-    const p = localPlayers[pid];
-    html += `<div>${p.name} ${p.ready ? "✅已準備" : "🔹進入房間"} ${p.eliminated?"❌已淘汰":""}</div>`
-  }
-  box.innerHTML = html;
-}
+  const {ref,set,onValue} = window.$fb;
+  roomRef = ref(fbDb,`rooms/${currentRoomId}`);
+  playersRef = ref(fbDb,`rooms/${currentRoomId}/players`);
+  roomEventsRef = ref(fbDb,`rooms/${currentRoomId}/roomEvents`);
 
-document.querySelector("#rec1Start").onclick = async ()=>{
+  await set(ref(fbDb,`rooms/${currentRoomId}/host`), myName);
+  await set(ref(playersRef, myName),{name:myName, ready:false});
+  await pushRoomEvent(`${myName} 進入房間`);
+
+  // 監聽事件串
+  unsubEvent = onValue(roomEventsRef, renderRoomEvents);
+
+  document.querySelector("#roomTitleShow").innerText = currentRoomId;
+  document.querySelector("#p2PlayerName").value = myName;
+  log("➡ 切換到 page2");
+  setPage("page2");
+};
+
+// 加入房間
+document.querySelector("#btnJoinRoom").onclick = async ()=>{
+  myName = document.querySelector("#playerNameInput").value.trim();
+  currentRoomId = document.querySelector("#roomIdJoinInput").value.trim();
+  if(!myName || currentRoomId.length!==4){alert("填寫姓名+4位房號");return}
+  await initFirebase();
+  const {ref,set,onValue} = window.$fb;
+
+  roomRef = ref(fbDb,`rooms/${currentRoomId}`);
+  playersRef = ref(fbDb,`rooms/${currentRoomId}/players`);
+  roomEventsRef = ref(fbDb,`rooms/${currentRoomId}/roomEvents`);
+
+  await set(ref(playersRef, myName),{name:myName, ready:false});
+  await pushRoomEvent(`${myName} 進入房間`);
+
+  unsubEvent = onValue(roomEventsRef, renderRoomEvents);
+
+  document.querySelector("#roomTitleShow").innerText = currentRoomId;
+  document.querySelector("#p2PlayerName").value = myName;
+  log("➡ 房客切換 page2");
+  setPage("page2");
+};
+
+// -------- 錄音臨時存儲，後續接大合唱
+let mediaRec1, mediaRec2;
+let chunks1=[],chunks2=[];
+
+document.querySelector("#rec1Start").onclick=async ()=>{
   const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  mediaRecorder1 = new MediaRecorder(stream);
-  audioChunks1 = [];
-  mediaRecorder1.ondataavailable = e=>audioChunks1.push(e.data);
-  mediaRecorder1.start();
-  log("🎙️ 開始錄第一段(包剪揼)");
-}
-document.querySelector("#rec1Stop").onclick = async ()=>{
-  mediaRecorder1.stop();
-  mediaRecorder1.onstop = async ()=>{
-    const blob = new Blob(audioChunks1,{type:"audio/webm"});
-    audioB641 = await blobToBase64(blob);
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/voice1`), audioB641);
-    localPlayers[myUid].voice1 = audioB641;
-    log("✅ 第一段錄音上傳完成");
-    checkMyAllReady();
-    renderPlayerList();
-  }
-}
+  mediaRec1 = new MediaRecorder(stream);
+  chunks1=[];
+  mediaRec1.ondataavailable=e=>chunks1.push(e.data);
+  mediaRec1.start();
+  log("開始錄第一段");
+};
+document.querySelector("#rec1Stop").onclick=()=>{
+  mediaRec1.stop();
+  log("停止錄第一段");
+};
 
-document.querySelector("#rec2Start").onclick = async ()=>{
+document.querySelector("#rec2Start").onclick=async ()=>{
   const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  mediaRecorder2 = new MediaRecorder(stream);
-  audioChunks2 = [];
-  mediaRecorder2.ondataavailable = e=>audioChunks2.push(e.data);
-  mediaRecorder2.start();
-  log("🎙️ 開始錄第二段(勝利宣言)");
-}
-document.querySelector("#rec2Stop").onclick = async ()=>{
-  mediaRecorder2.stop();
-  mediaRecorder2.onstop = async ()=>{
-    const blob = new Blob(audioChunks2,{type:"audio/webm"});
-    audioB642 = await blobToBase64(blob);
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/voice2`), audioB642);
-    localPlayers[myUid].voice2 = audioB642;
-    log("✅ 第二段錄音上傳完成");
-    checkMyAllReady();
-    renderPlayerList();
+  mediaRec2 = new MediaRecorder(stream);
+  chunks2=[];
+  mediaRec2.ondataavailable=e=>chunks2.push(e.data);
+  mediaRec2.start();
+  log("開始錄第二段");
+};
+document.querySelector("#rec2Stop").onclick=async ()=>{
+  mediaRec2.stop();
+  // 兩段都錄好就標準準備，寫事件
+  if(chunks1.length>0 && chunks2.length>0){
+    const {set,ref} = window.$fb;
+    await set(ref(playersRef,`${myName}/ready`),true);
+    await pushRoomEvent(`${myName} 已準備`);
+    log(myName + "標記已準備");
   }
-}
+};
 
-async function checkMyAllReady(){
-  if(audioB641 && audioB642){
-    localPlayers[myUid].ready = true;
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/ready`), true);
-  }
-}
-
-document.querySelectorAll("[data-rule]").forEach(btn=>{
+// 遊戲規則按鈕（房主用）
+document.querySelectorAll("[data‑rule]").forEach(btn=>{
   btn.onclick = async ()=>{
-    gameRule = btn.dataset.rule;
-    log(`📜 房主選定規則：${gameRule}`);
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/gameRule`), gameRule);
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/state`), "roundStart");
+    const rule = btn.dataset.rule;
+    const {set,ref} = window.$fb;
+    await set(ref(roomRef,"gameRule"), rule);
+    log("房主設定規則:"+rule);
   }
 })
 
-document.querySelector("#rock").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"rock"); log("👊我出：包")}
-document.querySelector("#scissors").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"scissors"); log("✂️我出：剪")}
-document.querySelector("#paper").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"paper"); log("🖐️我出：揼")}
-
-function getWinner(a,b){
-  if(a===b) return 0;
-  if((a==="rock"&&b==="scissors")||(a==="scissors"&&b==="paper")||(a==="paper"&&b==="rock")) return 1;
-  return -1;
-}
-
-async function playChorus(){
-  const ps = Object.values(localPlayers).filter(p=>!p.eliminated && p.voice1);
-  log(`🔊 大合唱，有效玩家數：${ps.length}`);
-  for(const pl of ps){
-    const au = new Audio(pl.voice1);
-    au.play().catch(e=>log(`播放音訊錯誤:${e}`));
-  }
-}
-async function playWinnerVoice(pid){
-  const p = localPlayers[pid];
-  if(!p || !p.voice2) return;
-  const au = new Audio(p.voice2);
-  au.play();
-}
-
-function subscribeRoom(){
-  roomRef = window.fb.ref(db,`rooms/${myRoomId}`);
-  window.fb.onValue(roomRef, snap=>{
-    const d = snap.val();
-    if(!d) return;
-    if(d.gameRule) gameRule = d.gameRule;
-    if(d.players){
-      const nowTs = Date.now();
-      localPlayers = {};
-      const incomingPlayers = d.players;
-      // 每次更新全部過一遍，搵新加入嘅玩家
-      for(const pid in incomingPlayers){
-        const pl = incomingPlayers[pid];
-        if(!pl.lastHb || (nowTs - pl.lastHb) > 3500) continue;
-        localPlayers[pid] = pl;
-
-        // 今次先發現嘅新玩家，彈進房提示
-        if(!seenPlayerIds.has(pid)){
-          seenPlayerIds.add(pid);
-          pushEvent(`${pl.name} 進入房間`);
-        }
-        if(pl.ready && !seenReadyIds.has(pid)){
-          seenReadyIds.add(pid);
-          pushEvent(`${pl.name} 已準備`);
-        }
-      }
-      renderPlayerList();
-    }
-    if(d.state === "roundStart"){
-      goPage("page3");
-      log("🚦新一輪，前往出拳頁");
-    }
-    if(d.state === "roundEnd"){
-      handleRoundEnd();
-    }
-    if(d.state === "gameOver"){
-      handleGameOver(d.winnerId);
-    }
-  })
-}
-
-async function handleRoundEnd(){
-  goPage("page4");
-  await playChorus();
-
-  let pids = [myUid];
-  Object.keys(localPlayers).forEach(id=>{if(id!==myUid) pids.push(id)});
-
-  const resultDiv = document.getElementById("roundResult");
-  resultDiv.innerHTML = "";
-  for(let i=0;i<pids.length;i++){
-    const pid = pids[i];
-    const p = localPlayers[pid];
-    await new Promise(r=>setTimeout(r, i===0 ? 0 : 800));
-    resultDiv.innerHTML += `<div>${p.name} : ${p.choice||"未出拳"}</div>`;
-  }
-
-  for(const pid in localPlayers){
-    const pl = localPlayers[pid];
-    if(!pl.winCnt) pl.winCnt = 0;
-    if(!pl.streak) pl.streak = 0;
-  }
-
-  const arr = Object.values(localPlayers);
-  for(let i=0;i<arr.length;i++){
-    for(let j=i+1;j<arr.length;j++){
-      const r = getWinner(arr[i].choice, arr[j].choice);
-      if(r===1){arr[i].winCnt++;arr[i].streak++;arr[j].streak=0;}
-      if(r===-1){arr[j].winCnt++;arr[j].streak++;arr[i].streak=0;}
-      if(r===0){arr[i].streak=0;arr[j].streak=0;}
-    }
-  }
-
-  for(const pid in localPlayers){
-    const pl = localPlayers[pid];
-    if(pl.eliminated) continue;
-    switch(gameRule){
-      case "oneRound":
-        if(pl.winCnt===0) pl.eliminated=true;
-        break;
-      case "win2":
-        if(pl.winCnt >= 2) pl.eliminated = true;
-        break;
-      case "win3":
-        if(pl.winCnt >= 3) pl.eliminated = true;
-        break;
-      case "consec2":
-        if(pl.streak >= 2) pl.eliminated = true;
-        break;
-    }
-  }
-
-  const sorted = Object.values(localPlayers).sort((a,b)=>b.winCnt - a.winCnt);
-  document.getElementById("rankBox").innerHTML = sorted.map(x=>`<div>${x.name}｜勝：${x.winCnt} 連勝：${x.streak} ${x.eliminated?"【已淘汰】":""}</div>`).join("");
-
-  const alive = Object.values(localPlayers).filter(x=>!x.eliminated);
-  if(alive.length === 1){
-    const winnerId = alive[0].uid;
-    window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/state`),"gameOver");
-    window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/winnerId`), winnerId);
-    return;
-  }
-
-  let cd = 5;
-  const cdSpan = document.getElementById("countDown");
-  await new Promise(res=>{
-    const t = setInterval(()=>{
-      cd--;
-      cdSpan.innerText = cd;
-      if(cd<=0){clearInterval(t);res()}
-    },1000)
-  })
-
-  for(const pid in localPlayers){
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${pid}/choice`), null);
-  }
-  window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/state`),"roundStart");
-}
-
-function handleGameOver(winnerId){
-  goPage("page5");
-  document.getElementById("finalWinner").innerText = `🏆最終勝利者：${localPlayers[winnerId].name}`;
-  playWinnerVoice(winnerId);
-}
-
-document.querySelector("#hostBtn").onclick = async ()=>{
-  myName = document.querySelector("#nameInput").value.trim();
-  if(!myName){ log("⚠️ 請先輸入玩家名稱"); return; }
-  log("Step4：房主點擊開啟房間");
-  const ok = await initFB();
-  if(!ok){ log("🛑 Firebase初始化失敗，唔可以開房"); return; }
-
-  myRoomId = gen4DigitRoom();
-  document.querySelector("#roomInput").value = myRoomId;
-  log(`✅ Step5：本地生成房號 = ${myRoomId}`);
-
-  document.querySelector("#roomDisplay").innerText = myRoomId;
-  document.querySelector("#playerIdInp").value = myName;
-  goPage("page2");
-
-  (async ()=>{
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
-      uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
-      voice1:null, voice2:null,
-      lastHb: window.fb.serverTimestamp()
-    });
-    localPlayers[myUid] = {uid:myUid,name:myName,ready:false,eliminated:false,winCnt:0,streak:0,voice1:null,voice2:null};
-    renderPlayerList();
-    startHeartBeat();
-    subscribeRoom();
-  })();
-};
-
-document.querySelector("#joinBtn").onclick = async ()=>{
-  myName = document.querySelector("#nameInput").value.trim();
-  if(!myName){ log("⚠️ 請先輸入玩家名稱"); return; }
-  log("Step4：房客點擊進入房間");
-  const ok = await initFB();
-  if(!ok){ log("🛑 Firebase初始化失敗，唔可以入房"); return; }
-
-  myRoomId = document.querySelector("#roomInput").value.trim();
-  if(!/^\d{4}$/.test(myRoomId)){ log("⚠️ 房間號必須4個數字"); return; }
-
-  document.querySelector("#roomDisplay").innerText = myRoomId;
-  document.querySelector("#playerIdInp").value = myName;
-  goPage("page2");
-
-  (async ()=>{
-    await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}`),{
-      uid:myUid, name:myName, ready:false, eliminated:false, winCnt:0, streak:0,
-      voice1:null, voice2:null,
-      lastHb: window.fb.serverTimestamp()
-    });
-    localPlayers[myUid] = {uid:myUid,name:myName,ready:false,eliminated:false,winCnt:0,streak:0,voice1:null,voice2:null};
-    renderPlayerList();
-    startHeartBeat();
-    subscribeRoom();
-  })();
-};
-
-log("✅ v2.1 JS全部載入完畢，等待玩家開房");
+log(`${VERSION} JS全部載入完畢，等待玩家開房`);
 </script>
 </body>
 </html>
