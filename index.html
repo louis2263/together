@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial‑scale=1.0"/>
-<title>包剪揼多人同步 v2.0</title>
+<title>包剪揼多人同步 v2.1</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
 body{overflow-x:hidden}
@@ -17,7 +17,6 @@ h2{text-align:center;margin:12px 0}
 h3{margin:14px 0}
 .imgBtn{width:100px;height:100px;margin:8px;border:none;background:none}
 .imgBtn img{width:100%;height:100%;object-fit:contain}
-/* 事件訊息視窗 */
 #eventLog{
   border:1px solid #333;
   background:rgba(255,255,255,0.75);
@@ -32,9 +31,8 @@ h3{margin:14px 0}
 </style>
 </head>
 <body>
-<div class="ver">v2.0</div>
+<div class="ver">v2.1</div>
 
-<!-- ========== 第1頁 ========== -->
 <div id="page1" class="page active" style="background:url('background01.jpg') center/cover">
 <h2>開啟 / 進入房間</h2>
 <input id="nameInput" placeholder="輸入你的玩家名稱">
@@ -43,13 +41,9 @@ h3{margin:14px 0}
 <button id="joinBtn">進入房間</button>
 </div>
 
-<!-- ========== 第2頁 ========== -->
 <div id="page2" class="page" style="background:url('background02.jpg') center/cover">
 <h2>房間號碼：<span id="roomDisplay">----</span></h2>
-
-<!-- 新：事件訊息視窗 -->
 <div id="eventLog"></div>
-
 <h2>錄製音訊 & 設定遊戲</h2>
 <input id="playerIdInp" placeholder="玩家ID" readonly>
 <br>
@@ -71,7 +65,6 @@ h3{margin:14px 0}
 <div id="playerList"></div>
 </div>
 
-<!-- ========== 第3頁：圖片按鈕出拳 ========== -->
 <div id="page3" class="page" style="background:url('background03.jpg') center/cover">
 <h2>請出拳</h2>
 <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
@@ -81,7 +74,6 @@ h3{margin:14px 0}
 </div>
 </div>
 
-<!-- ========== 第4頁：結果、延遲逐個顯示、倒數、淘汰邏輯 ========== -->
 <div id="page4" class="page" style="background:url('background04.jpg') center/cover">
 <h2>本輪出拳狀況</h2>
 <div id="roundResult"></div>
@@ -90,7 +82,6 @@ h3{margin:14px 0}
 <h2>倒數：<span id="countDown">5</span></h2>
 </div>
 
-<!-- ========== 第5頁 ========== -->
 <div id="page5" class="page" style="background:url('background05.jpg') center/cover">
 <h2>遊戲完結！</h2>
 <div id="finalWinner"></div>
@@ -101,7 +92,6 @@ h3{margin:14px 0}
 <script>
 const debugDiv = document.querySelector("#debug");
 const eventLogDiv = document.querySelector("#eventLog");
-// ✅改用本地紀錄本機已經彈過嘅ID，每次重連清空，唔會跨機攔截訊息
 let seenPlayerIds = new Set();
 let seenReadyIds = new Set();
 
@@ -110,7 +100,6 @@ function log(txt){
   debugDiv.innerHTML += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 }
-// 寫入第二頁事件視窗
 function pushEvent(msg){
   eventLogDiv.innerHTML += msg + "<br>";
   eventLogDiv.scrollTop = eventLogDiv.scrollHeight;
@@ -192,7 +181,6 @@ function renderPlayerList(){
   box.innerHTML = html;
 }
 
-//錄音
 document.querySelector("#rec1Start").onclick = async ()=>{
   const stream = await navigator.mediaDevices.getUserMedia({audio:true});
   mediaRecorder1 = new MediaRecorder(stream);
@@ -235,7 +223,6 @@ document.querySelector("#rec2Stop").onclick = async ()=>{
   }
 }
 
-// 檢查自己兩段音訊齊唔齊，齊就上傳ready標記
 async function checkMyAllReady(){
   if(audioB641 && audioB642){
     localPlayers[myUid].ready = true;
@@ -243,7 +230,6 @@ async function checkMyAllReady(){
   }
 }
 
-//選規則
 document.querySelectorAll("[data-rule]").forEach(btn=>{
   btn.onclick = async ()=>{
     gameRule = btn.dataset.rule;
@@ -253,7 +239,6 @@ document.querySelectorAll("[data-rule]").forEach(btn=>{
   }
 })
 
-//圖片按鈕出拳
 document.querySelector("#rock").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"rock"); log("👊我出：包")}
 document.querySelector("#scissors").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"scissors"); log("✂️我出：剪")}
 document.querySelector("#paper").onclick = async ()=>{await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${myUid}/choice`),"paper"); log("🖐️我出：揼")}
@@ -288,17 +273,18 @@ function subscribeRoom(){
     if(d.players){
       const nowTs = Date.now();
       localPlayers = {};
-      for(const pid in d.players){
-        const pl = d.players[pid];
+      const incomingPlayers = d.players;
+      // 每次更新全部過一遍，搵新加入嘅玩家
+      for(const pid in incomingPlayers){
+        const pl = incomingPlayers[pid];
         if(!pl.lastHb || (nowTs - pl.lastHb) > 3500) continue;
         localPlayers[pid] = pl;
 
-        // ✅ 本機第一次見到呢個玩家就彈進房訊息，每台機各自顯示
+        // 今次先發現嘅新玩家，彈進房提示
         if(!seenPlayerIds.has(pid)){
           seenPlayerIds.add(pid);
           pushEvent(`${pl.name} 進入房間`);
         }
-        // 第一次見到佢ready，彈已準備
         if(pl.ready && !seenReadyIds.has(pid)){
           seenReadyIds.add(pid);
           pushEvent(`${pl.name} 已準備`);
@@ -323,7 +309,6 @@ async function handleRoundEnd(){
   goPage("page4");
   await playChorus();
 
-  // 順序：先自己，其餘每個延遲0.8s顯示
   let pids = [myUid];
   Object.keys(localPlayers).forEach(id=>{if(id!==myUid) pids.push(id)});
 
@@ -336,14 +321,12 @@ async function handleRoundEnd(){
     resultDiv.innerHTML += `<div>${p.name} : ${p.choice||"未出拳"}</div>`;
   }
 
-  //初始化計數
   for(const pid in localPlayers){
     const pl = localPlayers[pid];
     if(!pl.winCnt) pl.winCnt = 0;
     if(!pl.streak) pl.streak = 0;
   }
 
-  //兩兩對戰
   const arr = Object.values(localPlayers);
   for(let i=0;i<arr.length;i++){
     for(let j=i+1;j<arr.length;j++){
@@ -354,7 +337,6 @@ async function handleRoundEnd(){
     }
   }
 
-  //完整4套規則淘汰判斷
   for(const pid in localPlayers){
     const pl = localPlayers[pid];
     if(pl.eliminated) continue;
@@ -374,7 +356,6 @@ async function handleRoundEnd(){
     }
   }
 
-  //排行榜
   const sorted = Object.values(localPlayers).sort((a,b)=>b.winCnt - a.winCnt);
   document.getElementById("rankBox").innerHTML = sorted.map(x=>`<div>${x.name}｜勝：${x.winCnt} 連勝：${x.streak} ${x.eliminated?"【已淘汰】":""}</div>`).join("");
 
@@ -386,7 +367,6 @@ async function handleRoundEnd(){
     return;
   }
 
-  //5秒倒數
   let cd = 5;
   const cdSpan = document.getElementById("countDown");
   await new Promise(res=>{
@@ -397,7 +377,6 @@ async function handleRoundEnd(){
     },1000)
   })
 
-  //重置本輪出拳
   for(const pid in localPlayers){
     await window.fb.set(window.fb.ref(db,`rooms/${myRoomId}/players/${pid}/choice`), null);
   }
@@ -410,7 +389,6 @@ function handleGameOver(winnerId){
   playWinnerVoice(winnerId);
 }
 
-//開房
 document.querySelector("#hostBtn").onclick = async ()=>{
   myName = document.querySelector("#nameInput").value.trim();
   if(!myName){ log("⚠️ 請先輸入玩家名稱"); return; }
@@ -439,7 +417,6 @@ document.querySelector("#hostBtn").onclick = async ()=>{
   })();
 };
 
-//入房
 document.querySelector("#joinBtn").onclick = async ()=>{
   myName = document.querySelector("#nameInput").value.trim();
   if(!myName){ log("⚠️ 請先輸入玩家名稱"); return; }
@@ -467,7 +444,7 @@ document.querySelector("#joinBtn").onclick = async ()=>{
   })();
 };
 
-log("✅ v2.0 JS全部載入完畢，等待玩家開房");
+log("✅ v2.1 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
