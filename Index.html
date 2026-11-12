@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>包剪揼多人同步 v3.2｜完整修復版</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;font-family:system-ui, -apple-system, sans-serif;}
+body{margin:0;padding:12px;background:#ffe666;font-size:17px;padding-bottom:160px;}
+.page{display:none;}
+.page.active{display:block !important;}
+button{padding:12px 16px;margin:6px 4px;font-size:16px;border-radius:8px;border:none;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.15);cursor:pointer;}
+button:active{transform:scale(0.98);}
+button:disabled{background:#ccc;color:#666;box-shadow:none;cursor:not-allowed;}
+input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;border:1px solid #aaa;}
+#eventLogBox{width:100%;height:130px;background:#fff;padding:10px;border-radius:8px;white-space:pre-wrap;overflow-y:auto;margin-bottom:12px;font-size:15px;}
+#debugWrap{position:fixed;left:0;right:0;bottom:0;height:140px;background:#111;color:#4f4;font-size:11px;z-index:999;border-top:2px solid #333;}
+#debugWindow{width:100%;height:100%;padding:6px;overflow-y:auto;font-family:monospace;}
+.versionTag{position:fixed;top:8px;right:8px;background:#444;color:#fff;padding:4px 8px;border-radius:6px;z-index:100;font-size:13px;}
+.rec-indicator{margin:8px 0;background:rgba(255,255,255,0.6);padding:10px;border-radius:8px;}
+.countdown-text{font-size:26px;font-weight:bold;color:red;margin:4px 0;}
+.fistBtn{width:30%;font-size:24px;padding:24px 0;margin:4px;font-weight:bold;}
+.fistBtn.selected{background:#4CAF50;color:#fff;border:2px solid #2E7D32;}
+.card{background:#fff;padding:12px;border-radius:8px;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<div class="versionTag">v3.2</div>
+
+<!-- Page1 -->
+<div id="page1" class="page active">
+  <h2>包剪揼語音大戰</h2>
+  <div class="card">
+    <label>你的名字：</label>
+    <input id="playerNameInput" placeholder="輸入你的名字 (勿用特殊符號)" maxlength="12"/>
+    <button id="btnCreateRoom" style="width:100%;background:#ff9800;color:#fff;font-weight:bold;">房主：開啟全新房間</button>
+  </div>
+  <div class="card">
+    <label>加入現有房間：</label>
+    <input id="roomIdJoinInput" type="number" placeholder="輸入4位數房間號碼"/>
+    <button id="btnJoinRoom" style="width:100%;background:#2196F3;color:#fff;font-weight:bold;">房客：進入房間</button>
+  </div>
+</div>
+
+<!-- Page2 -->
+<div id="page2" class="page">
+  <h2>房間號碼：<span id="roomTitleShow" style="color:#d32f2f;"></span></h2>
+  <div id="eventLogBox"></div>
+
+  <div class="rec-indicator">
+    <div><strong id="rec1Status">1. 包剪揼口號：未錄音</strong></div>
+    <div id="cd1" class="countdown-text"></div>
+    <button id="rec1Start">🎙️ 錄第一段 (3秒)</button>
+    <button id="play1" disabled>▶️ 試聽</button>
+  </div>
+
+  <div class="rec-indicator">
+    <div><strong id="rec2Status">2. 勝利宣言：未錄音</strong></div>
+    <div id="cd2" class="countdown-text"></div>
+    <button id="rec2Start">🎙️ 錄第二段 (3秒)</button>
+    <button id="play2" disabled>▶️ 試聽</button>
+  </div>
+
+  <div id="hostRuleSection" class="card">
+    <h4 style="margin-top:0;">遊戲規則 <span id="ruleHint" style="font-weight:normal;font-size:14px;color:#666;">(等待房主選擇)</span></h4>
+    <div id="ruleButtons">
+      <button data-rule="oneRound">一鋪定勝負</button>
+      <button data-rule="win2">贏兩鋪</button>
+      <button data-rule="win3">贏三鋪</button>
+      <button data-rule="consec2">連贏兩鋪</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page3 第三頁：選擇出拳 -->
+<div id="page3" class="page">
+  <h2>第 <span id="roundNumShow">1</span> 輪：請出拳！</h2>
+  <div style="display:flex;justify-content:space-between;">
+    <button class="fistBtn" data-fist="rock">✊ 石</button>
+    <button class="fistBtn" data-fist="scissors">✌️ 剪</button>
+    <button class="fistBtn" data-fist="paper">🖐️ 包</button>
+  </div>
+  <div id="p3Tip" class="card" style="margin-top:20px;text-align:center;font-weight:bold;">請選擇你要出的拳...</div>
+</div>
+
+<!-- Page4 第四頁：結果、排行榜、倒數 -->
+<div id="page4" class="page">
+  <h2>本輪戰果</h2>
+  <div id="roundResultText" class="card" style="font-size:18px;font-weight:bold;color:#d32f2f;"></div>
+  <div id="rankView" class="card"></div>
+  <div id="roundCountDown" style="font-size:28px;font-weight:bold;color:red;text-align:center;margin:15px 0"></div>
+  <button id="btnBackLobby" style="display:none;width:100%;background:#4CAF50;color:#fff;">返回大廳再玩一局</button>
+</div>
+
+<!-- Debug 永久常開 -->
+<div id="debugWrap">
+  <div id="debugWindow"></div>
+</div>
+
+<script>
+const debugDiv = document.querySelector("#debugWindow");
+const log = (txt)=>{
+  const t = new Date().toLocaleTimeString("zh-HK", {hour12:false});
+  debugDiv.innerText += `[${t}] ${txt}\n`;
+  debugDiv.scrollTop = debugDiv.scrollHeight;
+};
+log("✅ v3.2 啟動｜修復房主跳頁競態鎖、勝負判定及音訊同步");
+
+let fbDb, roomRef, playersRef, roomEventsRef;
+let myName = "";
+let isHost = false;
+let currentRoomId = "";
+let currentPage = "page1";
+let roomGlobalListener = null;
+let countDownTimer = null;
+let isStartingRound = false;
+let hasAnnouncedReady = false;
+
+// 全部玩家緩存音訊
+let allPlayersAudio = {};
+let audioBlob1 = null, audioBlob2 = null;
+let audioUrl1 = null, audioUrl2 = null;
+
+// 過濾 Firebase 禁止的字元
+function sanitizeName(name) {
+  return name.replace(/[.#$\[\]\/]/g, "").trim();
+}
+
+// 頁面切換（加入狀態鎖，防止重複觸發重置按鈕）
+function setPage(pageId){
+  if(currentPage === pageId) return;
+  currentPage = pageId;
+  log(`👉 切換頁面 -> ${pageId}`);
+
+  document.querySelectorAll(".page").forEach(p=> p.classList.remove("active"));
+  document.getElementById(pageId).classList.add("active");
+
+  if(pageId === "page3"){
+    document.querySelectorAll(".fistBtn").forEach(b=> {
+      b.disabled = false;
+      b.classList.remove("selected");
+    });
+    document.querySelector("#p3Tip").innerText = "請選擇你要出的拳...";
+  }
+}
+
+// 解鎖手機瀏覽器自動播放限制
+function unlockAudioContext() {
+  for (const pName in allPlayersAudio) {
+    const p = allPlayersAudio[pName];
+    if (p.audio1) { p.audio1.muted = true; p.audio1.play().then(()=>{ p.audio1.pause(); p.audio1.currentTime=0; p.audio1.muted=false; }).catch(()=>{}); }
+    if (p.audio2) { p.audio2.muted = true; p.audio2.play().then(()=>{ p.audio2.pause(); p.audio2.currentTime=0; p.audio2.muted=false; }).catch(()=>{}); }
+  }
+}
+
+function blobToBase64(blob){
+  return new Promise(resolve=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.readAsDataURL(blob);
+  });
+}
+
+// ========== Firebase Init ==========
+try{
+  const cfg = {
+    apiKey: "在此填入你的apiKey",
+    authDomain: "game-ad81e.firebaseapp.com",
+    databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "game-ad81e",
+    storageBucket: "game-ad81e.appspot.com"
+  };
+  const app = firebase.initializeApp(cfg);
+  fbDb = firebase.database(app);
+  log("✅ Firebase 初始化成功");
+}catch(err){
+  log("❌ Firebase初始化錯誤:" + err.message);
+}
+
+const pushRoomEvent = async (msg)=>{
+  if(roomEventsRef) await roomEventsRef.push({msg, ts:Date.now()});
+};
+
+const renderRoomEvents = (snap)=>{
+  const box = document.querySelector("#eventLogBox");
+  box.innerText = "";
+  if(!snap.exists()) return;
+  const arr = Object.values(snap.val()).sort((a,b)=>a.ts - b.ts);
+  arr.forEach(e=> box.innerText += e.msg + "\n");
+  box.scrollTop = box.scrollHeight;
+};
+
+// 監聽全部玩家音訊同步
+function watchAllPlayersAudio(){
+  playersRef.on("value", snap=>{
+    if(!snap.exists()) return;
+    const players = snap.val();
+    for(const pName in players){
+      const pd = players[pName];
+      if(!allPlayersAudio[pName]) allPlayersAudio[pName] = {};
+      if(pd.b64_1 && allPlayersAudio[pName].b64_1 !== pd.b64_1){
+        allPlayersAudio[pName].b64_1 = pd.b64_1;
+        allPlayersAudio[pName].audio1 = new Audio(pd.b64_1);
+        log(`📥 載入 [${pName}] 包剪揼音訊`);
+      }
+      if(pd.b64_2 && allPlayersAudio[pName].b64_2 !== pd.b64_2){
+        allPlayersAudio[pName].b64_2 = pd.b64_2;
+        allPlayersAudio[pName].audio2 = new Audio(pd.b64_2);
+        log(`📥 載入 [${pName}] 勝利宣言`);
+      }
+    }
+  });
+}
+
+// 計算包剪揼勝負
+function judgeRound(playersObj) {
+  const names = Object.keys(playersObj);
+  const fists = new Set(names.map(n => playersObj[n].fist));
+  const fistMap = { rock: "✊石", scissors: "✌️剪", paper: "🖐️包" };
+
+  let detail = names.map(n => `${n}: ${fistMap[playersObj[n].fist]}`).join(" ｜ ");
+
+  if (fists.size === 1 || fists.size === 3) {
+    return { isDraw: true, winners: [], detail: `平手！(${detail})` };
+  }
+
+  const arr = Array.from(fists);
+  let winFist = "";
+  if (arr.includes("rock") && arr.includes("scissors")) winFist = "rock";
+  else if (arr.includes("scissors") && arr.includes("paper")) winFist = "scissors";
+  else if (arr.includes("paper") && arr.includes("rock")) winFist = "paper";
+
+  const winners = names.filter(n => playersObj[n].fist === winFist);
+  return { isDraw: false, winners, detail: `${detail}\n🎉 本輪勝出：${winners.join(", ")}` };
+}
+
+// 檢查是否達成最終勝利條件
+function checkFinalChampion(playersObj, rule) {
+  const names = Object.keys(playersObj);
+  for (const n of names) {
+    const wins = playersObj[n].wins || 0;
+    const streak = playersObj[n].streak || 0;
+    if (rule === "oneRound" && wins >= 1) return n;
+    if (rule === "win2" && wins >= 2) return n;
+    if (rule === "win3" && wins >= 3) return n;
+    if (rule === "consec2" && streak >= 2) return n;
+  }
+  return null;
+}
+
+// 全房狀態監聽（核心狀態機）
+function startRoomGlobalWatch(){
+  if(roomGlobalListener) return;
+  watchAllPlayersAudio();
+
+  roomGlobalListener = roomRef.on("value", async snap=>{
+    if(!snap.exists()) return;
+    const roomData = snap.val();
+    const playersRaw = roomData.players || {};
+    const gameRule = roomData.gameRule;
+    const phase = roomData.gamePhase || "idle";
+    const roundNum = roomData.roundNum || 1;
+    const playerList = Object.values(playersRaw);
+
+    if(playerList.length === 0) return;
+
+    if(gameRule) {
+      const ruleNames = {oneRound:"一鋪定勝負", win2:"贏兩鋪", win3:"贏三鋪", consec2:"連贏兩鋪"};
+      document.querySelector("#ruleHint").innerText = `(已選：${ruleNames[gameRule]})`;
+    }
+
+    const allReady = playerList.length >= 2 && playerList.every(p => p.ready === true);
+    const allThrow = playerList.every(p => !!p.fist);
+
+    // 1. 大廳階段 -> 全部人準備好且至少2人 + 已選規則 -> 開始出拳
+    if(isHost && allReady && !!gameRule && phase === "idle" && !isStartingRound){
+      isStartingRound = true;
+      log("🚀 條件達成，房主啟動第一輪！");
+      await roomRef.update({ gamePhase: "roundStart", roundNum: 1 });
+      return;
+    }
+
+    // 2. 出拳階段 -> 全部人出拳 -> 房主負責結算分數
+    if(isHost && allThrow && phase === "roundStart"){
+      log("⚖️ 全部出拳完畢，房主結算中...");
+      const res = judgeRound(playersRaw);
+      const updates = {};
+
+      for(const pName in playersRaw){
+        let w = playersRaw[pName].wins || 0;
+        let s = playersRaw[pName].streak || 0;
+        if(!res.isDraw){
+          if(res.winners.includes(pName)){
+            w += 1;
+            s += 1;
+          } else {
+            s = 0;
+          }
+        }
+        updates[`players/${pName}/wins`] = w;
+        updates[`players/${pName}/streak`] = s;
+      }
+
+      const tempPlayers = JSON.parse(JSON.stringify(playersRaw));
+      for(const pName in tempPlayers){
+        tempPlayers[pName].wins = updates[`players/${pName}/wins`];
+        tempPlayers[pName].streak = updates[`players/${pName}/streak`];
+      }
+      const champion = checkFinalChampion(tempPlayers, gameRule);
+
+      updates["lastRoundResult"] = res.detail;
+      updates["lastRoundWinners"] = res.winners;
+      updates["champion"] = champion || "";
+      updates["gamePhase"] = "roundEnd";
+
+      await roomRef.update(updates);
+    }
+
+    // 3. 頁面與音效同步反應
+    if(phase === "idle" && !isStartingRound){
+      setPage("page2");
+    }
+    else if(phase === "roundStart"){
+      isStartingRound = false;
+      document.querySelector("#roundNumShow").innerText = roundNum;
+      if(currentPage !== "page3"){
+        setPage("page3");
+        playChorus(Object.keys(playersRaw), 1);
+      }
+    }
+    else if(phase === "roundEnd"){
+      if(currentPage !== "page4"){
+        setPage("page4");
+        renderPage4(roomData);
+      }
+    }
+  });
+}
+
+// 渲染第四頁戰果與播放勝利宣言
+function renderPage4(roomData) {
+  const playersRaw = roomData.players || {};
+  const resultText = roomData.lastRoundResult || "";
+  const winners = roomData.lastRoundWinners || [];
+  const champion = roomData.champion;
+
+  document.querySelector("#roundResultText").innerText = resultText;
+
+  let rankHtml = "<h4>目前戰績：</h4>";
+  Object.values(playersRaw).sort((a,b)=>(b.wins||0)-(a.wins||0)).forEach(p=>{
+    rankHtml += `<div>👤 <strong>${p.name}</strong>：總勝 ${p.wins||0} 局 (連勝 ${p.streak||0})</div>`;
+  });
+  document.querySelector("#rankView").innerHTML = rankHtml;
+
+  if(winners.length > 0){
+    playChorus(winners, 2);
+  }
+
+  const cdEl = document.querySelector("#roundCountDown");
+  const btnBack = document.querySelector("#btnBackLobby");
+  clearInterval(countDownTimer);
+
+  if(champion){
+    cdEl.innerHTML = `🏆 最終總冠軍誕生：<br><span style="font-size:36px;color:#ff9800;">${champion}</span>`;
+    btnBack.style.display = isHost ? "block" : "none";
+  } else {
+    btnBack.style.display = "none";
+    let sec = 5;
+    cdEl.innerText = `${sec} 秒後進入下一輪...`;
+    countDownTimer = setInterval(async ()=>{
+      sec--;
+      if(sec > 0){
+        cdEl.innerText = `${sec} 秒後進入下一輪...`;
+      } else {
+        clearInterval(countDownTimer);
+        cdEl.innerText = "準備中...";
+        if(isHost){
+          const nextUpdates = {
+            gamePhase: "roundStart",
+            roundNum: (roomData.roundNum || 1) + 1
+          };
+          for(const pName in playersRaw){
+            nextUpdates[`players/${pName}/fist`] = null;
+          }
+          await roomRef.update(nextUpdates);
+        }
+      }
+    }, 1000);
+  }
+}
+
+// 房主點擊返回大廳
+document.querySelector("#btnBackLobby").onclick = async ()=>{
+  if(!isHost) return;
+  isStartingRound = false;
+  const snap = await playersRef.once("value");
+  const players = snap.val() || {};
+  const updates = {
+    gamePhase: "idle",
+    gameRule: null,
+    champion: "",
+    roundNum: 1
+  };
+  for(const pName in players){
+    updates[`players/${pName}/fist`] = null;
+    updates[`players/${pName}/wins`] = 0;
+    updates[`players/${pName}/streak`] = 0;
+  }
+  await roomRef.update(updates);
+  await pushRoomEvent("🔄 房主重置了遊戲，請重新選擇規則");
+};
+
+// 建立房間
+document.querySelector("#btnCreateRoom").onclick = async ()=>{
+  try{
+    myName = sanitizeName(document.querySelector("#playerNameInput").value);
+    if(!myName){ alert("請輸入有效姓名"); return; }
+
+    isHost = true;
+    currentRoomId = String(Math.floor(1000 + Math.random()*9000));
+    log(`房主建立房間：${currentRoomId}`);
+
+    roomRef = fbDb.ref(`rooms/${currentRoomId}`);
+    playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
+    roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
+
+    await roomRef.set({ host: myName, gamePhase: "idle", roundNum: 1 });
+    await playersRef.child(myName).set({ name: myName, ready: false, wins: 0, streak: 0 });
+    await pushRoomEvent(`👑 ${myName} (房主) 建立了房間`);
+
+    roomEventsRef.on("value", renderRoomEvents);
+    startRoomGlobalWatch();
+    document.querySelector("#roomTitleShow").innerText = currentRoomId;
+    setPage("page2");
+  }catch(ex){
+    log("❌ 建立房間異常：" + ex.message);
+  }
+};
+
+// 加入房間
+document.querySelector("#btnJoinRoom").onclick = async ()=>{
+  try{
+    myName = sanitizeName(document.querySelector("#playerNameInput").value);
+    currentRoomId = document.querySelector("#roomIdJoinInput").value.trim();
+    if(!myName || currentRoomId.length !== 4){ alert("請填寫姓名同4位數房號"); return; }
+
+    isHost = false;
+    document.querySelector("#ruleButtons").style.display = "none";
+
+    roomRef = fbDb.ref(`rooms/${currentRoomId}`);
+    playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
+    roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
+
+    const roomSnap = await roomRef.once("value");
+    if(!roomSnap.exists()){ alert("房間不存在！"); return; }
+
+    await playersRef.child(myName).set({ name: myName, ready: false, wins: 0, streak: 0 });
+    await pushRoomEvent(`🙋 ${myName} 加入了房間`);
+
+    roomEventsRef.on("value", renderRoomEvents);
+    startRoomGlobalWatch();
+    document.querySelector("#roomTitleShow").innerText = currentRoomId;
+    setPage("page2");
+  }catch(ex){
+    log("❌ 加入房間異常："+ex.message);
+  }
+};
+
+// 錄音上傳 base64 (相容 iOS / Android)
+async function doRecord(idx){
+  unlockAudioContext();
+  const btnStart = document.querySelector(idx===1 ? "#rec1Start" : "#rec2Start");
+  const btnPlay = document.querySelector(idx===1 ? "#play1" : "#play2");
+  const statusDom = document.querySelector(idx===1 ? "#rec1Status" : "#rec2Status");
+  const cdDom = document.querySelector(idx===1 ? "#cd1" : "#cd2");
+
+  try {
+    btnStart.disabled = true;
+    btnPlay.disabled = true;
+    cdDom.innerText = "3";
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const rec = new MediaRecorder(stream);
+    const chk = [];
+    rec.ondataavailable = e => { if(e.data.size > 0) chk.push(e.data); };
+    rec.start();
+
+    for(let i=2; i>=1; i--){
+      await new Promise(r=>setTimeout(r, 1000));
+      cdDom.innerText = i;
+    }
+    await new Promise(r=>setTimeout(r, 1000));
+    rec.stop();
+    stream.getTracks().forEach(t=>t.stop());
+    cdDom.innerText = "";
+
+    await new Promise(res=>{
+      rec.onstop = async ()=>{
+        const mime = rec.mimeType || "audio/mp4";
+        const blob = new Blob(chk, { type: mime });
+        const url = URL.createObjectURL(blob);
+        const b64 = await blobToBase64(blob);
+
+        if(idx===1){
+          audioBlob1 = blob; audioUrl1 = url;
+          await playersRef.child(myName).update({ b64_1: b64 });
+        }else{
+          audioBlob2 = blob; audioUrl2 = url;
+          await playersRef.child(myName).update({ b64_2: b64 });
+        }
+        statusDom.innerText = idx===1 ? "1. 包剪揼口號：✅ 已錄畢" : "2. 勝利宣言：✅ 已錄畢";
+        btnPlay.disabled = false;
+        res();
+      };
+    });
+
+    btnStart.disabled = false;
+    if(audioBlob1 && audioBlob2){
+      await playersRef.child(myName).update({ ready: true });
+      if(!hasAnnouncedReady){
+        hasAnnouncedReady = true;
+        await pushRoomEvent(`✅ ${myName} 已完成錄音準備！`);
+      }
+    }
+  } catch (err) {
+    log("❌ 錄音失敗(請確認麥克風權限/HTTPS):" + err.message);
+    alert("無法存取麥克風，請確保使用 HTTPS 並允許麥克風權限。");
+    btnStart.disabled = false;
+    cdDom.innerText = "";
+  }
+}
+
+function playAudio(url){ if(url) new Audio(url).play(); }
+document.querySelector("#rec1Start").onclick = ()=> doRecord(1);
+document.querySelector("#rec2Start").onclick = ()=> doRecord(2);
+document.querySelector("#play1").onclick = ()=> playAudio(audioUrl1);
+document.querySelector("#play2").onclick = ()=> playAudio(audioUrl2);
+
+// 房主揀規則
+document.querySelectorAll("[data-rule]").forEach(btn=>{
+  btn.onclick = async ()=>{
+    if(!isHost) return;
+    try{
+      const rule = btn.dataset.rule;
+      await roomRef.child("gameRule").set(rule);
+      await pushRoomEvent(`📋 房主設定了規則：${btn.innerText}`);
+      log(`✅ 設定規則：${rule}`);
+    }catch(e){ log("設定規則錯誤:" + e.message); }
+  };
+});
+
+// 第三頁出拳
+document.querySelectorAll(".fistBtn").forEach(btn=>{
+  btn.onclick = async ()=>{
+    unlockAudioContext();
+    const fist = btn.dataset.fist;
+    log(`✊ 本輪出拳: ${fist}`);
+    btn.classList.add("selected");
+    document.querySelectorAll(".fistBtn").forEach(b=> b.disabled = true);
+    document.querySelector("#p3Tip").innerText = "已出拳！等待其他玩家...";
+    await playersRef.child(myName).update({ fist });
+  };
+});
+
+// 大合唱播放函數 (type: 1=包剪揼, 2=勝利宣言)
+function playChorus(targetNames, type){
+  let count = 0;
+  targetNames.forEach(n=>{
+    const pl = allPlayersAudio[n];
+    const audioObj = type === 1 ? pl?.audio1 : pl?.audio2;
+    if(audioObj){
+      audioObj.currentTime = 0;
+      audioObj.play().catch(e=>log(`⚠️ 播放[${n}]音訊被瀏覽器阻擋:${e.message}`));
+      count++;
+    }
+  });
+  log(`🎵 播放語音(${type===1?'口號':'勝利宣言'})：共 ${count} 人`);
+}
+</script>
+</body>
