@@ -17,6 +17,7 @@
             position: absolute; top: 0; left: 0; 
             background-size: cover; background-position: center; background-repeat: no-repeat; 
             box-sizing: border-box; padding: 20px; 
+            padding-bottom: 120px; /* 為 debug 視窗留空間 */
         }
         .page.active { 
             display: flex; flex-direction: column; 
@@ -32,12 +33,12 @@
 
         /* ================= UI 元件樣式 ================= */
         .panel { 
-            background: rgba(255, 255, 255, 0.9); 
+            background: rgba(255, 255, 255, 0.95); 
             padding: 20px; border-radius: 15px; 
             width: 90%; max-width: 400px; 
             text-align: center; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
-            max-height: 90vh; overflow-y: auto;
+            max-height: 85vh; overflow-y: auto;
         }
         input, button, select { 
             width: 100%; padding: 12px; margin: 8px 0; 
@@ -51,12 +52,11 @@
         }
         button:active { background: #0056b3; }
         button:disabled { background: #aaa; cursor: not-allowed; }
-        .btn-danger { background: #dc3545; }
         .btn-success { background: #28a745; }
         .btn-success:active { background: #1e7e34; }
         
         /* ================= 遊戲頁面專用 ================= */
-        #player-list, #resultList { list-style: none; padding: 0; margin: 0; text-align: left; max-height: 180px; overflow-y: auto; }
+        #player-list, #resultList { list-style: none; padding: 0; margin: 0; text-align: left; max-height: 150px; overflow-y: auto; }
         #player-list li, #resultList li { padding: 8px 0; border-bottom: 1px solid #ddd; font-size: 16px; }
         
         /* 出拳按鈕 */
@@ -74,9 +74,29 @@
         
         /* 倒數計時器 */
         #countdown { font-size: 60px; color: #dc3545; margin: 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+
+        /* ================= Debug 視窗 ================= */
+        #debug-window {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 9999;
+            border-top: 2px solid #555;
+        }
+        #debug-window p { margin: 2px 0; word-wrap: break-word; }
+        .debug-error { color: #ff4444 !important; }
+        .debug-warn { color: #ffbb33 !important; }
+        .debug-info { color: #33b5e5 !important; }
     </style>
     
-    <!-- 引入 Firebase SDK (v9 compat 版本，適合直接寫在 HTML) -->
+    <!-- 引入 Firebase SDK (注意：這裡使用的是 compat 版本) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
@@ -87,10 +107,10 @@
         <div class="panel">
             <h2>✊✌️✋ 包剪揼大合唱</h2>
             <input type="text" id="playerName" placeholder="輸入你的名字 (最多10字)" maxlength="10">
-            <button class="btn-success" onclick="createRoom()">建立房間 (成為房主)</button>
+            <button class="btn-success" id="btnCreateRoom" onclick="createRoom()">建立房間 (成為房主)</button>
             <hr style="margin: 20px 0; border: 1px solid #ddd;">
             <input type="text" id="roomCodeInput" placeholder="輸入4位數字房間號碼" maxlength="4" inputmode="numeric">
-            <button onclick="joinRoom()">加入房間 (成為房客)</button>
+            <button id="btnJoinRoom" onclick="joinRoom()">加入房間 (成為房客)</button>
         </div>
     </div>
 
@@ -119,7 +139,6 @@
             
             <hr style="margin: 15px 0; border: 1px solid #ddd;">
             
-            <!-- 只有房主睇得到 -->
             <div id="hostControls" class="hidden">
                 <h3>房主設定</h3>
                 <label>遊戲模式：</label>
@@ -129,7 +148,7 @@
                     <option value="3">贏三鋪</option>
                     <option value="streak2">連贏兩鋪</option>
                 </select>
-                <button class="btn-danger" onclick="startGame()" style="margin-top: 15px;">🚀 開始遊戲</button>
+                <button class="btn-success" onclick="startGame()" style="margin-top: 15px; background: #dc3545;">🚀 開始遊戲</button>
             </div>
             <p id="waitingMsg" class="hidden" style="color: #007bff; font-weight: bold;">等待房主開始遊戲...</p>
         </div>
@@ -145,7 +164,6 @@
             <h3>請出拳！</h3>
             <div class="rps-buttons">
                 <img src="paper.jpg" onclick="makeChoice('paper')" id="btn-paper" alt="包">
-                <!-- 已修正為 scissors.jpg -->
                 <img src="scissors.jpg" onclick="makeChoice('scissors')" id="btn-scissors" alt="剪">
                 <img src="rock.jpg" onclick="makeChoice('rock')" id="btn-rock" alt="揼">
             </div>
@@ -168,30 +186,69 @@
         <div class="panel">
             <h1 style="margin-top: 0;">🏆 最終勝利者 🏆</h1>
             <h2 id="winnerName" style="color: #d4af37; font-size: 36px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"></h2>
-            <p>正在播放勝利宣言...</p>
             <button onclick="location.reload()" style="margin-top: 20px;">回到首頁</button>
         </div>
     </div>
 
+    <!-- Debug 視窗 -->
+    <div id="debug-window">
+        <p class="debug-info">[系統] 等待初始化...</p>
+    </div>
+
     <script>
         // ==========================================
-        // 1. Firebase 初始化 (⚠️ 請替換成你的設定)
+        // 0. Debug 系統攔截器
+        // ==========================================
+        const debugDiv = document.getElementById('debug-window');
+        function logToScreen(msg, type = 'info') {
+            const p = document.createElement('p');
+            p.className = `debug-${type}`;
+            p.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugDiv.appendChild(p);
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+        }
+        
+        // 攔截 console 與 全域錯誤
+        window.onerror = function(message, source, lineno, colno, error) {
+            logToScreen(`JS 錯誤: ${message} (Line ${lineno})`, 'error');
+        };
+        window.onunhandledrejection = function(event) {
+            logToScreen(`Promise 錯誤: ${event.reason}`, 'error');
+        };
+
+        // ==========================================
+        // 1. Firebase 初始化 (已填入你的專屬設定)
         // ==========================================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBUI5N2IZO_2erP6nNHuWB-Q6T7Mrjl_m0",
+            authDomain: "game-ad81e.firebaseapp.com",
+            databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "game-ad81e",
+            storageBucket: "game-ad81e.firebasestorage.app",
+            messagingSenderId: "524468263754",
+            appId: "1:524468263754:web:6ff2273f778277cf22ffb3",
+            measurementId: "G-GSWSWK4WEL"
         };
-        
-        // 初始化 Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+
+        let db = null;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+            logToScreen("Firebase 初始化成功", 'info');
+            
+            // 測試連線
+            db.ref('.info/connected').on('value', (snap) => {
+                if (snap.val() === true) {
+                    logToScreen("已連線至 Firebase 資料庫", 'info');
+                } else {
+                    logToScreen("正在連線至 Firebase...", 'warn');
+                }
+            });
+        } catch (e) {
+            logToScreen("Firebase 初始化失敗: " + e.message, 'error');
         }
-        const db = firebase.database();
 
         // ==========================================
         // 2. 全局變數
@@ -203,20 +260,24 @@
         let currentGameMode = "1";
         let currentScores = {};
         let currentStreak = {};
-        let roomListener = null; // 用於取消監聽
 
         // ==========================================
         // 3. 第一頁：房間邏輯
         // ==========================================
         function createRoom() {
+            if (!db) return alert("Firebase 未初始化，請檢查 Debug 視窗。");
+            
             myName = document.getElementById('playerName').value.trim();
             if (!myName) return alert("請輸入名字");
             
-            // 生成 4 位數房間號
+            const btn = document.getElementById('btnCreateRoom');
+            btn.innerText = "建立中...";
+            btn.disabled = true;
+            
             roomCode = Math.floor(1000 + Math.random() * 9000).toString();
             isHost = true;
+            logToScreen(`嘗試建立房間: ${roomCode}`);
             
-            // 初始化房間資料
             db.ref('rooms/' + roomCode).set({
                 status: 'waiting',
                 mode: '1',
@@ -225,28 +286,48 @@
                     [myName]: { ready: false, rpsAudio: null, victoryAudio: null } 
                 }
             }).then(() => {
+                logToScreen(`房間 ${roomCode} 建立成功`);
                 enterRoom();
-            }).catch(err => alert("建立房間失敗: " + err.message));
+            }).catch(err => {
+                logToScreen(`建立失敗: ${err.message}`, 'error');
+                alert("建立失敗，請查看下方 Debug 視窗");
+                btn.innerText = "建立房間 (成為房主)";
+                btn.disabled = false;
+            });
         }
 
         function joinRoom() {
+            if (!db) return alert("Firebase 未初始化，請檢查 Debug 視窗。");
+            
             myName = document.getElementById('playerName').value.trim();
             roomCode = document.getElementById('roomCodeInput').value.trim();
             if (!myName || roomCode.length !== 4) return alert("請輸入名字及4位數字房間號碼");
             
+            const btn = document.getElementById('btnJoinRoom');
+            btn.innerText = "加入中...";
+            btn.disabled = true;
+            logToScreen(`嘗試加入房間: ${roomCode}`);
+            
             const roomRef = db.ref('rooms/' + roomCode);
             roomRef.once('value').then(snapshot => {
-                if (!snapshot.exists()) return alert("房間不存在");
+                if (!snapshot.exists()) {
+                    throw new Error("房間不存在");
+                }
                 const data = snapshot.val();
-                if (data.status !== 'waiting') return alert("遊戲已經開始或房間已關閉");
-                if (Object.keys(data.players || {}).length >= 8) return alert("房間已滿 (上限8人)");
+                if (data.status !== 'waiting') throw new Error("遊戲已開始或房間已關閉");
+                if (Object.keys(data.players || {}).length >= 8) throw new Error("房間已滿");
                 
-                // 加入房間
-                roomRef.child('players/' + myName).set({
+                return roomRef.child('players/' + myName).set({
                     ready: false, rpsAudio: null, victoryAudio: null
-                }).then(() => {
-                    enterRoom();
                 });
+            }).then(() => {
+                logToScreen(`成功加入房間 ${roomCode}`);
+                enterRoom();
+            }).catch(err => {
+                logToScreen(`加入失敗: ${err.message}`, 'error');
+                alert("加入失敗: " + err.message);
+                btn.innerText = "加入房間 (成為房客)";
+                btn.disabled = false;
             });
         }
 
@@ -261,20 +342,16 @@
                 document.getElementById('waitingMsg').classList.remove('hidden');
             }
             
-            // 監聽整個房間的資料變化
-            roomListener = db.ref('rooms/' + roomCode).on('value', snapshot => {
+            db.ref('rooms/' + roomCode).on('value', snapshot => {
                 const data = snapshot.val();
-                if (!data) return; // 房間被刪除
+                if (!data) {
+                    logToScreen("房間資料已被清除", 'warn');
+                    return;
+                }
                 
                 playersData = data.players || {};
                 updatePlayerList();
                 
-                // 同步房主的遊戲模式選擇
-                if (isHost === false && data.mode) {
-                    // 房客不需要顯示 select，但可以記錄
-                }
-
-                // 判斷遊戲是否開始
                 if (data.status === 'playing' && !document.getElementById('page3').classList.contains('active')) {
                     currentGameMode = data.mode;
                     currentScores = data.scores || {};
@@ -285,6 +362,7 @@
                     
                     document.getElementById('page2').classList.remove('active');
                     document.getElementById('page3').classList.add('active');
+                    logToScreen("遊戲開始！");
                 }
             });
         }
@@ -308,6 +386,7 @@
         
         async function startRecording(type) {
             if (isRecording) return;
+            logToScreen(`開始錄音 (${type})`);
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -318,17 +397,18 @@
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                 mediaRecorder.onstop = () => {
                     isRecording = false;
-                    // 將音訊轉為 Base64 (為了方便直接存 Firebase Database)
+                    logToScreen(`錄音結束，處理音訊...`);
+                    
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const reader = new FileReader();
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = () => {
                         const base64Audio = reader.result;
                         
-                        // 上傳到 Firebase
-                        db.ref(`rooms/${roomCode}/players/${myName}/${type}Audio`).set(base64Audio);
+                        db.ref(`rooms/${roomCode}/players/${myName}/${type}Audio`).set(base64Audio)
+                          .then(() => logToScreen(`音訊上傳成功 (${type})`))
+                          .catch(e => logToScreen(`音訊上傳失敗: ${e.message}`, 'error'));
                         
-                        // 顯示試聽播放器
                         const audioEl = document.getElementById(type === 'rps' ? 'audioRPS' : 'audioVictory');
                         audioEl.src = base64Audio;
                         audioEl.classList.remove('hidden');
@@ -337,14 +417,12 @@
                     };
                 };
 
-                // 開始錄音
                 mediaRecorder.start();
                 const btn = document.getElementById(type === 'rps' ? 'btnRecordRPS' : 'btnRecordVictory');
                 let timeLeft = 3;
                 btn.innerText = `錄音中... ${timeLeft}s`;
                 btn.disabled = true;
 
-                // 3秒倒數
                 const timer = setInterval(() => {
                     timeLeft--;
                     if (timeLeft > 0) {
@@ -354,21 +432,21 @@
                         mediaRecorder.stop();
                         btn.innerText = "重新錄音";
                         btn.disabled = false;
-                        // 關閉麥克風
                         stream.getTracks().forEach(track => track.stop());
                     }
                 }, 1000);
 
             } catch (err) {
-                alert("無法錄音，請確認瀏覽器已允許麥克風權限！");
-                console.error(err);
+                logToScreen(`錄音失敗: ${err.message}`, 'error');
+                alert("無法錄音，請確認麥克風權限！");
             }
         }
 
         function checkReadyStatus() {
             const p = playersData[myName];
             if (p && p.rpsAudio && p.victoryAudio) {
-                db.ref(`rooms/${roomCode}/players/${myName}/ready`).set(true);
+                db.ref(`rooms/${roomCode}/players/${myName}/ready`).set(true)
+                  .then(() => logToScreen("你已準備就緒"));
             }
         }
 
@@ -378,12 +456,10 @@
         function startGame() {
             const mode = document.getElementById('gameMode').value;
             
-            // 檢查是否所有人都準備好
             for (let p in playersData) {
                 if (!playersData[p].ready) return alert(`玩家 ${p} 尚未準備好！`);
             }
             
-            // 初始化分數與連勝紀錄
             let initScores = {};
             let initStreak = {};
             for (let p in playersData) { 
@@ -396,87 +472,12 @@
                 mode: mode,
                 scores: initScores,
                 streak: initStreak,
-                choices: null // 清空出拳紀錄
-            });
+                choices: null
+            }).then(() => logToScreen("房主已啟動遊戲"));
         }
 
         function getModeText(mode) {
             if (mode === '1') return "一鋪定勝負";
             if (mode === '2') return "贏兩鋪";
             if (mode === '3') return "贏三鋪";
-            if (mode === 'streak2') return "連贏兩鋪";
-        }
-
-        // ==========================================
-        // 6. 第三頁：出拳邏輯
-        // ==========================================
-        function updateScoreBoard() {
-            let str = Object.keys(currentScores).map(p => `${p}: ${currentScores[p]}分`).join(' | ');
-            document.getElementById('scoreBoard').innerText = str;
-        }
-
-        function makeChoice(choice) {
-            // UI 鎖定
-            document.querySelectorAll('.rps-buttons img').forEach(img => img.classList.remove('selected'));
-            document.getElementById('btn-' + choice).classList.add('selected');
-            document.getElementById('statusText').innerText = "等待其他玩家出拳...";
-            
-            // 寫入 Firebase
-            db.ref(`rooms/${roomCode}/choices/${myName}`).set(choice).then(() => {
-                // 檢查是否所有人已出拳
-                db.ref(`rooms/${roomCode}/choices`).once('value', snapshot => {
-                    const choices = snapshot.val();
-                    if (Object.keys(choices).length === Object.keys(playersData).length) {
-                        // 所有人已出拳，房主觸發計算
-                        if (isHost) {
-                            db.ref(`rooms/${roomCode}/status`).set('calculating');
-                        }
-                    }
-                });
-            });
-        }
-
-        // 監聽遊戲狀態變化 (所有手機都會監聽並各自運算)
-        db.ref('rooms/').on('child_changed', snapshot => {
-            const room = snapshot.val();
-            if (!room || room.status === undefined) return;
-            
-            // 只處理自己房間的變化
-            if (snapshot.key !== roomCode) return;
-
-            if (room.status === 'calculating') {
-                calculateResults(room);
-            } else if (room.status === 'playing' && document.getElementById('page4').classList.contains('active')) {
-                // 結算完畢，回到第三頁進行下一輪
-                document.getElementById('page4').classList.remove('active');
-                document.getElementById('page3').classList.add('active');
-                document.getElementById('statusText').innerText = "";
-                document.querySelectorAll('.rps-buttons img').forEach(img => img.classList.remove('selected'));
-                
-                currentScores = room.scores;
-                updateScoreBoard();
-            }
-        });
-
-        // ==========================================
-        // 7. 第四頁：結算與大合唱
-        // ==========================================
-        function calculateResults(room) {
-            const choices = room.choices;
-            const players = Object.keys(choices);
-            // 包剪揼相剋表
-            const rpsBeats = { 'rock': 'scissors', 'scissors': 'paper', 'paper': 'rock' };
-            
-            // 【大合唱】所有音訊疊加同時播放
-            players.forEach(p => {
-                if (room.players[p].rpsAudio) {
-                    const audio = new Audio(room.players[p].rpsAudio);
-                    audio.volume = 0.8;
-                    audio.play().catch(e => console.log("音訊播放被瀏覽器阻擋", e));
-                }
-            });
-
-            // 判斷勝負 (各自手機本地運算)
-            let roundWinners = [];
-            let roundLosers = [];
-            let uniqueChoices = [...new Set(playe
+           
