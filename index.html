@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>包剪揼多人同步 v2.7</title>
+<title>包剪揼多人同步 v2.9｜互傳音訊大合唱</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -15,7 +15,6 @@ button{padding:12px 16px;margin:6px;font-size:16px;border-radius:8px;border:none
 button:disabled{background:#ccc;}
 input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;border:1px solid #aaa}
 #eventLogBox{width:100%;min-height:140px;background:#fff;padding:10px;border-radius:8px;white-space:pre-wrap;overflow-y:auto;margin-bottom:12px}
-/* Debug 可摺 */
 #debugWrap{position:fixed;left:0;right:0;bottom:0;background:#222;color:#3f3;font-size:11px;max-height:32px;overflow:hidden;z-index:99;}
 #debugWrap.expand{max-height:140px;}
 #debugBar{padding:2px 6px;background:#333;cursor:pointer}
@@ -23,10 +22,11 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 .versionTag{position:fixed;top:8px;right:8px;background:#444;color:#fff;padding:4px 8px;border-radius:6px;z-index:100;}
 .rec-indicator{margin:8px 0}
 .countdown-text{font-size:26px;font-weight:bold;color:red;margin:4px 0;}
+.fistBtn{width:30%;font-size:22px;padding:20px 0;margin:8px}
 </style>
 </head>
 <body>
-<div class="versionTag">v2.7</div>
+<div class="versionTag">v2.9</div>
 
 <!-- Page1 -->
 <div id="page1" class="page active">
@@ -64,10 +64,15 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 </div>
 </div>
 
-<!-- Page3 第三頁：等待出拳、大合唱 -->
+<!-- Page3 第三頁：選擇出拳 -->
 <div id="page3" class="page">
-<h2>第三頁：本輪出拳階段，等待全部選手出拳完畢</h2>
-<div id="p3Log"></div>
+<h2>第三頁：請選擇本輪出拳</h2>
+<div style="display:flex;justify-content:space-around;flex-wrap:wrap;">
+<button class="fistBtn" data-fist="rock">石</button>
+<button class="fistBtn" data-fist="scissors">剪</button>
+<button class="fistBtn" data-fist="paper">包</button>
+</div>
+<div id="p3Tip" style="margin-top:20px">等待全部選手提交出拳...</div>
 </div>
 
 <!-- Page4 第四頁：結果、排行榜、5秒倒數 -->
@@ -94,12 +99,15 @@ const log = (txt)=>{
   debugDiv.innerText += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 };
-log("✅ v2.7 腳本載入");
+log("✅ v2.9 啟動：支援全房互傳音訊");
 
 let fbDb, roomRef, playersRef, roomEventsRef;
 let myName = "";
 let currentRoomId = "";
 let roomGlobalListener = null;
+
+// ======== 全域緩存：全部玩家嘅音訊 ========
+let allPlayersAudio = {}; // {playername:{b641, b642, audio1, audio2}}
 
 // 錄音全域狀態
 let mediaRec1 = null, mediaRec2 = null;
@@ -107,6 +115,19 @@ let stream1 = null, stream2 = null;
 let chunks1=[],chunks2=[];
 let audioBlob1 = null, audioBlob2 = null;
 let audioUrl1=null, audioUrl2=null;
+
+// blob 轉 base64
+function blobToBase64(blob){
+  return new Promise(resolve=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.readAsDataURL(blob);
+  })
+}
+// base64 還原 Audio
+function b64ToAudio(b64){
+  return new Audio(b64);
+}
 
 const setPage = (id)=>{
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
@@ -143,31 +164,57 @@ const renderRoomEvents = (snap)=>{
   arr.forEach(e=> box.innerText += e.msg + "\n");
 };
 
-// 監聽全房間狀態：判斷是否所有人ready + 已揀規則，就進入第三頁
+// 監聽玩家清單，同步所有人嘅錄音base64
+function watchAllPlayersAudio(){
+  playersRef.on("value", snap=>{
+    if(!snap.exists()) return;
+    const players = snap.val();
+    for(const pName in players){
+      const pd = players[pName];
+      if(!allPlayersAudio[pName]) allPlayersAudio[pName] = {};
+      // 更新第一段
+      if(pd.b64_1 && allPlayersAudio[pName].b64_1 !== pd.b64_1){
+        allPlayersAudio[pName].b64_1 = pd.b64_1;
+        allPlayersAudio[pName].audio1 = b64ToAudio(pd.b64_1);
+        log(`✅ 獲取${pName} 包剪揼音訊`);
+      }
+      // 更新第二段
+      if(pd.b64_2 && allPlayersAudio[pName].b64_2 !== pd.b64_2){
+        allPlayersAudio[pName].b64_2 = pd.b64_2;
+        allPlayersAudio[pName].audio2 = b64ToAudio(pd.b64_2);
+        log(`✅ 獲取${pName} 勝利宣言音訊`);
+      }
+    }
+    log(`本機已緩存玩家音訊清單：${Object.keys(allPlayersAudio).join(",")}`);
+  })
+}
+
+// 監聽全房間狀態
 function startRoomGlobalWatch(){
   if(roomGlobalListener) return;
+  watchAllPlayersAudio();
   roomGlobalListener = roomRef.on("value", async snap=>{
     if(!snap.exists()) return;
     const roomData = snap.val();
     const playersRaw = roomData.players||{};
     const gameRule = roomData.gameRule;
+    const phase = roomData.gamePhase || "idle";
     const playerList = Object.values(playersRaw);
     if(playerList.length === 0) return;
 
-    // 檢查全部玩家 ready = true
     const allReady = playerList.every(p=> p.ready === true);
-    log(`偵測：玩家數${playerList.length},全部ready=${allReady},已選規則=${!!gameRule}`);
+    const allThrow = playerList.every(p=> p.fist);
+    log(`偵測：玩家數${playerList.length},全部ready=${allReady},已選規則=${!!gameRule},全部已出拳=${allThrow}`);
 
-    if(allReady && !!gameRule){
-      // 廣播開始遊戲指揮標記，所有客戶端同步跳 page3
+    if(allReady && !!gameRule && phase === "idle"){
       await roomRef.child("gamePhase").set("roundStart");
     }
-
-    // 跟據指揮階段跳轉對應頁面
-    const phase = roomData.gamePhase;
-    if(phase === "roundStart"){
-      setPage("page3");
+    if(allThrow && phase === "roundStart"){
+      await roomRef.child("gamePhase").set("roundEnd");
     }
+
+    if(phase === "roundStart") setPage("page3");
+    if(phase === "roundEnd") setPage("page4");
   })
 }
 
@@ -185,7 +232,7 @@ document.querySelector("#btnCreateRoom").onclick = async ()=>{
     playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
     roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
 
-    await roomRef.child("host").set(myName);
+    await roomRef.set({host:myName, gamePhase:"idle"});
     await playersRef.child(myName).set({name:myName, ready:false});
     await pushRoomEvent(`${myName} 進入房間`);
 
@@ -238,7 +285,7 @@ document.querySelector("#btnJoinRoom").onclick = async ()=>{
   }
 };
 
-// -----錄音：強制3秒錄製、倒數、試聽、重錄
+// -----錄音：3秒錄製、倒數、試聽、重錄，錄好上傳base64
 async function doRecord(idx){
   const btnStart = idx===1 ? document.querySelector("#rec1Start") : document.querySelector("#rec2Start");
   const btnPlay = idx===1 ? document.querySelector("#play1") : document.querySelector("#play2");
@@ -268,19 +315,22 @@ async function doRecord(idx){
   cdDom.innerText="";
 
   await new Promise(res=>{
-    rec.onstop = ()=>{
+    rec.onstop = async ()=>{
       const blob = new Blob(chk, {type:"audio/webm"});
       const url = URL.createObjectURL(blob);
+      const b64 = await blobToBase64(blob);
       if(idx===1){
         audioBlob1 = blob;
         audioUrl1 = url;
+        await playersRef.child(myName).update({b64_1:b64});
       }else{
         audioBlob2 = blob;
         audioUrl2 = url;
+        await playersRef.child(myName).update({b64_2:b64});
       }
       statusDom.innerText = idx===1 ? "第一段包剪揼：✅已錄畢" : "第二段勝利宣言：✅已錄畢";
       btnPlay.disabled = false;
-      log(`第${idx}段錄製完畢，可以試聽`);
+      log(`第${idx}段錄製完畢，已上傳base64到firebase`);
       res();
     }
   })
@@ -316,7 +366,29 @@ document.querySelectorAll("[data-rule]").forEach(btn=>{
   }
 })
 
-log("v2.7 JS全部載入完畢，等待玩家開房");
+// =========第三頁出拳按鈕事件========
+document.querySelectorAll(".fistBtn").forEach(btn=>{
+  btn.onclick = async ()=>{
+    const fist = btn.dataset.fist;
+    log(`本輪出拳:${fist}`);
+    await playersRef.child(myName).update({fist});
+    document.querySelectorAll(".fistBtn").forEach(b=>b.disabled=true);
+  }
+})
+
+// 公用：播放全部未淘汰玩家嘅包剪揼大合唱（後續第四頁調用）
+function playAllChorus(aliveNames){
+  aliveNames.forEach(n=>{
+    const pl = allPlayersAudio[n];
+    if(pl && pl.audio1){
+      pl.audio1.currentTime = 0;
+      pl.audio1.play().catch(e=>log(`播放${n}音訊失敗:${e.message}`));
+    }
+  })
+  log(`🎵 大合唱觸發，播放${aliveNames.length}位選手聲音`);
+}
+
+log("v2.9 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
