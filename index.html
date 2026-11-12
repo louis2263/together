@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>包剪揼多人同步 v3.1｜邏輯與相容性修復</title>
+<title>包剪揼多人同步 v3.2｜完整修復版</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -27,7 +28,7 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 </style>
 </head>
 <body>
-<div class="versionTag">v3.1</div>
+<div class="versionTag">v3.2</div>
 
 <!-- Page1 -->
 <div id="page1" class="page active">
@@ -106,7 +107,7 @@ const log = (txt)=>{
   debugDiv.innerText += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 };
-log("✅ v3.1 啟動｜修復Firebase連線、頁面狀態鎖、勝負判定");
+log("✅ v3.2 啟動｜修復房主跳頁競態鎖、勝負判定及音訊同步");
 
 let fbDb, roomRef, playersRef, roomEventsRef;
 let myName = "";
@@ -115,6 +116,8 @@ let currentRoomId = "";
 let currentPage = "page1";
 let roomGlobalListener = null;
 let countDownTimer = null;
+let isStartingRound = false; // 防止重複觸發開局與舊狀態蓋過
+let hasAnnouncedReady = false; // 防止重錄音時重複洗版提示
 
 // 全部玩家緩存音訊
 let allPlayersAudio = {};
@@ -161,7 +164,7 @@ function blobToBase64(blob){
   });
 }
 
-// ========== Firebase Init (修正半形減號) ==========
+// ========== Firebase Init ==========
 try{
   const cfg = {
     apiKey: "在此填入你的apiKey",
@@ -276,9 +279,11 @@ function startRoomGlobalWatch(){
     const allThrow = playerList.every(p => !!p.fist);
 
     // 1. 大廳階段 -> 全部人準備好且至少2人 + 已選規則 -> 開始出拳
-    if(isHost && allReady && !!gameRule && phase === "idle"){
+    if(isHost && allReady && !!gameRule && phase === "idle" && !isStartingRound){
+      isStartingRound = true;
       log("🚀 條件達成，房主啟動第一輪！");
       await roomRef.update({ gamePhase: "roundStart", roundNum: 1 });
+      return; // 等待正式的 roundStart snapshot 再切換頁面，避免被舊狀態蓋過
     }
 
     // 2. 出拳階段 -> 全部人出拳 -> 房主負責結算分數
@@ -319,10 +324,11 @@ function startRoomGlobalWatch(){
     }
 
     // 3. 頁面與音效同步反應
-    if(phase === "idle"){
+    if(phase === "idle" && !isStartingRound){
       setPage("page2");
     }
     else if(phase === "roundStart"){
+      isStartingRound = false;
       document.querySelector("#roundNumShow").innerText = roundNum;
       if(currentPage !== "page3"){
         setPage("page3");
@@ -397,6 +403,7 @@ function renderPage4(roomData) {
 // 房主點擊返回大廳
 document.querySelector("#btnBackLobby").onclick = async ()=>{
   if(!isHost) return;
+  isStartingRound = false;
   const snap = await playersRef.once("value");
   const players = snap.val() || {};
   const updates = {
@@ -467,7 +474,7 @@ document.querySelector("#btnJoinRoom").onclick = async ()=>{
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
     setPage("page2");
   }catch(ex){
-    log("❌ 加入房間異常：" + ex.message);
+    log("❌ 加入房間異常："+ex.message);
   }
 };
 
@@ -523,7 +530,10 @@ async function doRecord(idx){
     btnStart.disabled = false;
     if(audioBlob1 && audioBlob2){
       await playersRef.child(myName).update({ ready: true });
-      await pushRoomEvent(`✅ ${myName} 已完成錄音準備！`);
+      if(!hasAnnouncedReady){
+        hasAnnouncedReady = true;
+        await pushRoomEvent(`✅ ${myName} 已完成錄音準備！`);
+      }
     }
   } catch (err) {
     log("❌ 錄音失敗(請確認麥克風權限/HTTPS):" + err.message);
@@ -569,16 +579,4 @@ document.querySelectorAll(".fistBtn").forEach(btn=>{
 function playChorus(targetNames, type){
   let count = 0;
   targetNames.forEach(n=>{
-    const pl = allPlayersAudio[n];
-    const audioObj = type === 1 ? pl?.audio1 : pl?.audio2;
-    if(audioObj){
-      audioObj.currentTime = 0;
-      audioObj.play().catch(e=>log(`⚠️ 播放[${n}]音訊被瀏覽器阻擋:${e.message}`));
-      count++;
-    }
-  });
-  log(`🎵 播放語音(${type===1?'口號':'勝利宣言'})：共 ${count} 人`);
-}
-</script>
-</body>
-</html>
+    const pl = allPlayersAudio
