@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>包剪揼多人同步 v2.6</title>
+<title>包剪揼多人同步 v2.7</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -15,7 +15,7 @@ button{padding:12px 16px;margin:6px;font-size:16px;border-radius:8px;border:none
 button:disabled{background:#ccc;}
 input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;border:1px solid #aaa}
 #eventLogBox{width:100%;min-height:140px;background:#fff;padding:10px;border-radius:8px;white-space:pre-wrap;overflow-y:auto;margin-bottom:12px}
-/* Debug 改細、可摺，唔阻畫面 */
+/* Debug 可摺 */
 #debugWrap{position:fixed;left:0;right:0;bottom:0;background:#222;color:#3f3;font-size:11px;max-height:32px;overflow:hidden;z-index:99;}
 #debugWrap.expand{max-height:140px;}
 #debugBar{padding:2px 6px;background:#333;cursor:pointer}
@@ -26,7 +26,7 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 </style>
 </head>
 <body>
-<div class="versionTag">v2.6</div>
+<div class="versionTag">v2.7</div>
 
 <!-- Page1 -->
 <div id="page1" class="page active">
@@ -64,7 +64,20 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 </div>
 </div>
 
-<!-- 改良Debug：可摺，唔阻下面操作 -->
+<!-- Page3 第三頁：等待出拳、大合唱 -->
+<div id="page3" class="page">
+<h2>第三頁：本輪出拳階段，等待全部選手出拳完畢</h2>
+<div id="p3Log"></div>
+</div>
+
+<!-- Page4 第四頁：結果、排行榜、5秒倒數 -->
+<div id="page4" class="page">
+<h2>第四頁：本輪戰果</h2>
+<div id="rankView"></div>
+<div id="roundCountDown" style="font-size:40px;color:red;text-align:center;margin:20px 0"></div>
+</div>
+
+<!-- Debug -->
 <div id="debugWrap">
 <div id="debugBar">Debug (點擊展開/收摺)</div>
 <div id="debugWindow"></div>
@@ -81,11 +94,12 @@ const log = (txt)=>{
   debugDiv.innerText += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 };
-log("✅ v2.6 腳本開始執行");
+log("✅ v2.7 腳本載入");
 
 let fbDb, roomRef, playersRef, roomEventsRef;
 let myName = "";
 let currentRoomId = "";
+let roomGlobalListener = null;
 
 // 錄音全域狀態
 let mediaRec1 = null, mediaRec2 = null;
@@ -97,6 +111,7 @@ let audioUrl1=null, audioUrl2=null;
 const setPage = (id)=>{
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  log(`切換頁面 → ${id}`);
 };
 
 // ========== Firebase Init ==========
@@ -128,6 +143,34 @@ const renderRoomEvents = (snap)=>{
   arr.forEach(e=> box.innerText += e.msg + "\n");
 };
 
+// 監聽全房間狀態：判斷是否所有人ready + 已揀規則，就進入第三頁
+function startRoomGlobalWatch(){
+  if(roomGlobalListener) return;
+  roomGlobalListener = roomRef.on("value", async snap=>{
+    if(!snap.exists()) return;
+    const roomData = snap.val();
+    const playersRaw = roomData.players||{};
+    const gameRule = roomData.gameRule;
+    const playerList = Object.values(playersRaw);
+    if(playerList.length === 0) return;
+
+    // 檢查全部玩家 ready = true
+    const allReady = playerList.every(p=> p.ready === true);
+    log(`偵測：玩家數${playerList.length},全部ready=${allReady},已選規則=${!!gameRule}`);
+
+    if(allReady && !!gameRule){
+      // 廣播開始遊戲指揮標記，所有客戶端同步跳 page3
+      await roomRef.child("gamePhase").set("roundStart");
+    }
+
+    // 跟據指揮階段跳轉對應頁面
+    const phase = roomData.gamePhase;
+    if(phase === "roundStart"){
+      setPage("page3");
+    }
+  })
+}
+
 // 建立房間
 document.querySelector("#btnCreateRoom").onclick = async ()=>{
   try{
@@ -147,6 +190,7 @@ document.querySelector("#btnCreateRoom").onclick = async ()=>{
     await pushRoomEvent(`${myName} 進入房間`);
 
     roomEventsRef.on("value", renderRoomEvents);
+    startRoomGlobalWatch();
 
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
     log("➡ 切換 page2");
@@ -156,7 +200,7 @@ document.querySelector("#btnCreateRoom").onclick = async ()=>{
   }
 };
 
-// 加入房間，校驗：房間是否存在、防止同名
+// 加入房間
 document.querySelector("#btnJoinRoom").onclick = async ()=>{
   try{
     log("房客點擊進入房間");
@@ -184,6 +228,7 @@ document.querySelector("#btnJoinRoom").onclick = async ()=>{
     await pushRoomEvent(`${myName} 進入房間`);
 
     roomEventsRef.on("value", renderRoomEvents);
+    startRoomGlobalWatch();
 
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
     log("➡ 房客切換 page2");
@@ -212,7 +257,6 @@ async function doRecord(idx){
   rec.start();
   log(`開始錄第${idx}段，倒數3秒`);
 
-  // 3秒倒數計時
   for(let i=2;i>=1;i--){
     await new Promise(r=>setTimeout(r,1000));
     cdDom.innerText = String(i);
@@ -243,7 +287,6 @@ async function doRecord(idx){
 
   btnStart.disabled = false;
 
-  // 如果兩段都錄好 → 標記玩家已準備，發送同步事件
   if(audioBlob1 && audioBlob2){
     await playersRef.child(`${myName}`).update({ready:true});
     await pushRoomEvent(`${myName} 已準備`);
@@ -251,7 +294,6 @@ async function doRecord(idx){
   }
 }
 
-// 試聽
 function playAudio(url){
   if(!url) return;
   const au = new Audio(url);
@@ -274,7 +316,7 @@ document.querySelectorAll("[data-rule]").forEach(btn=>{
   }
 })
 
-log("v2.6 JS全部載入完畢，等待玩家開房");
+log("v2.7 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
