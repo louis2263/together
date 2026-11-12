@@ -3,22 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>包剪揼多人同步 v2.9｜互傳音訊大合唱</title>
+<title>包剪揼多人同步 v3.0｜修復空白頁、debug消失</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *{box-sizing:border-box;font-family:system-ui}
-body{margin:0;padding:12px;background:#ffe666;font-size:17px;padding-bottom:42px;}
-.page{display:none}
-.page.active{display:block}
+body{margin:0;padding:12px;background:#ffe666;font-size:17px;padding-bottom:160px;}
+.page{display:none;}
+.page.active{display:block !important;}
 button{padding:12px 16px;margin:6px;font-size:16px;border-radius:8px;border:none;background:#fff}
 button:disabled{background:#ccc;}
 input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;border:1px solid #aaa}
 #eventLogBox{width:100%;min-height:140px;background:#fff;padding:10px;border-radius:8px;white-space:pre-wrap;overflow-y:auto;margin-bottom:12px}
-#debugWrap{position:fixed;left:0;right:0;bottom:0;background:#222;color:#3f3;font-size:11px;max-height:32px;overflow:hidden;z-index:99;}
-#debugWrap.expand{max-height:140px;}
-#debugBar{padding:2px 6px;background:#333;cursor:pointer}
-#debugWindow{padding:4px 6px;overflow-y:auto;max-height:108px}
+/* 重寫Debug，徹底解決消失問題，固定底部，常開 */
+#debugWrap{position:fixed;left:0;right:0;bottom:0;height:140px;background:#111;color:#4f4;font-size:11px;z-index:999;}
+#debugWindow{width:100%;height:100%;padding:6px;overflow-y:auto;}
 .versionTag{position:fixed;top:8px;right:8px;background:#444;color:#fff;padding:4px 8px;border-radius:6px;z-index:100;}
 .rec-indicator{margin:8px 0}
 .countdown-text{font-size:26px;font-weight:bold;color:red;margin:4px 0;}
@@ -26,7 +25,7 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 </style>
 </head>
 <body>
-<div class="versionTag">v2.9</div>
+<div class="versionTag">v3.0</div>
 
 <!-- Page1 -->
 <div id="page1" class="page active">
@@ -82,41 +81,50 @@ input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;bord
 <div id="roundCountDown" style="font-size:40px;color:red;text-align:center;margin:20px 0"></div>
 </div>
 
-<!-- Debug -->
+<!-- Debug 永久常開，唔會再消失 -->
 <div id="debugWrap">
-<div id="debugBar">Debug (點擊展開/收摺)</div>
 <div id="debugWindow"></div>
 </div>
 
 <script>
-const debugWrap = document.querySelector("#debugWrap");
-const debugBar = document.querySelector("#debugBar");
 const debugDiv = document.querySelector("#debugWindow");
-debugBar.onclick = ()=> debugWrap.classList.toggle("expand");
 
 const log = (txt)=>{
-  const t = new Date().toLocaleString("zh-HK");
+  const t = new Date().toLocaleString("zh‑HK");
   debugDiv.innerText += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 };
-log("✅ v2.9 啟動：支援全房互傳音訊");
+log("✅ v3.0 啟動｜修復Debug消失、第三頁空白");
 
 let fbDb, roomRef, playersRef, roomEventsRef;
 let myName = "";
 let currentRoomId = "";
 let roomGlobalListener = null;
 
-// ======== 全域緩存：全部玩家嘅音訊 ========
-let allPlayersAudio = {}; // {playername:{b641, b642, audio1, audio2}}
+// 全部玩家緩存音訊
+let allPlayersAudio = {};
 
-// 錄音全域狀態
 let mediaRec1 = null, mediaRec2 = null;
 let stream1 = null, stream2 = null;
 let chunks1=[],chunks2=[];
 let audioBlob1 = null, audioBlob2 = null;
 let audioUrl1=null, audioUrl2=null;
 
-// blob 轉 base64
+function setPage(pageId){
+  log(`👉 切換頁面 ${pageId}`);
+  document.querySelectorAll(".page").forEach(p=>{
+    p.classList.remove("active");
+  })
+  const target = document.getElementById(pageId);
+  target.classList.add("active");
+
+  // 切去第三頁重置出拳按鈕
+  if(pageId === "page3"){
+    document.querySelectorAll(".fistBtn").forEach(b=> b.disabled = false);
+  }
+}
+
+// blob <-> base64
 function blobToBase64(blob){
   return new Promise(resolve=>{
     const r = new FileReader();
@@ -124,30 +132,23 @@ function blobToBase64(blob){
     r.readAsDataURL(blob);
   })
 }
-// base64 還原 Audio
 function b64ToAudio(b64){
   return new Audio(b64);
 }
 
-const setPage = (id)=>{
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  log(`切換頁面 → ${id}`);
-};
-
 // ========== Firebase Init ==========
 try{
-  log("Step0：準備初始化 Firebase");
+  log("Step0 初始化Firebase");
   const cfg = {
     apiKey:"在此填入你的apiKey",
-    authDomain:"game-ad81e.firebaseapp.com",
-    databaseURL:"https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId:"game-ad81e",
-    storageBucket:"game-ad81e.appspot.com"
+    authDomain:"game‑ad81e.firebaseapp.com",
+    databaseURL:"https://game‑ad81e‑default‑rtdb.asia‑southeast1.firebasedatabase.app",
+    projectId:"game‑ad81e",
+    storageBucket:"game‑ad81e.appspot.com"
   };
   const app = firebase.initializeApp(cfg);
   fbDb = firebase.database(app);
-  log("✅ Step1 Firebase 初始化成功");
+  log("✅ Firebase OK");
 }catch(err){
   log("❌ Firebase初始化錯誤:" + err.message);
 }
@@ -164,7 +165,7 @@ const renderRoomEvents = (snap)=>{
   arr.forEach(e=> box.innerText += e.msg + "\n");
 };
 
-// 監聽玩家清單，同步所有人嘅錄音base64
+// 監聽全部玩家音訊同步
 function watchAllPlayersAudio(){
   playersRef.on("value", snap=>{
     if(!snap.exists()) return;
@@ -172,24 +173,21 @@ function watchAllPlayersAudio(){
     for(const pName in players){
       const pd = players[pName];
       if(!allPlayersAudio[pName]) allPlayersAudio[pName] = {};
-      // 更新第一段
       if(pd.b64_1 && allPlayersAudio[pName].b64_1 !== pd.b64_1){
         allPlayersAudio[pName].b64_1 = pd.b64_1;
         allPlayersAudio[pName].audio1 = b64ToAudio(pd.b64_1);
-        log(`✅ 獲取${pName} 包剪揼音訊`);
+        log(`📥 取得 ${pName} 包剪揼音訊`);
       }
-      // 更新第二段
       if(pd.b64_2 && allPlayersAudio[pName].b64_2 !== pd.b64_2){
         allPlayersAudio[pName].b64_2 = pd.b64_2;
         allPlayersAudio[pName].audio2 = b64ToAudio(pd.b64_2);
-        log(`✅ 獲取${pName} 勝利宣言音訊`);
+        log(`📥 取得 ${pName} 勝利宣言`);
       }
     }
-    log(`本機已緩存玩家音訊清單：${Object.keys(allPlayersAudio).join(",")}`);
   })
 }
 
-// 監聽全房間狀態
+// 全房狀態監聽，控制頁面自動跳轉
 function startRoomGlobalWatch(){
   if(roomGlobalListener) return;
   watchAllPlayersAudio();
@@ -204,7 +202,7 @@ function startRoomGlobalWatch(){
 
     const allReady = playerList.every(p=> p.ready === true);
     const allThrow = playerList.every(p=> p.fist);
-    log(`偵測：玩家數${playerList.length},全部ready=${allReady},已選規則=${!!gameRule},全部已出拳=${allThrow}`);
+    log(`狀態：玩家${playerList.length}｜全部準備=${allReady}｜已選規則=${!!gameRule}｜全部出拳=${allThrow}｜階段=${phase}`);
 
     if(allReady && !!gameRule && phase === "idle"){
       await roomRef.child("gamePhase").set("roundStart");
@@ -221,12 +219,11 @@ function startRoomGlobalWatch(){
 // 建立房間
 document.querySelector("#btnCreateRoom").onclick = async ()=>{
   try{
-    log("Step4 房主點擊開啟房間");
+    log("房主建立房間");
     myName = document.querySelector("#playerNameInput").value.trim();
     if(!myName){alert("請輸入姓名");return;}
-
     currentRoomId = String(Math.floor(1000 + Math.random()*9000));
-    log(`Step5 生成房號=${currentRoomId}`);
+    log(`生成房號：${currentRoomId}`);
 
     roomRef = fbDb.ref(`rooms/${currentRoomId}`);
     playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
@@ -238,9 +235,7 @@ document.querySelector("#btnCreateRoom").onclick = async ()=>{
 
     roomEventsRef.on("value", renderRoomEvents);
     startRoomGlobalWatch();
-
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
-    log("➡ 切換 page2");
     setPage("page2");
   }catch(ex){
     log("❌ 建立房間異常：" + ex.message);
@@ -250,42 +245,30 @@ document.querySelector("#btnCreateRoom").onclick = async ()=>{
 // 加入房間
 document.querySelector("#btnJoinRoom").onclick = async ()=>{
   try{
-    log("房客點擊進入房間");
+    log("房客嘗試加入");
     myName = document.querySelector("#playerNameInput").value.trim();
     currentRoomId = document.querySelector("#roomIdJoinInput").value.trim();
-    if(!myName || currentRoomId.length!==4){alert("請填寫姓名及4位房號");return;}
+    if(!myName || currentRoomId.length!==4){alert("填姓名同4位房號");return;}
 
     roomRef = fbDb.ref(`rooms/${currentRoomId}`);
     playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
     roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
 
     const roomSnap = await roomRef.once("value");
-    if(!roomSnap.exists()){
-      alert("該房間不存在！");
-      log("❌ 輸入咗不存在嘅房號");
-      return;
-    }
-    const playerSnap = await playersRef.once("value");
-    if(playerSnap.exists() && playerSnap.val()[myName]){
-      alert("呢個名字已經有人喺房間入面！請換名");
-      return;
-    }
-
+    if(!roomSnap.exists()){alert("房間不存在");return;}
     await playersRef.child(myName).set({name:myName, ready:false});
     await pushRoomEvent(`${myName} 進入房間`);
 
     roomEventsRef.on("value", renderRoomEvents);
     startRoomGlobalWatch();
-
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
-    log("➡ 房客切換 page2");
     setPage("page2");
   }catch(ex){
     log("❌ 加入房間異常："+ex.message);
   }
 };
 
-// -----錄音：3秒錄製、倒數、試聽、重錄，錄好上傳base64
+// 錄音上傳base64
 async function doRecord(idx){
   const btnStart = idx===1 ? document.querySelector("#rec1Start") : document.querySelector("#rec2Start");
   const btnPlay = idx===1 ? document.querySelector("#play1") : document.querySelector("#play2");
@@ -300,16 +283,10 @@ async function doRecord(idx){
   let rec = new MediaRecorder(stream);
   let chk=[];
   rec.ondataavailable = e=>chk.push(e.data);
-
   rec.start();
-  log(`開始錄第${idx}段，倒數3秒`);
 
-  for(let i=2;i>=1;i--){
-    await new Promise(r=>setTimeout(r,1000));
-    cdDom.innerText = String(i);
-  }
+  for(let i=2;i>=1;i--){await new Promise(r=>setTimeout(r,1000)); cdDom.innerText=i;}
   await new Promise(r=>setTimeout(r,1000));
-
   rec.stop();
   stream.getTracks().forEach(t=>t.stop());
   cdDom.innerText="";
@@ -320,63 +297,52 @@ async function doRecord(idx){
       const url = URL.createObjectURL(blob);
       const b64 = await blobToBase64(blob);
       if(idx===1){
-        audioBlob1 = blob;
-        audioUrl1 = url;
+        audioBlob1 = blob; audioUrl1 = url;
         await playersRef.child(myName).update({b64_1:b64});
       }else{
-        audioBlob2 = blob;
-        audioUrl2 = url;
+        audioBlob2 = blob; audioUrl2 = url;
         await playersRef.child(myName).update({b64_2:b64});
       }
       statusDom.innerText = idx===1 ? "第一段包剪揼：✅已錄畢" : "第二段勝利宣言：✅已錄畢";
       btnPlay.disabled = false;
-      log(`第${idx}段錄製完畢，已上傳base64到firebase`);
       res();
     }
   })
-
   btnStart.disabled = false;
-
   if(audioBlob1 && audioBlob2){
     await playersRef.child(`${myName}`).update({ready:true});
     await pushRoomEvent(`${myName} 已準備`);
-    log(myName + "標記已準備");
   }
 }
 
-function playAudio(url){
-  if(!url) return;
-  const au = new Audio(url);
-  au.play();
-}
-
+function playAudio(url){if(!url)return; new Audio(url).play();}
 document.querySelector("#rec1Start").onclick = ()=> doRecord(1);
 document.querySelector("#rec2Start").onclick = ()=> doRecord(2);
 document.querySelector("#play1").onclick = ()=> playAudio(audioUrl1);
 document.querySelector("#play2").onclick = ()=> playAudio(audioUrl2);
 
-// 設定遊戲規則
+// 房主揀規則
 document.querySelectorAll("[data-rule]").forEach(btn=>{
   btn.onclick = async ()=>{
     try{
       const rule = btn.dataset.rule;
       await roomRef.child("gameRule").set(rule);
-      log("房主設定規則:"+rule);
+      log(`✅ 設定規則：${rule}`);
     }catch(e){log("設定規則錯誤:"+e.message)}
   }
 })
 
-// =========第三頁出拳按鈕事件========
+// 第三頁出拳
 document.querySelectorAll(".fistBtn").forEach(btn=>{
   btn.onclick = async ()=>{
     const fist = btn.dataset.fist;
-    log(`本輪出拳:${fist}`);
+    log(`✊ 本輪出拳:${fist}`);
     await playersRef.child(myName).update({fist});
     document.querySelectorAll(".fistBtn").forEach(b=>b.disabled=true);
   }
 })
 
-// 公用：播放全部未淘汰玩家嘅包剪揼大合唱（後續第四頁調用）
+// 大合唱播放預留函數
 function playAllChorus(aliveNames){
   aliveNames.forEach(n=>{
     const pl = allPlayersAudio[n];
@@ -385,10 +351,10 @@ function playAllChorus(aliveNames){
       pl.audio1.play().catch(e=>log(`播放${n}音訊失敗:${e.message}`));
     }
   })
-  log(`🎵 大合唱觸發，播放${aliveNames.length}位選手聲音`);
+  log(`🎵 大合唱：${aliveNames.length}人`);
 }
 
-log("v2.9 JS全部載入完畢，等待玩家開房");
+log("v3.0 全部腳本載入完成，可以開始測試");
 </script>
 </body>
 </html>
