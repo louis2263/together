@@ -1,423 +1,262 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>包剪揼多人同步 v2.5</title>
-<!-- Firebase 9 (Compat Mode) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<!-- Tailwind CSS 增強美觀度 -->
-<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .recording-pulse {
-    animation: pulse-red 1.5s infinite;
-  }
-  @keyframes pulse-red {
-    0%, 100% { background-color: #ef4444; }
-    50% { background-color: #991b1b; }
-  }
+*{box-sizing:border-box;font-family:system-ui}
+body{margin:0;padding:12px;background:#ffe666;font-size:17px}
+.page{display:none}
+.page.active{display:block}
+button{padding:12px 16px;margin:6px;font-size:16px;border-radius:8px;border:none;background:#fff}
+input{padding:11px;width:100%;margin:6px 0;font-size:17px;border-radius:6px;border:1px solid #aaa}
+#eventLogBox{width:100%;min-height:140px;background:#fff;padding:10px;border-radius:8px;white-space:pre-wrap;overflow-y:auto;margin-bottom:12px}
+#debugWindow{position:fixed;left:0;right:0;bottom:0;background:#000;color:#3f3;padding:8px;font-size:12px;max-height:160px;overflow-y:auto}
+.versionTag{position:fixed;top:8px;right:8px;background:#444;color:#fff;padding:4px 8px;border-radius:6px}
+.ready-mark{color:green;font-weight:bold}
+.rec-indicator{margin:4px 0}
 </style>
 </head>
-<body class="bg-amber-100 min-h-screen text-slate-800 p-4">
+<body>
+<div class="versionTag">v2.5</div>
 
-<div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-amber-200">
-  
-  <!-- Header / Version -->
-  <div class="bg-amber-400 p-4 flex justify-between items-center border-b border-amber-300">
-    <h1 class="font-bold text-lg text-amber-950">✊✌️✋ 包剪揼多人同步</h1>
-    <span class="bg-amber-900 text-amber-100 text-xs px-2.5 py-1 rounded-full font-mono">v2.5 (Fixed)</span>
-  </div>
-
-  <div class="p-5">
-    
-    <!-- PAGE 1: 登入 & 建房/加房 -->
-    <div id="page1" class="page space-y-4">
-      <h2 class="text-xl font-bold text-center text-slate-700">歡迎來到包剪揼大對決</h2>
-      
-      <div>
-        <label class="block text-sm font-semibold mb-1 text-slate-600">你的名字</label>
-        <input id="playerNameInput" type="text" placeholder="輸入你的名字..." class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none transition"/>
-      </div>
-
-      <hr class="my-4 border-slate-200" />
-
-      <div class="space-y-3">
-        <button id="btnCreateRoom" class="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold py-3 rounded-xl shadow transition">
-          👑 房主：創建全新房間
-        </button>
-
-        <div class="pt-2">
-          <label class="block text-sm font-semibold mb-1 text-slate-600">加入現有房間</label>
-          <div class="flex gap-2">
-            <input id="roomIdJoinInput" type="number" maxlength="4" placeholder="4位房號" class="w-1/2 p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none transition text-center font-bold tracking-widest"/>
-            <button id="btnJoinRoom" class="w-1/2 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold py-3 rounded-xl shadow transition">
-              🚪 房客：進入房間
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAGE 2: 房間大堂 & 錄音與規則設定 -->
-    <div id="page2" class="page hidden space-y-5">
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-        <div>
-          <span class="text-xs text-slate-500 block">房間號碼</span>
-          <span id="roomTitleShow" class="text-2xl font-black text-amber-600 font-mono">----</span>
-        </div>
-        <div>
-          <span class="text-xs text-slate-500 block">身份</span>
-          <span id="roleBadge" class="text-xs px-2 py-1 rounded bg-slate-200 font-bold">---</span>
-        </div>
-      </div>
-
-      <!-- 動態日誌框 -->
-      <div>
-        <label class="block text-xs font-semibold mb-1 text-slate-500">房間動態消息</label>
-        <div id="eventLogBox" class="w-full h-32 bg-slate-900 text-green-400 p-3 rounded-xl text-xs font-mono overflow-y-auto space-y-1 shadow-inner"></div>
-      </div>
-
-      <!-- 錄音區塊 -->
-      <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-4">
-        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-1">
-          🎙️ 錄製戰鬥語音
-        </h3>
-
-        <!-- 錄音段落 1 -->
-        <div class="bg-white p-3 rounded-lg border border-amber-200 space-y-2">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-semibold text-slate-600">第一段：包剪揼口號（大合唱）</span>
-            <span id="statusRec1" class="text-amber-600 font-bold">未錄製</span>
-          </div>
-          <div class="flex gap-2">
-            <button id="rec1Start" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 rounded-lg transition">開始錄音</button>
-            <button id="rec1Stop" class="flex-1 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded-lg transition" disabled>停止</button>
-            <button id="play1Btn" class="bg-amber-200 text-amber-800 text-xs px-3 py-2 rounded-lg font-bold hidden">▶ 試聽</button>
-          </div>
-        </div>
-
-        <!-- 錄音段落 2 -->
-        <div class="bg-white p-3 rounded-lg border border-amber-200 space-y-2">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-semibold text-slate-600">第二段：勝利宣言（贏家獨唱）</span>
-            <span id="statusRec2" class="text-amber-600 font-bold">未錄製</span>
-          </div>
-          <div class="flex gap-2">
-            <button id="rec2Start" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 rounded-lg transition">開始錄音</button>
-            <button id="rec2Stop" class="flex-1 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded-lg transition" disabled>停止</button>
-            <button id="play2Btn" class="bg-amber-200 text-amber-800 text-xs px-3 py-2 rounded-lg font-bold hidden">▶ 試聽</button>
-          </div>
-        </div>
-
-        <button id="btnConfirmReady" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition opacity-50 cursor-not-allowed" disabled>
-          ✅ 提交音訊並準備完成
-        </button>
-      </div>
-
-      <!-- 房主設定區塊 -->
-      <div id="hostRuleSection" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-        <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider">房主專用：選擇賽制</h4>
-        <div class="grid grid-cols-2 gap-2">
-          <button data-rule="oneRound" class="rule-btn bg-white border border-slate-300 hover:border-amber-500 text-slate-700 font-medium text-xs py-2 rounded-lg transition">一鋪定勝負</button>
-          <button data-rule="win2" class="rule-btn bg-white border border-slate-300 hover:border-amber-500 text-slate-700 font-medium text-xs py-2 rounded-lg transition">贏兩鋪勝出</button>
-          <button data-rule="win3" class="rule-btn bg-white border border-slate-300 hover:border-amber-500 text-slate-700 font-medium text-xs py-2 rounded-lg transition">贏三鋪勝出</button>
-          <button data-rule="consec2" class="rule-btn bg-white border border-slate-300 hover:border-amber-500 text-slate-700 font-medium text-xs py-2 rounded-lg transition">連贏兩鋪勝出</button>
-        </div>
-        <div class="text-xs text-slate-500">當前規則：<span id="currentRuleText" class="font-bold text-amber-600">未設定</span></div>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!-- Debug Window -->
-  <div class="bg-slate-950 p-2 border-t border-slate-800 text-emerald-400 font-mono text-[10px] h-24 overflow-y-auto" id="debugWindow"></div>
+<!-- Page1 -->
+<div id="page1" class="page active">
+<h2>第一頁：輸入姓名 / 建立或加入房間</h2>
+<input id="playerNameInput" placeholder="輸入你的名字"/>
+<br/>
+<button id="btnCreateRoom">房主：開啟全新房間</button>
+<br/>
+<input id="roomIdJoinInput" placeholder="輸入4位數房間號碼"/>
+<button id="btnJoinRoom">房客：進入房間</button>
 </div>
 
+<!-- Page2 -->
+<div id="page2" class="page">
+<h2>房間號碼：<span id="roomTitleShow"></span></h2>
+<div id="eventLogBox"></div>
+<div class="rec-indicator">
+<span id="rec1Status">第一段包剪揼：未錄音</span><br>
+<span id="rec2Status">第二段勝利宣言：未錄音</span>
+</div>
+
+<h3>錄製音訊 & 設定遊戲</h3>
+<input id="p2PlayerName" readonly/>
+
+<h4>第一段：包剪揼（大合唱用）</h4>
+<button id="rec1Start">開始錄第一段</button>
+<button id="rec1Stop">停止錄第一段</button>
+
+<h4>第二段：勝利宣言</h4>
+<button id="rec2Start">開始錄第二段</button>
+<button id="rec2Stop">停止錄第二段</button>
+
+<h4>房主選擇遊戲規則</h4>
+<div>
+<button data-rule="oneRound">一鋪定勝負</button>
+<button data-rule="win2">贏兩鋪</button>
+<button data-rule="win3">贏三鋪</button>
+<button data-rule="consec2">連贏兩鋪</button>
+</div>
+</div>
+
+<div id="debugWindow"></div>
+
 <script>
-// --- Debug Log System ---
 const debugDiv = document.querySelector("#debugWindow");
-const log = (txt) => {
-  const t = new Date().toLocaleTimeString("zh-HK", { hour12: false });
-  const line = document.createElement("div");
-  line.innerText = `[${t}] ${txt}`;
-  debugDiv.appendChild(line);
+const log = (txt)=>{
+  const t = new Date().toLocaleString("zh-HK");
+  debugDiv.innerText += `[${t}] ${txt}\n`;
   debugDiv.scrollTop = debugDiv.scrollHeight;
 };
-log("✅ v2.5 腳本載入完成");
+log("✅ v2.5 腳本開始執行");
 
-// --- Firebase 初始化 ---
 let fbDb, roomRef, playersRef, roomEventsRef;
 let myName = "";
 let currentRoomId = "";
-let isHost = false;
 
-try {
+// 錄音全域狀態
+let mediaRec1 = null, mediaRec2 = null;
+let stream1 = null, stream2 = null;
+let chunks1=[],chunks2=[];
+let audioBlob1 = null, audioBlob2 = null;
+
+const setPage = (id)=>{
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+};
+
+// ========== Firebase Init ==========
+try{
   log("Step0：準備初始化 Firebase");
-  // 提示：正式部署時請替換為你的真實 Firebase 設定
   const cfg = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "game-ad81e.firebaseapp.com",
-    databaseURL: "https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "game-ad81e",
-    storageBucket: "game-ad81e.appspot.com"
+    apiKey:"在此填入你的apiKey",
+    authDomain:"game-ad81e.firebaseapp.com",
+    databaseURL:"https://game-ad81e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:"game-ad81e",
+    storageBucket:"game-ad81e.appspot.com"
   };
   const app = firebase.initializeApp(cfg);
   fbDb = firebase.database(app);
   log("✅ Step1 Firebase 初始化成功");
-} catch (err) {
-  log("❌ Firebase 初始化錯誤: " + err.message);
+}catch(err){
+  log("❌ Firebase初始化錯誤:" + err.message);
 }
 
-// --- 頁面切換控制 ---
-const setPage = (pageId) => {
-  document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-  document.getElementById(pageId).classList.remove("hidden");
+const pushRoomEvent = async (msg)=>{
+  await roomEventsRef.push({msg, ts:Date.now()});
 };
 
-// --- 事件日誌同步 ---
-const pushRoomEvent = async (msg) => {
-  if (roomEventsRef) {
-    await roomEventsRef.push({ msg, ts: Date.now() });
-  }
-};
-
-const renderRoomEvents = (snap) => {
+const renderRoomEvents = (snap)=>{
   const box = document.querySelector("#eventLogBox");
-  box.innerHTML = "";
-  if (!snap.exists()) return;
-  const arr = Object.values(snap.val()).sort((a, b) => a.ts - b.ts);
-  arr.forEach(e => {
-    const item = document.createElement("div");
-    item.innerText = e.msg;
-    box.appendChild(item);
-  });
-  box.scrollTop = box.scrollHeight;
+  box.innerText = "";
+  if(!snap.exists()) return;
+  const arr = Object.values(snap.val()).sort((a,b)=>a.ts - b.ts);
+  arr.forEach(e=> box.innerText += e.msg + "\n");
 };
 
-// --- 創建房間 (房主) ---
-document.querySelector("#btnCreateRoom").onclick = async () => {
-  try {
+// 建立房間
+document.querySelector("#btnCreateRoom").onclick = async ()=>{
+  try{
+    log("Step4 房主點擊開啟房間");
     myName = document.querySelector("#playerNameInput").value.trim();
-    if (!myName) {
-      alert("請填寫你的姓名！");
-      return;
-    }
+    if(!myName){alert("請輸入姓名");return;}
 
-    currentRoomId = String(Math.floor(1000 + Math.random() * 9000));
-    isHost = true;
+    currentRoomId = String(Math.floor(1000 + Math.random()*9000));
     log(`Step5 生成房號=${currentRoomId}`);
 
     roomRef = fbDb.ref(`rooms/${currentRoomId}`);
     playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
     roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
 
-    await roomRef.set({
-      host: myName,
-      created: Date.now(),
-      gameRule: "oneRound"
-    });
-    
-    await playersRef.child(myName).set({ name: myName, ready: false, isHost: true });
-    await pushRoomEvent(`👑 房主 ${myName} 建立了房間`);
+    await roomRef.child("host").set(myName);
+    await playersRef.child(myName).set({name:myName, ready:false});
+    await pushRoomEvent(`${myName} 進入房間`);
 
-    // 監聽房間動態
     roomEventsRef.on("value", renderRoomEvents);
-    roomRef.child("gameRule").on("value", snap => {
-      if(snap.exists()){
-        document.querySelector("#currentRuleText").innerText = getRuleName(snap.val());
-      }
-    });
 
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
-    document.querySelector("#roleBadge").innerText = "房主";
-    document.querySelector("#roleBadge").className = "text-xs px-2 py-1 rounded bg-amber-200 text-amber-800 font-bold";
-    
+    document.querySelector("#p2PlayerName").value = myName;
+    log("➡ 切換 page2");
     setPage("page2");
-    log("➡ 切換至 Page2 (大堂)");
-  } catch (ex) {
-    log("❌ 創建房間異常：" + ex.message);
+  }catch(ex){
+    log("❌ 建立房間異常：" + ex.message);
   }
 };
 
-// --- 加入房間 (房客) ---
-document.querySelector("#btnJoinRoom").onclick = async () => {
-  try {
+// 加入房間，新增校驗：房間是否存在、防止同名
+document.querySelector("#btnJoinRoom").onclick = async ()=>{
+  try{
+    log("房客點擊進入房間");
     myName = document.querySelector("#playerNameInput").value.trim();
     currentRoomId = document.querySelector("#roomIdJoinInput").value.trim();
-
-    if (!myName || currentRoomId.length !== 4) {
-      alert("請填寫姓名及正確的 4 位數房號！");
-      return;
-    }
+    if(!myName || currentRoomId.length!==4){alert("請填寫姓名及4位房號");return;}
 
     roomRef = fbDb.ref(`rooms/${currentRoomId}`);
-    
-    // 檢查房間是否存在
-    const snap = await roomRef.once("value");
-    if (!snap.exists()) {
-      alert("找不到該房間，請確認房號！");
-      return;
-    }
-
     playersRef = fbDb.ref(`rooms/${currentRoomId}/players`);
     roomEventsRef = fbDb.ref(`rooms/${currentRoomId}/roomEvents`);
 
-    await playersRef.child(myName).set({ name: myName, ready: false, isHost: false });
-    await pushRoomEvent(`🚪 玩家 ${myName} 加入了房間`);
+    // 檢查房間是否存在
+    const roomSnap = await roomRef.once("value");
+    if(!roomSnap.exists()){
+      alert("該房間不存在！");
+      log("❌ 輸入咗不存在嘅房號");
+      return;
+    }
+    // 檢查有冇同名玩家
+    const playerSnap = await playersRef.once("value");
+    if(playerSnap.exists() && playerSnap.val()[myName]){
+      alert("呢個名字已經有人喺房間入面！請換名");
+      return;
+    }
+
+    await playersRef.child(myName).set({name:myName, ready:false});
+    await pushRoomEvent(`${myName} 進入房間`);
 
     roomEventsRef.on("value", renderRoomEvents);
-    roomRef.child("gameRule").on("value", snap => {
-      if(snap.exists()){
-        document.querySelector("#currentRuleText").innerText = getRuleName(snap.val());
-      }
-    });
 
     document.querySelector("#roomTitleShow").innerText = currentRoomId;
-    document.querySelector("#roleBadge").innerText = "玩家";
-    document.querySelector("#roleBadge").className = "text-xs px-2 py-1 rounded bg-sky-200 text-sky-800 font-bold";
-    
-    // 隱藏房主專用設定
-    document.querySelector("#hostRuleSection").classList.add("opacity-60", "pointer-events-none");
-
+    document.querySelector("#p2PlayerName").value = myName;
+    log("➡ 房客切換 page2");
     setPage("page2");
-    log("➡ 房客切換至 Page2");
-  } catch (ex) {
-    log("❌ 加入房間異常：" + ex.message);
+  }catch(ex){
+    log("❌ 加入房間異常："+ex.message);
   }
 };
 
-// --- 錄音功能管理 ---
-let mediaStream = null;
-let mediaRec1 = null, mediaRec2 = null;
-let chunks1 = [], chunks2 = [];
-let audioUrl1 = null, audioUrl2 = null;
-
-// 通用錄音啟動
-async function getStream() {
-  if (!mediaStream) {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  }
-  return mediaStream;
-}
-
-// 錄音 1 (口號)
-document.querySelector("#rec1Start").onclick = async () => {
-  try {
-    const stream = await getStream();
-    mediaRec1 = new MediaRecorder(stream);
-    chunks1 = [];
-    mediaRec1.ondataavailable = e => chunks1.push(e.data);
-    mediaRec1.onstop = () => {
-      const blob = new Blob(chunks1, { type: "audio/webm" });
-      audioUrl1 = URL.createObjectURL(blob);
-      document.querySelector("#statusRec1").innerText = "✅ 完成";
-      document.querySelector("#statusRec1").className = "text-emerald-600 font-bold";
-      document.querySelector("#play1Btn").classList.remove("hidden");
-      checkReadyState();
+// -----錄音 修復：停止關閉咪、異步處理
+document.querySelector("#rec1Start").onclick=async ()=>{
+  try{
+    stream1 = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRec1 = new MediaRecorder(stream1);
+    chunks1=[];
+    mediaRec1.ondataavailable=e=>chunks1.push(e.data);
+    mediaRec1.onstop = ()=>{
+      audioBlob1 = new Blob(chunks1, {type:"audio/webm"});
+      document.querySelector("#rec1Status").innerText = "第一段包剪揼：✅已錄畢";
+      log("第一段錄音完成");
     };
     mediaRec1.start();
-    document.querySelector("#rec1Start").disabled = true;
-    document.querySelector("#rec1Stop").disabled = false;
-    document.querySelector("#statusRec1").innerText = "🔴 錄音中...";
-    log("🎙️ 開始錄製第一段");
-  } catch (e) { log("❌ 錄音1失敗: " + e.message); }
+    document.querySelector("#rec1Status").innerText = "第一段包剪揼：🔴錄音中";
+    log("開始錄第一段");
+  }catch(e){log("錄音1錯誤:"+e.message)}
 };
 
-document.querySelector("#rec1Stop").onclick = () => {
-  if (mediaRec1 && mediaRec1.state !== "inactive") {
-    mediaRec1.stop();
-    document.querySelector("#rec1Start").disabled = false;
-    document.querySelector("#rec1Stop").disabled = true;
-    log("⏹️ 停止錄製第一段");
-  }
+document.querySelector("#rec1Stop").onclick=()=>{
+  if(!mediaRec1) return;
+  mediaRec1.stop();
+  stream1.getTracks().forEach(t=>t.stop());
+  stream1=null;
+  mediaRec1=null;
+  log("停止錄第一段，關閉麥克風");
 };
 
-document.querySelector("#play1Btn").onclick = () => {
-  if (audioUrl1) new Audio(audioUrl1).play();
-};
-
-// 錄音 2 (勝利宣言)
-document.querySelector("#rec2Start").onclick = async () => {
-  try {
-    const stream = await getStream();
-    mediaRec2 = new MediaRecorder(stream);
-    chunks2 = [];
-    mediaRec2.ondataavailable = e => chunks2.push(e.data);
-    mediaRec2.onstop = () => {
-      const blob = new Blob(chunks2, { type: "audio/webm" });
-      audioUrl2 = URL.createObjectURL(blob);
-      document.querySelector("#statusRec2").innerText = "✅ 完成";
-      document.querySelector("#statusRec2").className = "text-emerald-600 font-bold";
-      document.querySelector("#play2Btn").classList.remove("hidden");
-      checkReadyState();
+document.querySelector("#rec2Start").onclick=async ()=>{
+  try{
+    stream2 = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRec2 = new MediaRecorder(stream2);
+    chunks2=[];
+    mediaRec2.ondataavailable=e=>chunks2.push(e.data);
+    mediaRec2.onstop = async ()=>{
+      audioBlob2 = new Blob(chunks2, {type:"audio/webm"});
+      document.querySelector("#rec2Status").innerText = "第二段勝利宣言：✅已錄畢";
+      // 兩段都錄好就標準玩家準備
+      if(audioBlob1 && audioBlob2){
+        await playersRef.child(`${myName}`).update({ready:true});
+        await pushRoomEvent(`${myName} 已準備`);
+        log(myName + "標記已準備");
+      }
     };
     mediaRec2.start();
-    document.querySelector("#rec2Start").disabled = true;
-    document.querySelector("#rec2Stop").disabled = false;
-    document.querySelector("#statusRec2").innerText = "🔴 錄音中...";
-    log("🎙️ 開始錄製第二段");
-  } catch (e) { log("❌ 錄音2失敗: " + e.message); }
+    document.querySelector("#rec2Status").innerText = "第二段勝利宣言：🔴錄音中";
+    log("開始錄第二段");
+  }catch(e){log("錄音2錯誤:"+e.message)}
 };
 
-document.querySelector("#rec2Stop").onclick = () => {
-  if (mediaRec2 && mediaRec2.state !== "inactive") {
-    mediaRec2.stop();
-    document.querySelector("#rec2Start").disabled = false;
-    document.querySelector("#rec2Stop").disabled = true;
-    log("⏹️ 停止錄製第二段");
-  }
+document.querySelector("#rec2Stop").onclick=()=>{
+  if(!mediaRec2) return;
+  mediaRec2.stop();
+  stream2.getTracks().forEach(t=>t.stop());
+  stream2=null;
+  mediaRec2=null;
+  log("停止錄第二段，關閉麥克風");
 };
 
-document.querySelector("#play2Btn").onclick = () => {
-  if (audioUrl2) new Audio(audioUrl2).play();
-};
-
-function checkReadyState() {
-  if (audioUrl1 && audioUrl2) {
-    const btn = document.querySelector("#btnConfirmReady");
-    btn.disabled = false;
-    btn.classList.remove("opacity-50", "cursor-not-allowed");
-  }
-}
-
-// 確定準備完成
-document.querySelector("#btnConfirmReady").onclick = async () => {
-  try {
-    await playersRef.child(myName).update({ ready: true });
-    await pushRoomEvent(`👍 ${myName} 已完成錄音並準備就緒！`);
-    document.querySelector("#btnConfirmReady").innerText = "🎉 已準備完成";
-    document.querySelector("#btnConfirmReady").disabled = true;
-    log(`✅ ${myName} 標記為 Ready`);
-  } catch (e) { log("❌ 準備狀態更新失敗: " + e.message); }
-};
-
-// --- 規則設定 ---
-const getRuleName = (ruleKey) => {
-  const map = {
-    oneRound: "一鋪定勝負",
-    win2: "贏兩鋪勝出",
-    win3: "贏三鋪勝出",
-    consec2: "連贏兩鋪勝出"
-  };
-  return map[ruleKey] || ruleKey;
-};
-
-document.querySelectorAll("[data-rule]").forEach(btn => {
-  btn.onclick = async () => {
-    if (!isHost) return;
-    try {
+// 設定遊戲規則
+document.querySelectorAll("[data-rule]").forEach(btn=>{
+  btn.onclick = async ()=>{
+    try{
       const rule = btn.dataset.rule;
       await roomRef.child("gameRule").set(rule);
-      await pushRoomEvent(`⚙️ 房主將規則修改為：${getRuleName(rule)}`);
-      log("房主設定規則: " + rule);
-    } catch (e) { log("❌ 設定規則錯誤: " + e.message); }
-  };
-});
+      log("房主設定規則:"+rule);
+    }catch(e){log("設定規則錯誤:"+e.message)}
+  }
+})
+
+log("v2.5 JS全部載入完畢，等待玩家開房");
 </script>
 </body>
 </html>
-```
