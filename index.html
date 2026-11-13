@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -176,9 +175,29 @@ const MODE_NAMES = {
 
 const debugDiv = document.getElementById('debug');
 function logDebug(s){
+  if(!debugDiv) return;
   debugDiv.innerText += new Date().toLocaleTimeString() + " | " + s + "\n";
   debugDiv.scrollTop = debugDiv.scrollHeight;
 }
+
+// 捕捉所有未處理的錯誤並顯示在螢幕下方 Debug 框，方便手機直接除錯
+window.onerror = function(msg, url, line) {
+  logDebug("❌ 程式錯誤 (第" + line + "行): " + msg);
+};
+window.addEventListener("unhandledrejection", function(event) {
+  logDebug("❌ 非同步/Firebase錯誤: " + (event.reason?.message || event.reason));
+});
+
+logDebug("✅ 網頁與腳本載入成功，準備就緒");
+
+// 測試 Firebase 連線狀態
+db.ref(".info/connected").on("value", (snap) => {
+  if (snap.val() === true) {
+    logDebug("🟢 已成功連線至 Firebase 伺服器");
+  } else {
+    logDebug("🟡 正在連線 Firebase 伺服器...");
+  }
+});
 
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -592,64 +611,277 @@ async function runRoundProcess(roomSnapshotData){
 
 // =========== Firebase 事件綁定 ===========
 document.getElementById('btnCreateRoom').onclick = async ()=>{
-  myName = sanitizeName(document.getElementById('myName').value);
-  if(!myName){ alert("請輸入有效的名字（不可含特殊符號）"); return; }
-  
-  roomId = genRoomId();
-  isHost = true;
-  roomRef = db.ref(`rooms/${roomId}`);
-  
-  // 若房主意外斷線，自動清理房間避免殘留垃圾資料
-  roomRef.onDisconnect().remove();
+  try {
+    logDebug("👉 點擊了【開新房間】...");
+    myName = sanitizeName(document.getElementById('myName').value);
+    if(!myName){ logDebug("⚠️ 名字為空"); return; }
+    
+    roomId = genRoomId();
+    isHost = true;
+    roomRef = db.ref(`rooms/${roomId}`);
+    
+    logDebug("⏳ 正在寫入房間資料至 Firebase (" + roomId + ")...");
+    // 若房主意外斷線，自動清理房間避免殘留垃圾資料
+    roomRef.onDisconnect().remove();
 
-  await roomRef.set({
-    host: myName,
-    gameState: "waiting",
-    mode: "oneRound",
-    round: 1,
-    winner: "",
-    players: {}
-  });
+    await roomRef.set({
+      host: myName,
+      gameState: "waiting",
+      mode: "oneRound",
+      round: 1,
+      winner: "",
+      players: {}
+    });
 
-  playerRef = roomRef.child(`players/${myName}`);
-  await playerRef.set({
-    name: myName,
-    readySound: false,
-    choice: "",
-    eliminated: false,
-    score: 0,
-    consecWin: 0
-  });
+    playerRef = roomRef.child(`players/${myName}`);
+    await playerRef.set({
+      name: myName,
+      readySound: false,
+      choice: "",
+      eliminated: false,
+      score: 0,
+      consecWin: 0
+    });
 
-  logDebug("建立房間 " + roomId);
-  enterRoomUI();
+    logDebug("✅ 建立房間成功: " + roomId);
+    enterRoomUI();
+  } catch (err) {
+    logDebug("❌ 開房失敗: " + err.message);
+  }
 };
 
 document.getElementById('btnJoinRoom').onclick = async ()=>{
-  myName = sanitizeName(document.getElementById('myName').value);
-  roomId = document.getElementById('roomIdJoin').value.trim();
-  if(!myName || roomId.length !== 4){ alert("請輸入有效名字及4位房號"); return; }
+  try {
+    logDebug("👉 點擊了【進房間】...");
+    myName = sanitizeName(document.getElementById('myName').value);
+    roomId = document.getElementById('roomIdJoin').value.trim();
+    if(!myName || roomId.length !== 4){ logDebug("⚠️ 請輸入有效名字及4位房號"); return; }
 
-  isHost = false;
-  roomRef = db.ref(`rooms/${roomId}`);
-  const snap = await roomRef.once('value');
-  if(!snap.exists()){ alert("房間不存在或已關閉"); return; }
+    isHost = false;
+    roomRef = db.ref(`rooms/${roomId}`);
+    const snap = await roomRef.once('value');
+    if(!snap.exists()){ logDebug("⚠️ 房間不存在或已關閉"); return; }
 
-  const roomData = snap.val();
-  if(roomData.gameState !== "waiting"){ alert("遊戲已經開始，無法中途加入"); return; }
+    const roomData = snap.val();
+    if(roomData.gameState !== "waiting"){ logDebug("⚠️ 遊戲已經開始，無法中途加入"); return; }
 
-  const pl = roomData.players || {};
-  if(Object.keys(pl).length >= 8){ alert("房間已滿 (最多8人)"); return; }
-  if(pl[myName]){ alert("房間內已有相同名字的玩家，請換一個名字"); return; }
+    const pl = roomData.players || {};
+    if(Object.keys(pl).length >= 8){ logDebug("⚠️ 房間已滿 (最多8人)"); return; }
+    if(pl[myName]){ logDebug("⚠️ 房間內已有相同名字的玩家"); return; }
 
-  playerRef = roomRef.child(`players/${myName}`);
-  await playerRef.set({
-    name: myName,
-    readySound: false,
-    choice: "",
-    eliminated: false,
-    score: 0,
-    consecWin: 0
+    playerRef = roomRef.child(`players/${myName}`);
+    await playerRef.set({
+      name: myName,
+      readySound: false,
+      choice: "",
+      eliminated: false,
+      score: 0,
+      consecWin: 0
+    });
+
+    logDebug("✅ " + myName + " 進房成功: " + roomId);
+    enterRoomUI();
+  } catch (err) {
+    logDebug("❌ 進房失敗: " + err.message);
+  }
+};
+
+function enterRoomUI(){
+  isProcessingRound = false;
+  lastProcessedRound = -1;
+  victoryPlayed = false;
+  document.getElementById('showRoomId').innerText = roomId;
+  document.getElementById('hostControls').style.display = isHost ? "block" : "none";
+  showPage('page2');
+  listenRoom();
+}
+
+function listenRoom(){
+  roomRef.off(); // 確保不重複綁定監聽器
+  roomRef.on('value', snap => {
+    const d = snap.val();
+    if(!d){
+      // 房間被房主刪除
+      alert("房間已關閉，將返回大廳");
+      resetLocalState();
+      showPage("page1");
+      return;
+    }
+
+    renderRoomLog(d);
+
+    // 同步快取所有玩家的音訊
+    const ps = d.players || {};
+    Object.values(ps).forEach(p => {
+      if(p.sound){
+        if(!localAudioCache[p.name]) localAudioCache[p.name] = {};
+        if(localAudioCache[p.name].soundB64 !== p.sound){
+          localAudioCache[p.name].soundB64 = p.sound;
+          const bl = base64ToBlob(p.sound);
+          localAudioCache[p.name].soundBlobUrl = URL.createObjectURL(bl);
+        }
+      }
+      if(p.victory){
+        if(!localAudioCache[p.name]) localAudioCache[p.name] = {};
+        if(localAudioCache[p.name].victoryB64 !== p.victory){
+          localAudioCache[p.name].victoryB64 = p.victory;
+          const bl = base64ToBlob(p.victory);
+          localAudioCache[p.name].victoryBlobUrl = URL.createObjectURL(bl);
+        }
+      }
+    });
+
+    // 狀態機分流
+    if(d.gameState === "playing"){
+      // 如果正在播放本回合動畫結算中，忽略中途的資料庫變動
+      if(isProcessingRound) return;
+
+      const currentRound = d.round || 1;
+      const aliveList = Object.values(ps).filter(pl => !pl.eliminated);
+      // 檢查所有存活者是否都已出拳 (choice 為非空字串)
+      const allHasChoice = aliveList.length > 0 && aliveList.every(pl => pl.choice && pl.choice !== "");
+
+      if(allHasChoice && lastProcessedRound !== currentRound){
+        runRoundProcess(d);
+      } else if(!allHasChoice) {
+        // 尚有人未出拳，顯示 Page 3 出拳畫面
+        showPage("page3");
+        renderScore(d);
+        updateChoiceButtonsUI(ps[myName]);
+      }
+    } else if(d.gameState === "finished"){
+      showPage("page5");
+      const winName = d.winner || "無";
+      document.getElementById("winnerName").innerText = winName;
+      if(!victoryPlayed && ps[winName]){
+        victoryPlayed = true;
+        playWinnerVictory(ps[winName]);
+      }
+    }
+  });
+}
+
+function updateChoiceButtonsUI(me){
+  const actionArea = document.getElementById('actionArea');
+  const specMsg = document.getElementById('spectatorMsg');
+  const btns = document.querySelectorAll('.choice-btn');
+
+  if(!me || me.eliminated){
+    actionArea.style.display = "none";
+    specMsg.style.display = "block";
+    return;
+  }
+
+  actionArea.style.display = "block";
+  specMsg.style.display = "none";
+  myChoice = me.choice || "";
+
+  btns.forEach(btn => {
+    const val = btn.dataset.val;
+    btn.classList.toggle('selected', val === myChoice);
+    // 一旦出拳後即鎖定按鈕，防止反悔或重複點擊
+    btn.disabled = (myChoice !== "");
   });
 
-  logD
+  document.getElementById('choicePrompt').innerText = myChoice 
+    ? `✅ 你已出【${getPunchName(myChoice)}】，等待其他玩家...` 
+    : "請選擇你要出的拳：";
+}
+
+function renderRoomLog(roomData){
+  const logDiv = document.getElementById('roomLog');
+  logDiv.innerHTML = "<h4>房間玩家列表：</h4>";
+  const ps = roomData.players || {};
+  Object.values(ps).forEach(p => {
+    const div = document.createElement('div');
+    div.style.padding = "4px 0";
+    const hostTag = (p.name === roomData.host) ? "👑 " : "";
+    div.innerText = `${hostTag}${p.name} ${p.readySound ? "✅已錄音" : "⏳未錄音"}`;
+    logDiv.appendChild(div);
+  });
+}
+
+document.getElementById('btnStartGame').onclick = async ()=>{
+  if(!isHost) return;
+  const snap = await roomRef.once('value');
+  const d = snap.val();
+  const playerCount = Object.keys(d.players || {}).length;
+  if(playerCount < 2){
+    alert("至少需要 2 位玩家才能開始遊戲！");
+    return;
+  }
+
+  const sel = document.getElementById('gameModeSel').value;
+  await roomRef.update({
+    gameState: "playing",
+    mode: sel,
+    round: 1,
+    winner: ""
+  });
+  logDebug("房主啟動遊戲，模式=" + sel);
+};
+
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.onclick = async function(){
+    if(this.disabled || myChoice !== "") return;
+    initAudioContext(); // 趁使用者點擊按鈕時解鎖手機音訊播放權限
+    const val = this.dataset.val;
+    myChoice = val;
+    
+    // 立即鎖定 UI 防止連點
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    this.classList.add('selected');
+
+    await playerRef.update({ choice: val });
+    logDebug(myName + " 出拳: " + val);
+  };
+});
+
+function renderScore(roomData){
+  document.getElementById('curModeText').innerText = `${MODE_NAMES[roomData.mode] || roomData.mode} (第 ${roomData.round || 1} 回合)`;
+  const sb = document.getElementById('scoreBox');
+  sb.innerHTML = "<h4>📊 即時戰況</h4>";
+  Object.values(roomData.players || {}).forEach(p => {
+    const statusHtml = p.eliminated 
+      ? `<span class="status-badge badge-elim">已淘汰</span>` 
+      : (p.choice ? `<span class="status-badge badge-alive">已出拳</span>` : `<span style="color:#aaa;font-size:0.85rem;">思考中...</span>`);
+    
+    sb.innerHTML += `
+      <div style="margin:6px 0;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.1);">
+        <strong>${p.name}</strong> | 勝場: ${p.score || 0} | 連勝: ${p.consecWin || 0} ${statusHtml}
+      </div>
+    `;
+  });
+}
+
+function resetLocalState(){
+  if(roomRef) roomRef.off();
+  Object.values(localAudioCache).forEach(item => {
+    if(item.soundBlobUrl) URL.revokeObjectURL(item.soundBlobUrl);
+    if(item.victoryBlobUrl) URL.revokeObjectURL(item.victoryBlobUrl);
+  });
+  localAudioCache = {};
+  roomRef = null;
+  playerRef = null;
+  myChoice = "";
+  isProcessingRound = false;
+  lastProcessedRound = -1;
+}
+
+document.getElementById('btnEndGame').onclick = async ()=>{
+  if(roomRef && isHost){
+    await roomRef.remove();
+  }
+  resetLocalState();
+  if(audioCtx) { await audioCtx.close(); audioCtx = null; }
+  logDebug("結束遊戲並清除快取");
+  showPage("page1");
+};
+
+document.getElementById('btnRecSound').onclick = ()=> startRecord("sound");
+document.getElementById('btnPlaySound').onclick = ()=> playLocalRecord("sound");
+document.getElementById('btnRecVictory').onclick = ()=> startRecord("victory");
+document.getElementById('btnPlayVictory').onclick = ()=> playLocalRecord("victory");
+</script>
+</body>
+</html>
