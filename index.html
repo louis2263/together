@@ -375,14 +375,21 @@ async function playChorus(playerList){
   }
   if(buffers.length === 0) return;
 
+  // 計算這批存活玩家音訊中最長的一段時間，確保大合唱播完才進入下一步
+  let maxDuration = 0;
   const playAt = audioCtx.currentTime + 0.05;
   buffers.forEach(buf=>{
+    if(buf.duration > maxDuration) maxDuration = buf.duration;
     const src = audioCtx.createBufferSource();
     src.buffer = buf;
     src.connect(audioCtx.destination);
     src.start(playAt);
   });
-  logDebug(`大合唱播放，共 ${buffers.length} 條音訊同時播出`);
+  logDebug(`大合唱播放，共 ${buffers.length} 條存活玩家音訊同時疊加播出`);
+
+  // 等待大合唱播放完畢（上限 3.2 秒防卡死）
+  const waitMs = Math.min(Math.max(maxDuration * 1000, 1000), 3200);
+  await sleep(waitMs);
 }
 
 async function playWinnerVictory(winnerPlayer){
@@ -431,25 +438,29 @@ async function renderPunchDisplay(roomData){
   const mePlayer = playersHaveChoice.find(p => p.name === myName);
   const otherPlayers = playersHaveChoice.filter(p => p.name !== myName);
 
+  // 1. 大合唱結束後，自己的出拳圖片立刻出現
   if(mePlayer){
     const divMe = document.createElement("div");
     divMe.className = "punch-item";
     divMe.innerHTML = `
       <strong>${mePlayer.name} (自己)</strong> 出【${getPunchName(mePlayer.choice)}】
-      <img src="${getPunchImgSrc(mePlayer.choice)}" style="width:55px;height:55px;vertical-align:middle;margin-left:8px;border-radius:6px;">
+      <img src="${getPunchImgSrc(mePlayer.choice)}" style="width:65px;height:65px;vertical-align:middle;margin-left:8px;border-radius:8px;">
     `;
     container.appendChild(divMe);
+    logDebug(`立刻顯示自己出拳: ${mePlayer.name}`);
   }
 
+  // 2. 每隔 0.8s (800ms) 依序顯示其他存活玩家的名字 + 圖片
   for(const p of otherPlayers){
-    await sleep(600);
+    await sleep(800);
     const divOther = document.createElement("div");
     divOther.className = "punch-item";
     divOther.innerHTML = `
       <strong>${p.name}</strong> 出【${getPunchName(p.choice)}】
-      <img src="${getPunchImgSrc(p.choice)}" style="width:55px;height:55px;vertical-align:middle;margin-left:8px;border-radius:6px;">
+      <img src="${getPunchImgSrc(p.choice)}" style="width:65px;height:65px;vertical-align:middle;margin-left:8px;border-radius:8px;">
     `;
     container.appendChild(divOther);
+    logDebug(`延遲 0.8s 顯示玩家: ${p.name}`);
   }
 }
 
@@ -558,31 +569,42 @@ async function runRoundProcess(roomSnapshotData){
   const currentRound = roomSnapshotData.round || 1;
   lastProcessedRound = currentRound;
 
-  logDebug(`==== 開始處理第 ${currentRound} 回合 ====`);
+  logDebug(`==== 進入第四頁：開始處理第 ${currentRound} 回合 ====`);
+  
+  // 先清空第四頁兩個視窗的舊內容與重置倒數顯示
+  document.getElementById("showPunch").innerHTML = "<div style='color:#ffd54f;'>🎵 正在播放存活玩家大合唱...</div>";
+  document.getElementById("showElim").innerHTML = "<div style='color:#aaa;'>等待揭曉出拳結果...</div>";
+  document.getElementById("countDownText").innerText = "3";
+  
+  // 切換至第四頁 (使用 background04.jpg)
   showPage("page4");
 
+  // 步驟 1：只篩選「未淘汰 (!x.eliminated)」且有錄音的玩家，同時疊加播放大合唱
   const alivePlayersWithSound = Object.values(roomSnapshotData.players || {})
     .filter(x => !x.eliminated && x.sound);
-  playChorus(alivePlayersWithSound);
+  await playChorus(alivePlayersWithSound);
 
+  // 步驟 2：大合唱播放完畢後，立刻顯示自己出拳，再每隔 0.8s 依序顯示其他存活玩家
   await renderPunchDisplay(roomSnapshotData);
 
+  // 步驟 3：在第二個視窗顯示本回合晉級與淘汰名單
   const roundResult = calcRoundLocal(roomSnapshotData);
   const elimDiv = document.getElementById("showElim");
   
   if(roundResult.allDraw){
-    elimDiv.innerHTML = `<div style="color:#ffd54f;">🤝 本回合打和！無人淘汰/得分，準備下一回合...</div>`;
+    elimDiv.innerHTML = `<div style="color:#ffd54f;">🤝 本回合打和！全員進入下一輪比賽...</div>`;
   } else {
     const isElimMode = (roomSnapshotData.mode === "oneRound");
     elimDiv.innerHTML = `
-      <div style="color:#00e676;">🏆 本回合勝出：<strong>${roundResult.winnerNames.join(", ")}</strong></div>
-      <div style="color:#ff5252;">${isElimMode ? "❌ 本回合淘汰" : "💔 本回合落敗"}：<strong>${roundResult.loserNames.join(", ") || "無"}</strong></div>
+      <div style="color:#00e676;">🏆 進入下一輪比賽：<strong>${roundResult.winnerNames.join(", ")}</strong></div>
+      <div style="color:#ff5252;">${isElimMode ? "❌ 本回合被淘汰" : "💔 本回合落敗"}：<strong>${roundResult.loserNames.join(", ") || "無"}</strong></div>
     `;
   }
 
+  // 步驟 4：3 秒倒數數字顯示
   await runCountdown();
 
-  // 統一由「房主 (Host)」負責計算結果並更新 Firebase 資料庫，避免多人同時寫入衝突
+  // 步驟 5：統一由「房主 (Host)」將新狀態寫回 Firebase，觸發全員進入下一輪(Page 3)或最終勝利(Page 5)
   if(isHost){
     const finalWinnerName = checkGameWinCondition(roomSnapshotData.mode, roundResult.players);
     const updatePayload = {};
